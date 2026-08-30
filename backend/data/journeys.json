@@ -1,0 +1,119 @@
+[
+  {
+    "id": "journey-1788114971865-hz30",
+    "name": "Use AI Agent on Instagram DMs",
+    "template_id": "tpl-ig-dm",
+    "status": "inactive",
+    "trigger": {
+      "type": "conversation",
+      "channel": "instagram",
+      "label": "Instagram Direct Message"
+    },
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "assign_agent",
+        "title": "Assign to AI Agent",
+        "bot_id": "bot-apex-agency",
+        "bot_name": "Apex AI Assistant",
+        "is_configured": true
+      },
+      {
+        "id": "node-2",
+        "type": "wait_delay",
+        "title": "Wait Until",
+        "duration_value": 2,
+        "duration_unit": "hours",
+        "is_configured": true
+      },
+      {
+        "id": "node-3",
+        "type": "send_message",
+        "title": "Send Message in Conversation",
+        "message_text": "Thanks for reaching out on Instagram! Let us know how we can help.",
+        "is_configured": true
+      }
+    ],
+    "created_at": "2026-08-30T18:36:11.865Z",
+    "updated_at": "2026-08-30T18:41:27.861Z",
+    "execution_count": 0
+  },
+  {
+    "id": "journey-wa-agent-1",
+    "name": "Use AI Agent on WhatsApp",
+    "template_id": "tpl-wa-agent",
+    "status": "active",
+    "trigger": {
+      "type": "conversation",
+      "channel": "whatsapp",
+      "label": "WhatsApp Incoming Message"
+    },
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "assign_agent",
+        "title": "Assign to AI Agent",
+        "bot_id": "bot-apex-agency",
+        "bot_name": "Apex AI Assistant",
+        "is_configured": true
+      },
+      {
+        "id": "node-2",
+        "type": "wait_delay",
+        "title": "Wait Until",
+        "duration_value": 6,
+        "duration_unit": "hours",
+        "is_configured": true
+      },
+      {
+        "id": "node-3",
+        "type": "send_message",
+        "title": "Send Message in Conversation",
+        "message_text": "Hey! Just checking in to see if you had any more questions regarding our packages?",
+        "is_configured": true
+      }
+    ],
+    "created_at": "2026-08-30T10:00:00Z",
+    "updated_at": "2026-08-30T12:30:00Z",
+    "execution_count": 142
+  },
+  {
+    "id": "journey-ig-dm-1",
+    "name": "Use AI Agent on Instagram DMs",
+    "template_id": "tpl-ig-dm",
+    "status": "inactive",
+    "trigger": {
+      "type": "conversation",
+      "channel": "instagram",
+      "label": "Instagram Direct Message"
+    },
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "assign_agent",
+        "title": "Assign to AI Agent",
+        "bot_id": "bot-apex-agency",
+        "bot_name": "Apex AI Assistant",
+        "is_configured": true
+      },
+      {
+        "id": "node-2",
+        "type": "wait_delay",
+        "title": "Wait Until",
+        "duration_value": 2,
+        "duration_unit": "hours",
+        "is_configured": true
+      },
+      {
+        "id": "node-3",
+        "type": "send_message",
+        "title": "Send Message in Conversation",
+        "message_text": "Thanks for reaching out via Instagram! Would you like our portfolio link?",
+        "is_configured": true
+      }
+    ],
+    "created_at": "2026-08-30T11:00:00Z",
+    "updated_at": "2026-08-30T11:00:00Z",
+    "execution_count": 58
+  }
+]

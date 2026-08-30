@@ -36,7 +36,14 @@ ${bot.business_knowledge || 'No specific knowledge base provided.'}
 
   // If Gemini API Key is available, call Google Gemini
   if (apiKey && apiKey.trim().length > 10) {
-    const candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash-exp',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-8b',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro'
+    ];
     
     for (const modelName of candidateModels) {
       try {

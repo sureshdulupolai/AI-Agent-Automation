@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   MessageSquare, 
   QrCode, 
@@ -16,7 +17,13 @@ import {
 import confetti from 'canvas-confetti';
 
 export default function WhatsAppPage({ bots = [], initialBotId = null, onNavigate }) {
-  const [selectedBotId, setSelectedBotId] = useState(initialBotId || (bots[0]?.id || ''));
+  const [searchParams] = useSearchParams();
+  const botIdFromQuery = searchParams.get('botId');
+  const [selectedBotId, setSelectedBotId] = useState(botIdFromQuery || initialBotId || (bots[0]?.id || ''));
+
+  useEffect(() => {
+    if (botIdFromQuery) setSelectedBotId(botIdFromQuery);
+  }, [botIdFromQuery]);
   const [activeTab, setActiveTab] = useState('testing');
   const [connectMethod, setConnectMethod] = useState('pairing-code');
   

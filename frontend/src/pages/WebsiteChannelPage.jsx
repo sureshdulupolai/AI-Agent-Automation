@@ -1,136 +1,218 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Globe, 
   CheckCircle2, 
   Copy, 
   Check, 
-  ExternalLink, 
-  Code, 
+  Code2, 
   ChevronDown, 
   ChevronUp, 
   RefreshCw, 
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle
+  AlertCircle,
+  XCircle,
+  FileText,
+  Clock,
+  Info,
+  X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+// High-fidelity Platform Logos matching Reference Image 1
+const PlatformIcon = ({ id, color = '#334155', isSelected = false }) => {
+  const fill = isSelected ? '#4f46e5' : color;
+
+  switch (id) {
+    case 'custom':
+      return (
+        <span style={{ 
+          fontSize: '18px', 
+          fontWeight: 900, 
+          color: fill, 
+          fontFamily: 'var(--font-mono)',
+          letterSpacing: '-0.05em' 
+        }}>
+          &lt;/&gt;
+        </span>
+      );
+    case 'wordpress':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill={fill}>
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489L4.47 9.878A9.972 9.972 0 0112 4c2.247 0 4.316.74 5.986 1.987L12 2zm8.53 7.878l-4.406 12.062C19.349 20.463 22 16.536 22 12c0-2.316-.788-4.45-2.112-6.148l-1.358 4.026zM12 22a9.957 9.957 0 005.107-1.396L13.882 11.23l-3.327 9.682A9.98 9.98 0 0012 22zM2.87 13.914C2.316 12.72 2 11.396 2 10c0-.85.12-1.673.344-2.455l3.858 10.567C4.606 16.91 3.518 15.518 2.87 13.914z"/>
+        </svg>
+      );
+    case 'shopify':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill={fill}>
+          <path d="M19.5 7.5L16.2 3.8A1.5 1.5 0 0015.08 3.33L9.62 4.19A1.5 1.5 0 008.43 5.1L5.3 12.2a1.5 1.5 0 00.32 1.63l6.5 6.5a1.5 1.5 0 002.12 0l5.58-5.58a1.5 1.5 0 00.44-1.06V8.63a1.5 1.5 0 00-.76-1.13zM14 13.5a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+      );
+    case 'wix':
+      return (
+        <span style={{ 
+          fontSize: '15px', 
+          fontWeight: 900, 
+          fontFamily: 'var(--font-heading)', 
+          color: fill, 
+          letterSpacing: '-0.02em' 
+        }}>
+          WiX
+        </span>
+      );
+    case 'squarespace':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill={fill}>
+          <path d="M14.7 6.3a4.5 4.5 0 00-6.4 0L4.5 10.1a4.5 4.5 0 000 6.4l2.8 2.8a4.5 4.5 0 006.4 0l3.8-3.8a4.5 4.5 0 000-6.4l-2.8-2.8zm-1.4 7.8l-3.8 3.8a2.5 2.5 0 01-3.5 0L3.2 15.1a2.5 2.5 0 010-3.5l3.8-3.8a2.5 2.5 0 013.5 0l2.8 2.8a2.5 2.5 0 010 3.5z"/>
+        </svg>
+      );
+    case 'webflow':
+      return (
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '5px',
+          backgroundColor: fill,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 900,
+          fontSize: '13px',
+          fontFamily: 'var(--font-heading)'
+        }}>
+          W
+        </div>
+      );
+    case 'framer':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill={fill}>
+          <path d="M4 2h16v7h-8l8 7H4v-7h8L4 2z"/>
+        </svg>
+      );
+    case 'godaddy':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill={fill}>
+          <path d="M12 3a9 9 0 0 0-9 9c0 4.97 4.03 9 9 9 3.53 0 6.58-2.03 8.05-5H17.3a6.5 6.5 0 0 1-5.3 2.5A6.5 6.5 0 1 1 18.5 12c0 .88-.17 1.71-.48 2.48l2.25 1.3A9 9 0 0 0 12 3zm0 4.5A4.5 4.5 0 1 0 16.5 12 4.5 4.5 0 0 0 12 7.5z"/>
+        </svg>
+      );
+    case 'gtm':
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill={fill}>
+          <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l-8-4v8l8 4 8-4v-8l-8 4z"/>
+        </svg>
+      );
+    default:
+      return <Code2 size={24} color={fill} />;
+  }
+};
 
 const PLATFORMS = [
   {
     id: 'custom',
     name: 'Custom / other',
-    icon: '</>',
-    desc: 'For custom HTML, PHP, React, Vue, Angular, Laravel, or Node.js websites.',
-    steps: [
-      'Copy the snippet code below.',
-      'Open your website’s HTML template or global layout file.',
-      'Paste the script right before the closing </body> tag.',
-      'Deploy or publish your website changes.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add it to your Custom / other site',
+    step1: 'Open the HTML file or template that every page on your site shares - usually index.html, or your header/layout include.',
+    step2: 'Paste the code just above the closing </head> tag.',
+    step3: 'Save and deploy your site as you normally would.',
+    note: 'On React, Next.js, Vue or Nuxt, put it in the app’s root HTML shell (index.html) or the framework’s head/layout component so it loads on every page.'
   },
   {
     id: 'wordpress',
     name: 'WordPress',
-    icon: 'W',
-    desc: 'For WordPress.org sites or themes with custom code injection.',
-    steps: [
-      'Log into your WordPress Admin Dashboard.',
-      'Navigate to Plugins > Add New and install "Insert Headers and Footers" (or use your theme’s custom code settings).',
-      'Go to Settings > WPCode / Insert Headers and Footers.',
-      'Paste the snippet in the "Scripts in Footer" box and click Save.'
-    ]
+    time: 'About 3 min',
+    heading: 'Add it to your WordPress site',
+    step1: 'Log into your WordPress Admin Dashboard and go to Plugins > Add New.',
+    step2: 'Install "Insert Headers and Footers" (or use your theme’s custom code settings) and paste the code into the Header section.',
+    step3: 'Click Save Settings and clear your cache if applicable.',
+    note: 'Works seamlessly on Elementor, Divi, Astra, and all standard WordPress block themes.'
   },
   {
     id: 'shopify',
     name: 'Shopify',
-    icon: 'S',
-    desc: 'For Shopify eCommerce stores.',
-    steps: [
-      'Log into your Shopify Admin.',
-      'Go to Online Store > Themes > Edit code on your active theme.',
-      'Under Layout, open the theme.liquid file.',
-      'Scroll to the bottom and paste the snippet right above </body>.',
-      'Click Save.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add it to your Shopify store',
+    step1: 'Go to Online Store > Themes in your Shopify admin.',
+    step2: 'Click Actions > Edit code, open theme.liquid, and paste the code right before </head>.',
+    step3: 'Click Save in the top right.',
+    note: 'The chat widget will load across product pages, cart, and collections automatically.'
   },
   {
     id: 'wix',
     name: 'Wix',
-    icon: 'Wix',
-    desc: 'For Wix Studio and standard Wix websites.',
-    steps: [
-      'Go to Settings in your Wix site dashboard.',
-      'Click on Custom Code in the Advanced section.',
-      'Click + Add Custom Code at the top right.',
-      'Paste the snippet, set Place Code in to "Body - end", and click Apply.'
-    ]
+    time: 'About 3 min',
+    heading: 'Add it to your Wix site',
+    step1: 'Go to Settings > Custom Code in your Wix dashboard.',
+    step2: 'Click + Add Custom Code, paste the code, and set "Place Code in" to Head.',
+    step3: 'Click Apply and publish your site changes.',
+    note: 'Ensure "All pages" is selected so the assistant is accessible site-wide.'
   },
   {
     id: 'squarespace',
     name: 'Squarespace',
-    icon: 'SQ',
-    desc: 'For Squarespace sites.',
-    steps: [
-      'In the Home Menu, go to Settings > Developer Tools > Code Injection.',
-      'Paste the code snippet into the Footer field.',
-      'Click Save at the top of the panel.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add it to your Squarespace site',
+    step1: 'In the Home Menu, go to Settings > Developer Tools > Code Injection.',
+    step2: 'Paste the code into the Header injection field.',
+    step3: 'Click Save at the top of the panel.',
+    note: 'Available on Squarespace Business and Commerce plans.'
   },
   {
     id: 'webflow',
     name: 'Webflow',
-    icon: 'Wf',
-    desc: 'For Webflow designer sites.',
-    steps: [
-      'Open your Webflow Project Settings.',
-      'Navigate to the Custom Code tab.',
-      'Paste the snippet into the "Footer Code" field before </body>.',
-      'Save changes and Publish your site to all domains.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add it to your Webflow site',
+    step1: 'Open your Webflow Project Settings.',
+    step2: 'Go to the Custom Code tab and paste the code into the "Head Code" field.',
+    step3: 'Click Save Changes and Publish to all selected domains.',
+    note: 'Custom code runs on published domains and Webflow staging.'
   },
   {
     id: 'framer',
     name: 'Framer',
-    icon: 'Fr',
-    desc: 'For Framer websites.',
-    steps: [
-      'Go to Site Settings > General in your Framer dashboard.',
-      'Scroll down to the "Custom Code" section.',
-      'Paste the snippet into the "End of <body> tag" section and click Save & Publish.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add it to your Framer site',
+    step1: 'Go to Site Settings > General in your Framer dashboard.',
+    step2: 'Scroll down to Custom Code and paste the code into the "<head> tag" section.',
+    step3: 'Save and Publish your Framer site.',
+    note: 'Your AI agent will launch immediately on the live Framer domain.'
   },
   {
     id: 'godaddy',
     name: 'GoDaddy',
-    icon: 'GD',
-    desc: 'For GoDaddy Websites + Marketing.',
-    steps: [
-      'In your GoDaddy website builder, click Add Section to page.',
-      'Select HTML / Custom Code and click Add.',
-      'Paste the snippet in the Custom Code field and click Done & Publish.'
-    ]
+    time: 'About 3 min',
+    heading: 'Add it to your GoDaddy site',
+    step1: 'In your GoDaddy website builder, click Add Section to your header layout.',
+    step2: 'Select HTML / Custom Code and paste the snippet.',
+    step3: 'Click Done and Publish.',
+    note: 'Paste in global header to show on every subpage.'
   },
   {
     id: 'gtm',
     name: 'Google Tag Manager',
-    icon: 'GTM',
-    desc: 'Deploy via Google Tag Manager without editing site code.',
-    steps: [
-      'In your GTM Workspace, click Tags > New.',
-      'Choose Tag Type: "Custom HTML".',
-      'Paste the code snippet into the HTML box.',
-      'Set Triggering to "All Pages" (Page View).',
-      'Save and Submit / Publish your GTM container.'
-    ]
+    time: 'About 2 min',
+    heading: 'Add via Google Tag Manager',
+    step1: 'In your GTM Workspace, click Tags > New and select Custom HTML.',
+    step2: 'Paste the code snippet and set Triggering to "All Pages (Page View)".',
+    step3: 'Click Save and Submit / Publish your GTM container version.',
+    note: 'Enables zero-code deployment without modifying core site files.'
   }
 ];
 
 export default function WebsiteChannelPage({ bots = [] }) {
-  const [selectedBotId, setSelectedBotId] = useState(bots[0]?.id || 'bot-apex-agency');
+  const [searchParams] = useSearchParams();
+  const botIdFromQuery = searchParams.get('botId');
+  const [selectedBotId, setSelectedBotId] = useState(botIdFromQuery || bots[0]?.id || 'bot-apex-agency');
+
+  useEffect(() => {
+    if (botIdFromQuery) setSelectedBotId(botIdFromQuery);
+  }, [botIdFromQuery]);
   const [websiteUrl, setWebsiteUrl] = useState('buildvora.netlify.app');
   const [stepsUnlocked, setStepsUnlocked] = useState(true);
   const [selectedPlatform, setSelectedPlatform] = useState('custom');
-  const [copied, setCopied] = useState(false);
+  
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   const [checkingSite, setCheckingSite] = useState(false);
   const [checkResult, setCheckResult] = useState(null);
   const [showIframeAccordion, setShowIframeAccordion] = useState(false);
@@ -139,46 +221,153 @@ export default function WebsiteChannelPage({ bots = [] }) {
   const origin = window.location.origin;
   const scriptUrl = `${origin}/widget.js`;
 
-  const embedSnippet = `<!-- OmniBot AI Chatbot & Lead Capture Widget -->
-<script 
-  src="${scriptUrl}" 
-  data-bot-id="${selectedBot?.id || 'bot-apex-agency'}" 
-  async>
-</script>`;
+  const linkTag = `<link rel="stylesheet" href="https://chatzy-kb-store.s3.amazonaws.com/icons/5ab07987-b5db-477c-82ff-1287e0883acb"/>`;
+  const scriptTag = `<script src="${scriptUrl}" id="${selectedBot?.id || 'bot-apex-agency'}" class="chatzy_widget_script" defer></script>`;
 
-  const iframeSnippet = `<iframe 
-  src="${origin}/widget.js?embed=inline&botId=${selectedBot?.id || 'bot-apex-agency'}" 
-  width="100%" 
-  height="600" 
-  frameborder="0"
-  style="border-radius: 12px; border: 1px solid #e2e8f0;">
-</iframe>`;
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(embedSnippet);
-    setCopied(true);
-    confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleCheckWebsite = async () => {
-    setCheckingSite(true);
-    setCheckResult(null);
-
-    setTimeout(() => {
-      setCheckingSite(false);
-      setCheckResult({
-        success: true,
-        message: `Widget detected successfully on ${websiteUrl}! AI agent is ready to engage visitors.`
-      });
-      confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
-    }, 1200);
-  };
+  const embedCodeSnippet = `${linkTag}\n${scriptTag}`;
 
   const currentPlatformObj = PLATFORMS.find(p => p.id === selectedPlatform) || PLATFORMS[0];
 
+  // Full instruction text for "Copy code + steps" button
+  const fullInstructionsText = `Please add the OmniBot AI chat widget to ${websiteUrl || 'your website'}.
+
+Platform: ${currentPlatformObj.name} (${currentPlatformObj.time.toLowerCase()})
+
+Steps:
+1. ${currentPlatformObj.step1}
+2. ${currentPlatformObj.step2}
+3. ${currentPlatformObj.step3}
+
+Code to paste:
+${linkTag}
+${scriptTag}
+
+Note: ${currentPlatformObj.note}`;
+
+  const handleCopyCodeOnly = () => {
+    navigator.clipboard.writeText(embedCodeSnippet);
+    setCopiedCode(true);
+    confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleCopyFullSteps = () => {
+    navigator.clipboard.writeText(fullInstructionsText);
+    setShowToast(true);
+    confetti({ particleCount: 45, spread: 65, origin: { y: 0.65 } });
+    setTimeout(() => setShowToast(false), 3500);
+  };
+
+  const handleSaveDomainAndSteps = async () => {
+    setStepsUnlocked(true);
+    // Persist domain restriction to bot in database
+    if (selectedBotId && websiteUrl.trim()) {
+      try {
+        await fetch(`/api/bots/${selectedBotId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ website_url: websiteUrl.trim() })
+        });
+      } catch (e) {
+        console.error('Failed to update bot website url', e);
+      }
+    }
+  };
+
+  const handleCheckWebsite = async () => {
+    if (!websiteUrl || !websiteUrl.trim()) {
+      alert('Please enter a website domain or URL.');
+      return;
+    }
+
+    setCheckingSite(true);
+    setCheckResult(null);
+
+    try {
+      const res = await fetch('/api/verify-website', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: websiteUrl.trim(),
+          botId: selectedBotId
+        })
+      });
+
+      const data = await res.json();
+      setCheckResult(data);
+
+      if (data.success) {
+        confetti({ particleCount: 50, spread: 70, origin: { y: 0.7 } });
+      }
+    } catch (err) {
+      setCheckResult({
+        success: false,
+        status: 'error',
+        message: 'Could not connect to verification probe server.'
+      });
+    } finally {
+      setCheckingSite(false);
+    }
+  };
+
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ padding: '24px 32px', maxWidth: '1000px', margin: '0 auto', position: 'relative' }}>
+      {/* Top Right Toast Notification matching Chatzy Image 2 */}
+      {showToast && (
+        <div className="animate-fade-in" style={{
+          position: 'fixed',
+          top: '20px',
+          right: '24px',
+          zIndex: 9999,
+          backgroundColor: '#ffffff',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '10px',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+          padding: '12px 18px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          maxWidth: '400px',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            width: '22px',
+            height: '22px',
+            borderRadius: '50%',
+            backgroundColor: '#059669',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            flexShrink: 0
+          }}>
+            <Check size={13} />
+          </div>
+
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
+            Steps and code copied - paste them anywhere.
+          </div>
+
+          <button 
+            onClick={() => setShowToast(false)}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px' }}
+          >
+            <X size={14} />
+          </button>
+
+          {/* Animated green progress bar at bottom of toast */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            height: '3px',
+            backgroundColor: '#059669',
+            width: '100%',
+            animation: 'toastProgress 3.5s linear forwards'
+          }} />
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '14px', display: 'flex', gap: '6px' }}>
         <span>Channels</span>
@@ -205,7 +394,7 @@ export default function WebsiteChannelPage({ bots = [] }) {
             Website
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Put your AI agent on your website as a chat bubble. No coding needed — follow the steps below.
+            Put your AI agent on your website as a chat bubble. No coding needed — we'll show you exactly where to paste it.
           </p>
         </div>
       </div>
@@ -286,7 +475,7 @@ export default function WebsiteChannelPage({ bots = [] }) {
 
             <div>
               <button
-                onClick={() => setStepsUnlocked(true)}
+                onClick={handleSaveDomainAndSteps}
                 className="btn-primary"
                 style={{ padding: '7px 14px', fontSize: '12.5px' }}
               >
@@ -299,7 +488,7 @@ export default function WebsiteChannelPage({ bots = [] }) {
         {/* STEP 3: ADD IT TO YOUR SITE */}
         {stepsUnlocked && (
           <div className="glass-panel animate-fade-in" style={{ padding: '22px 24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
               <div style={{
                 width: '24px',
                 height: '24px',
@@ -323,12 +512,13 @@ export default function WebsiteChannelPage({ bots = [] }) {
               </div>
             </div>
 
-            {/* 3x3 Platform Grid */}
+            {/* Full-width, High-Fidelity 3x3 Platform Grid matching Chatzy Reference Image 1 */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '10px',
-              marginBottom: '20px'
+              gap: '14px',
+              width: '100%',
+              marginBottom: '24px'
             }}>
               {PLATFORMS.map((p) => {
                 const isSelected = selectedPlatform === p.id;
@@ -337,22 +527,45 @@ export default function WebsiteChannelPage({ bots = [] }) {
                     key={p.id}
                     onClick={() => setSelectedPlatform(p.id)}
                     style={{
-                      padding: '14px 10px',
-                      borderRadius: '10px',
+                      height: '92px',
+                      minHeight: '92px',
+                      borderRadius: '12px',
                       border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                      backgroundColor: isSelected ? 'var(--bg-subtle)' : '#ffffff',
+                      backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.04)' : '#ffffff',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.15s'
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px 10px',
+                      boxSizing: 'border-box',
+                      boxShadow: isSelected 
+                        ? '0 0 0 1px var(--primary), 0 2px 8px rgba(79, 70, 229, 0.08)' 
+                        : '0 1px 2px rgba(0, 0, 0, 0.02)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-hover)';
+                        e.currentTarget.style.backgroundColor = 'var(--bg-surface-hover)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.backgroundColor = '#ffffff';
+                      }
                     }}
                   >
-                    <span style={{ fontSize: '14px', fontWeight: 800, color: isSelected ? 'var(--primary)' : '#475569' }}>
-                      {p.icon}
-                    </span>
-                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: isSelected ? 'var(--primary)' : 'var(--text-primary)' }}>
+                    <PlatformIcon id={p.id} isSelected={isSelected} />
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: isSelected ? 700 : 500,
+                      color: isSelected ? 'var(--primary)' : 'var(--text-primary)',
+                      textAlign: 'center',
+                      lineHeight: 1.25
+                    }}>
                       {p.name}
                     </span>
                   </button>
@@ -360,62 +573,220 @@ export default function WebsiteChannelPage({ bots = [] }) {
               })}
             </div>
 
-            {/* Platform Instructions Box */}
+            {/* STEP-BY-STEP PLATFORM INSTRUCTION CARD (Matching Chatzy Image 1) */}
             <div style={{
-              background: 'var(--bg-subtle)',
+              background: '#ffffff',
               border: '1px solid var(--border-subtle)',
-              borderRadius: '10px',
-              padding: '16px',
-              marginBottom: '18px'
+              borderRadius: '12px',
+              padding: '20px',
+              marginBottom: '20px'
             }}>
-              <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                Instructions for {currentPlatformObj.name}:
-              </h4>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '10px' }}>
-                {currentPlatformObj.desc}
-              </p>
+              {/* Header Title + Estimated Time */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <PlatformIcon id={selectedPlatform} isSelected={true} />
+                  <h4 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {currentPlatformObj.heading}
+                  </h4>
+                </div>
 
-              <ol style={{ paddingLeft: '18px', fontSize: '12.5px', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                {currentPlatformObj.steps.map((s, idx) => (
-                  <li key={idx}>{s}</li>
-                ))}
-              </ol>
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <Clock size={13} />
+                  <span>{currentPlatformObj.time}</span>
+                </div>
+              </div>
 
-            {/* Code Snippet Box */}
-            <div style={{ position: 'relative', marginBottom: '22px' }}>
-              <pre style={{
-                background: 'var(--bg-subtle)',
-                border: '1px solid var(--border-subtle)',
-                padding: '16px',
-                borderRadius: '10px',
-                fontFamily: 'var(--font-mono)',
+              {/* Numbered Steps List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '18px' }}>
+                {/* Step 1 */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    marginTop: '1px'
+                  }}>
+                    1
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                    {currentPlatformObj.step1}
+                  </div>
+                </div>
+
+                {/* Step 2 + Embed Code Card */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    marginTop: '1px'
+                  }}>
+                    2
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.45, marginBottom: '10px' }}>
+                      {currentPlatformObj.step2}
+                    </div>
+
+                    {/* Chatzy Code Box */}
+                    <div style={{
+                      background: 'var(--bg-subtle)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '10px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        padding: '8px 14px',
+                        borderBottom: '1px solid var(--border-subtle)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: '#ffffff'
+                      }}>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          Embed code
+                        </span>
+
+                        <button
+                          onClick={handleCopyCodeOnly}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--primary)',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            padding: '2px 6px'
+                          }}
+                        >
+                          {copiedCode ? <Check size={13} color="#059669" /> : <Copy size={13} />}
+                          <span>{copiedCode ? 'Copied code' : 'Copy code'}</span>
+                        </button>
+                      </div>
+
+                      {/* Code Content with syntax colors */}
+                      <pre style={{
+                        padding: '14px',
+                        margin: 0,
+                        fontFamily: 'var(--font-mono)',
+                        fontSize: '12px',
+                        lineHeight: 1.6,
+                        overflowX: 'auto',
+                        color: 'var(--text-primary)'
+                      }}>
+                        <div>
+                          <span style={{ color: '#e11d48' }}>&lt;link </span>
+                          <span style={{ color: '#d97706' }}>rel</span>=
+                          <span style={{ color: '#059669' }}>"stylesheet" </span>
+                          <span style={{ color: '#d97706' }}>href</span>=
+                          <span style={{ color: '#059669' }}>"https://chatzy-kb-store.s3.amazonaws.com/icons/5ab07987-b5db-477c-82ff-1287e0883acb"</span>
+                          <span style={{ color: '#e11d48' }}>/&gt;</span>
+                        </div>
+                        <div>
+                          <span style={{ color: '#e11d48' }}>&lt;script </span>
+                          <span style={{ color: '#d97706' }}>src</span>=
+                          <span style={{ color: '#059669' }}>"{scriptUrl}" </span>
+                          <span style={{ color: '#d97706' }}>id</span>=
+                          <span style={{ color: '#059669' }}>"{selectedBot?.id || 'bot-apex-agency'}" </span>
+                          <span style={{ color: '#d97706' }}>class</span>=
+                          <span style={{ color: '#059669' }}>"chatzy_widget_script" </span>
+                          <span style={{ color: '#d97706' }}>defer</span>
+                          <span style={{ color: '#e11d48' }}>&gt;&lt;/script&gt;</span>
+                        </div>
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{
+                    width: '22px',
+                    height: '22px',
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    marginTop: '1px'
+                  }}>
+                    3
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                    {currentPlatformObj.step3}
+                  </div>
+                </div>
+              </div>
+
+              {/* Amber Callout Box matching Chatzy */}
+              <div style={{
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fef3c7',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                marginBottom: '16px',
                 fontSize: '12.5px',
-                color: 'var(--text-primary)',
-                overflowX: 'auto',
-                lineHeight: 1.45,
-                margin: 0
+                color: '#92400e',
+                lineHeight: 1.45
               }}>
-                {embedSnippet}
-              </pre>
+                <Info size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#d97706' }} />
+                <div>
+                  {currentPlatformObj.note}
+                </div>
+              </div>
 
-              <button
-                onClick={handleCopy}
-                className="btn-primary"
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  right: '10px',
-                  padding: '5px 12px',
-                  fontSize: '12px'
-                }}
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                <span>{copied ? 'Copied!' : 'Copy'}</span>
-              </button>
+              {/* Blue "Copy code + steps" button matching Chatzy Image 1 */}
+              <div>
+                <button
+                  onClick={handleCopyFullSteps}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    border: '1px solid rgba(79, 70, 229, 0.25)',
+                    color: 'var(--primary)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <FileText size={14} />
+                  <span>Copy code + steps</span>
+                </button>
+              </div>
             </div>
 
-            {/* "Did it work?" Live Website Validator Card */}
+            {/* "Did it work?" Real Live HTTP Probe Card */}
             <div style={{
               background: '#ffffff',
               border: '1px solid var(--border-subtle)',
@@ -432,7 +803,7 @@ export default function WebsiteChannelPage({ bots = [] }) {
                   Did it work?
                 </h4>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  We'll check <strong>{websiteUrl}</strong> and verify the widget.
+                  We'll open <strong>{websiteUrl || 'your site'}</strong> and look for the widget.
                 </p>
               </div>
 
@@ -447,22 +818,32 @@ export default function WebsiteChannelPage({ bots = [] }) {
               </button>
             </div>
 
+            {/* Verification Result Feedback */}
             {checkResult && (
               <div className="animate-fade-in" style={{
                 marginTop: '12px',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
+                padding: '14px 16px',
+                borderRadius: '10px',
+                background: checkResult.success ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+                border: `1px solid ${checkResult.success ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
                 display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '12.5px',
-                color: '#059669',
-                fontWeight: 600
+                alignItems: 'flex-start',
+                gap: '10px',
+                fontSize: '13px',
+                color: checkResult.success ? '#059669' : '#dc2626',
+                lineHeight: 1.45
               }}>
-                <CheckCircle2 size={16} />
-                <span>{checkResult.message}</span>
+                {checkResult.success ? (
+                  <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                ) : (
+                  <XCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                )}
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: '2px' }}>
+                    {checkResult.success ? 'Widget Detected' : 'Widget Not Detected'}
+                  </div>
+                  <div>{checkResult.message}</div>
+                </div>
               </div>
             )}
 
@@ -501,7 +882,7 @@ export default function WebsiteChannelPage({ bots = [] }) {
                     fontSize: '12px',
                     overflowX: 'auto'
                   }}>
-                    {iframeSnippet}
+                    {`<iframe src="${origin}/widget.js?embed=inline&botId=${selectedBot?.id || 'bot-apex-agency'}" width="100%" height="600" frameborder="0"></iframe>`}
                   </pre>
                 </div>
               )}

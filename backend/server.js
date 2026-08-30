@@ -13,6 +13,8 @@ import * as leadController from './controllers/leadController.js';
 import * as whatsappController from './controllers/whatsappController.js';
 
 import * as inboxController from './controllers/inboxController.js';
+import * as verifyWebsiteController from './controllers/verifyWebsiteController.js';
+import * as journeyController from './controllers/journeyController.js';
 
 dotenv.config();
 
@@ -86,8 +88,9 @@ app.put('/api/bots/:botId', authenticateToken, botController.updateBot);
 app.delete('/api/bots/:botId', authenticateToken, botController.deleteBot);
 
 // ----------------------------------------------------
-// Chat & Widget Messaging Routes
+// Chat & Widget Messaging & Verification Routes
 // ----------------------------------------------------
+app.post('/api/verify-website', verifyWebsiteController.verifyWebsiteWidget);
 app.post('/api/chat/:botId', chatController.handleWidgetChat);
 app.get('/api/chat/:botId/history/:sessionId', chatController.getSessionHistory);
 app.post('/api/chat/:botId/lead', chatController.submitLeadForm);
@@ -119,6 +122,16 @@ app.post('/api/whatsapp/:botId/simulate', whatsappController.simulateIncoming);
 // Meta Cloud API Webhooks
 app.get('/api/webhook/whatsapp', whatsappController.metaWebhookVerify);
 app.post('/api/webhook/whatsapp', whatsappController.metaWebhookReceive);
+
+// ----------------------------------------------------
+// Automation Journeys & Flow Builder Routes
+// ----------------------------------------------------
+app.get('/api/journeys', authenticateToken, journeyController.listJourneys);
+app.get('/api/journeys/:id', authenticateToken, journeyController.getJourney);
+app.post('/api/journeys', authenticateToken, journeyController.createJourney);
+app.put('/api/journeys/:id', authenticateToken, journeyController.updateJourney);
+app.patch('/api/journeys/:id/toggle-status', authenticateToken, journeyController.toggleJourneyStatus);
+app.delete('/api/journeys/:id', authenticateToken, journeyController.deleteJourney);
 
 // Start Server
 app.listen(PORT, () => {

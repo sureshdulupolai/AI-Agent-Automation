@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/layout/Navbar';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
 import DashboardPage from './pages/DashboardPage';
 import BotDetailsPage from './pages/BotDetailsPage';
@@ -10,14 +10,17 @@ import LeadsPage from './pages/LeadsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import DemoSitePage from './pages/DemoSitePage';
 import DeploymentGuidePage from './pages/DeploymentGuidePage';
+import JourneyTemplatesPage from './pages/journeys/JourneyTemplatesPage';
+import MyJourneysPage from './pages/journeys/MyJourneysPage';
+import JourneyStudioPage from './pages/journeys/JourneyStudioPage';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [selectedBotId, setSelectedBotId] = useState(null);
+  const location = useLocation();
   const [bots, setBots] = useState([]);
   const [embedModalBot, setEmbedModalBot] = useState(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Set pristine light theme as permanent standard
   useEffect(() => {
@@ -31,9 +34,6 @@ export default function App() {
       const data = await res.json();
       if (data.bots) {
         setBots(data.bots);
-        if (!selectedBotId && data.bots.length > 0) {
-          setSelectedBotId(data.bots[0].id);
-        }
       }
     } catch (err) {
       console.error('Failed to load bots:', err);
@@ -44,20 +44,8 @@ export default function App() {
     loadBots();
   }, []);
 
-  const handleSelectBotStudio = (bot) => {
-    setSelectedBotId(bot.id);
-    setCurrentPage('bot-details');
-  };
-
-  const handleOpenWhatsApp = (bot) => {
-    if (bot) setSelectedBotId(bot.id);
-    setCurrentPage('whatsapp');
-  };
-
-  const handleOpenEmbed = (bot) => {
-    if (bot) setSelectedBotId(bot.id);
-    setCurrentPage('website-channel');
-  };
+  // Full-screen canvas for Demo Site and Journey Studio matching Chatzy
+  const isFullScreenCanvas = location.pathname.startsWith('/demo') || location.pathname.startsWith('/journeys/journey-studio');
 
   return (
     <AuthProvider>
@@ -67,97 +55,63 @@ export default function App() {
         width: '100vw',
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
         backgroundColor: 'var(--bg-page)'
       }}>
-        {/* Sleek Compact Navbar */}
-        <Navbar 
-          onNavigate={(page) => setCurrentPage(page)} 
-          currentPage={currentPage}
-        />
+        {/* Full-Height Modern Sidebar Navigation matching Chatzy */}
+        {!isFullScreenCanvas && (
+          <Sidebar
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          />
+        )}
 
-        {/* Full-Height Body Container (100vh - 50px Navbar) */}
-        <div style={{
-          height: 'calc(100vh - 50px)',
-          display: 'flex',
+        {/* Main Scrollable Viewport with Real React Router Navigation */}
+        <main style={{
           flex: 1,
-          overflow: 'hidden'
+          height: '100vh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          backgroundColor: 'var(--bg-page)',
+          position: 'relative'
         }}>
-          {/* Sidebar */}
-          {currentPage !== 'demo-site' && (
-            <Sidebar
-              currentPage={currentPage}
-              onNavigate={(page) => setCurrentPage(page)}
-            />
-          )}
+          <Routes>
+            {/* Dashboard / AI Bots Studio */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/bots" element={<DashboardPage />} />
+            
+            {/* Bot Details Studio */}
+            <Route path="/bots/:botId" element={<BotDetailsPage bots={bots} />} />
 
-          {/* Main Scrollable Viewport */}
-          <main style={{
-            flex: 1,
-            height: '100%',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            backgroundColor: 'var(--bg-page)',
-            position: 'relative'
-          }}>
-            {currentPage === 'dashboard' && (
-              <DashboardPage
-                onSelectBot={handleSelectBotStudio}
-                onOpenWhatsApp={handleOpenWhatsApp}
-                onOpenEmbed={handleOpenEmbed}
-              />
-            )}
+            {/* Journeys Automation (Chatzy Identical) */}
+            <Route path="/journeys/templates" element={<JourneyTemplatesPage />} />
+            <Route path="/journeys/create" element={<Navigate to="/journeys/templates" replace />} />
+            <Route path="/journeys" element={<MyJourneysPage />} />
+            <Route path="/journeys/journey-studio/:journeyId" element={<JourneyStudioPage bots={bots} />} />
 
-            {currentPage === 'bot-details' && (
-              <BotDetailsPage
-                botId={selectedBotId || bots[0]?.id}
-                onBack={() => setCurrentPage('dashboard')}
-                onOpenWhatsApp={handleOpenWhatsApp}
-                onOpenEmbed={handleOpenEmbed}
-              />
-            )}
+            {/* Channels */}
+            <Route path="/channels/website" element={<WebsiteChannelPage bots={bots} />} />
+            <Route path="/channels/whatsapp" element={<WhatsAppPage bots={bots} />} />
 
-            {currentPage === 'website-channel' && (
-              <WebsiteChannelPage
-                bots={bots}
-              />
-            )}
+            {/* Conversations Inbox */}
+            <Route path="/inbox" element={<InboxPage />} />
+            <Route path="/conversations" element={<Navigate to="/inbox" replace />} />
 
-            {currentPage === 'inbox' && (
-              <InboxPage />
-            )}
+            {/* Leads CRM */}
+            <Route path="/leads" element={<LeadsPage bots={bots} />} />
+            <Route path="/audience" element={<Navigate to="/leads" replace />} />
 
-            {currentPage === 'whatsapp' && (
-              <WhatsAppPage
-                bots={bots}
-                initialBotId={selectedBotId}
-                onNavigate={(page) => setCurrentPage(page)}
-              />
-            )}
+            {/* Analytics & Logs */}
+            <Route path="/analytics" element={<AnalyticsPage bots={bots} />} />
 
-            {currentPage === 'leads' && (
-              <LeadsPage
-                bots={bots}
-              />
-            )}
+            {/* Tools & Deploy */}
+            <Route path="/demo" element={<DemoSitePage bots={bots} />} />
+            <Route path="/deployment" element={<DeploymentGuidePage />} />
 
-            {currentPage === 'analytics' && (
-              <AnalyticsPage
-                bots={bots}
-              />
-            )}
-
-            {currentPage === 'demo-site' && (
-              <DemoSitePage
-                bots={bots}
-              />
-            )}
-
-            {currentPage === 'deployment' && (
-              <DeploymentGuidePage />
-            )}
-          </main>
-        </div>
+            {/* 404 Catch-All Redirect */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
 
         {/* 1-Click Embed Snippet Modal */}
         {embedModalBot && (

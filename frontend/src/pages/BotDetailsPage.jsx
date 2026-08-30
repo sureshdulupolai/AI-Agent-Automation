@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Bot, 
   Sparkles, 
@@ -17,7 +18,11 @@ import {
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
 
-export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
+export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }) {
+  const { botId: routeBotId } = useParams();
+  const navigate = useNavigate();
+  const activeBotId = routeBotId || propBotId;
+
   const [bot, setBot] = useState(null);
   const [activeTab, setActiveTab] = useState('appearance');
   const [loading, setLoading] = useState(true);
@@ -42,8 +47,9 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
   const [sandboxTyping, setSandboxTyping] = useState(false);
 
   const fetchBot = async () => {
+    if (!activeBotId) return;
     try {
-      const res = await fetch(`/api/bots/${botId}`);
+      const res = await fetch(`/api/bots/${activeBotId}`);
       if (res.ok) {
         const data = await res.json();
         const b = data.bot;
@@ -72,7 +78,12 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
 
   useEffect(() => {
     fetchBot();
-  }, [botId]);
+  }, [activeBotId]);
+
+  const handleBack = () => {
+    if (onBack) onBack();
+    else navigate('/dashboard');
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -164,14 +175,14 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
   ];
 
   const botInitial = getInitialLetter(botName || 'Bot');
-  const botInitialBg = getInitialColor(botName || 'Bot');
+  const botInitialBg = primaryColor || getInitialColor(botName || 'Bot');
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={onBack} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12.5px' }}>
+          <button onClick={handleBack} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12.5px' }}>
             <ArrowLeft size={14} /> Back
           </button>
           <div>

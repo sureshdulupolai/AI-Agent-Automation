@@ -26,7 +26,7 @@ export default function BotBuilderModal({ onClose, onCreated }) {
   const [loading, setLoading] = useState(false);
 
   const botInitial = getInitialLetter(formData.bot_name || 'Bot');
-  const botInitialBg = getInitialColor(formData.bot_name || 'Bot');
+  const botInitialBg = formData.primary_color || getInitialColor(formData.bot_name || 'Bot');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

@@ -44,9 +44,10 @@ export async function getPublicBotConfig(req, res) {
       quick_prompts: bot.quick_prompts || [],
       launcher_icon: bot.launcher_icon || 'chat',
       launcher_position: bot.launcher_position || 'bottom-right',
-      teaser_text: bot.teaser_text || '👋 Need help? Chat with our AI!',
+      teaser_text: bot.teaser_text || 'How can I help you today?',
       show_teaser: bot.show_teaser !== false,
-      theme_mode: bot.theme_mode || 'light'
+      theme_mode: bot.theme_mode || 'light',
+      website_url: bot.website_url || null
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to load public bot config' });
@@ -70,7 +71,8 @@ export async function createBot(req, res) {
       launcher_position,
       teaser_text,
       show_teaser,
-      theme_mode
+      theme_mode,
+      website_url
     } = req.body;
 
     if (!bot_name) {
@@ -90,9 +92,10 @@ export async function createBot(req, res) {
       whatsapp_number: whatsapp_number || null,
       launcher_icon: launcher_icon || 'chat',
       launcher_position: launcher_position || 'bottom-right',
-      teaser_text: teaser_text || '👋 Need help? Chat with our AI!',
+      teaser_text: teaser_text || 'How can I help you today?',
       show_teaser: show_teaser !== false,
-      theme_mode: theme_mode || 'light'
+      theme_mode: theme_mode || 'light',
+      website_url: website_url || null
     });
 
     return res.status(201).json({ bot: newBot });

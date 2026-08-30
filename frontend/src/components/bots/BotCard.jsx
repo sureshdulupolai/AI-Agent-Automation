@@ -17,7 +17,7 @@ export default function BotCard({
 }) {
   const isWhatsAppConnected = bot.whatsapp_status === 'connected';
   const initial = getInitialLetter(bot.bot_name || 'Bot');
-  const avatarBg = getInitialColor(bot.bot_name || 'Bot');
+  const avatarBg = bot.primary_color || getInitialColor(bot.bot_name || 'Bot');
 
   return (
     <div className="glass-panel glass-panel-hover animate-fade-in" style={{

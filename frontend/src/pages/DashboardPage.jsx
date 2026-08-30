@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bot, 
   Plus, 
@@ -15,6 +16,7 @@ import BotBuilderModal from '../components/bots/BotBuilderModal';
 import EmbedSnippetModal from '../components/bots/EmbedSnippetModal';
 
 export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed }) {
+  const navigate = useNavigate();
   const [bots, setBots] = useState([]);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,9 +199,9 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed
             <BotCard
               key={bot.id}
               bot={bot}
-              onSelect={() => onSelectBot(bot)}
-              onOpenWhatsApp={() => onOpenWhatsApp(bot)}
-              onOpenEmbed={() => onOpenEmbed ? onOpenEmbed(bot) : setSelectedEmbedBot(bot)}
+              onSelect={() => onSelectBot ? onSelectBot(bot) : navigate(`/bots/${bot.id}`)}
+              onOpenWhatsApp={() => onOpenWhatsApp ? onOpenWhatsApp(bot) : navigate(`/channels/whatsapp?botId=${bot.id}`)}
+              onOpenEmbed={() => onOpenEmbed ? onOpenEmbed(bot) : navigate(`/channels/website?botId=${bot.id}`)}
               onDelete={() => handleDeleteBot(bot.id)}
             />
           ))}

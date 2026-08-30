@@ -86,16 +86,24 @@
       return `<img src="${avatarUrl}" class="launcher-avatar-img" alt="Chat" />`;
     }
     if (iconType === 'sparkles') {
-      return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
+      return `<svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>`;
     }
     if (iconType === 'headset') {
-      return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`;
+      return `<svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`;
     }
     if (iconType === 'bot') {
-      return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`;
+      return `<svg class="icon-chat" viewBox="0 0 48 48" fill="none" style="width: 38px; height: 38px;">
+        <circle cx="24" cy="24" r="21" fill="#38bdf8" stroke="#0284c7" stroke-width="2.5"/>
+        <rect x="13" y="15" width="22" height="14" rx="3" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+        <circle cx="18.5" cy="22" r="2.5" fill="#f59e0b"/>
+        <circle cx="29.5" cy="22" r="2.5" fill="#f59e0b"/>
+        <path d="M20 33h8v3h-8z" fill="#0284c7"/>
+        <path d="M11 22h2M35 22h2" stroke="#0284c7" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 39c3.2-4.5 7.5-6.5 12-6.5s8.8 2 12 6.5" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+      </svg>`;
     }
-    // Default chat bubble
-    return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    // Default chat bubble matching Reference Image 4
+    return `<svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="width: 27px; height: 27px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
   }
 
   function renderWidget() {
@@ -517,6 +525,8 @@
     renderMessages();
   }
 
+  let teaserTimer = null;
+
   function bindEvents() {
     const launcherBtn = shadow.getElementById('launcher-btn');
     const closeBtn = shadow.getElementById('close-modal-btn');
@@ -529,8 +539,22 @@
     closeBtn.addEventListener('click', toggleChat);
 
     if (teaserBubble) {
+      if (teaserTimer) clearTimeout(teaserTimer);
+      // Auto-dismiss teaser greeting after 6.5 seconds so it doesn't block UI permanently
+      teaserTimer = setTimeout(() => {
+        isTeaserVisible = false;
+        const el = shadow.getElementById('teaser-bubble');
+        if (el) {
+          el.style.opacity = '0';
+          el.style.transform = 'scale(0.85) translateY(10px)';
+          el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+          setTimeout(() => { if (el) el.remove(); }, 400);
+        }
+      }, 6500);
+
       teaserBubble.addEventListener('click', (e) => {
         if (e.target.closest('#teaser-close-btn')) return;
+        if (teaserTimer) clearTimeout(teaserTimer);
         toggleChat();
       });
     }
@@ -538,8 +562,15 @@
     if (teaserClose) {
       teaserClose.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (teaserTimer) clearTimeout(teaserTimer);
         isTeaserVisible = false;
-        renderWidget();
+        const el = shadow.getElementById('teaser-bubble');
+        if (el) {
+          el.style.opacity = '0';
+          el.style.transform = 'scale(0.85) translateY(10px)';
+          el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          setTimeout(() => { if (el) el.remove(); }, 300);
+        }
       });
     }
 
@@ -678,6 +709,27 @@
       if (res.ok) {
         const data = await res.json();
         botConfig = { ...botConfig, ...data };
+
+        // Domain Security Restriction
+        if (botConfig.website_url && botConfig.website_url.trim()) {
+          const allowedHostname = botConfig.website_url
+            .replace(/^https?:\/\//i, '')
+            .replace(/\/.*$/, '')
+            .trim()
+            .toLowerCase();
+          
+          const currentHostname = (window.location.hostname || '').toLowerCase();
+
+          const isAllowed = currentHostname === allowedHostname ||
+                            currentHostname.endsWith('.' + allowedHostname) ||
+                            currentHostname === 'localhost' ||
+                            currentHostname === '127.0.0.1';
+
+          if (!isAllowed) {
+            console.warn(`[OmniBot Security] Unauthorized domain: Widget is locked to "${allowedHostname}", but running on "${currentHostname}".`);
+            return;
+          }
+        }
       }
     } catch (e) {}
 
