@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniBot Widget Test Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .container {
+      max-width: 720px;
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      font-size: 26px;
+      margin-top: 0;
+      color: #38bdf8;
+    }
+    p {
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .badge {
+      display: inline-block;
+      background: #0284c7;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    code {
+      background: #334155;
+      color: #f43f5e;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    pre {
+      background: #020617;
+      color: #38bdf8;
+      padding: 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <span class="badge">Standalone Embed Test</span>
+    <h1>OmniBot Universal Embed Demonstration</h1>
+    <p>
+      This demo page simulates an external business website (e.g. Shopify, Webflow, or custom React site) embedding the OmniBot widget.
+    </p>
+
+    <div class="card">
+      <h3>Embedded Script Tag</h3>
+      <p>Look at the bottom right corner of your screen! The floating AI chatbot bubble is loaded dynamically via:</p>
+      <pre>&lt;script src="/widget.js" data-bot-id="bot-apex-agency"&gt;&lt;/script&gt;</pre>
+    </div>
+
+    <div class="card">
+      <h3>Interactive Verification Steps</h3>
+      <p>1. Click the floating chat bubble on the bottom right.</p>
+      <p>2. Ask questions such as: <code>What services do you offer?</code> or <code>How much does a custom SaaS cost?</code></p>
+      <p>3. Drop your name and email/phone to test the automatic lead extraction engine!</p>
+    </div>
+  </div>
+
+  <!-- Embed OmniBot Widget dynamically -->
+  <script src="/widget.js" data-bot-id="bot-apex-agency"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# =========================================================
+# OmniBot SaaS - Root .gitignore
+# =========================================================
+
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment Variables & Secrets (Keep .env.example safe)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+frontend/.env
+
+# WhatsApp Live Session Credentials & Auth Tokens (Do NOT commit sensitive WhatsApp keys)
+backend/data/whatsapp_sessions/
+backend/data/test_wa_session/
+*.session
+*.session-journal
+
+# Production Builds
+frontend/dist/
+frontend/build/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Editor & OS Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporary & Cache
+.cache/
+.eslintcache
+.vite/

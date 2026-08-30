@@ -1,0 +1,11 @@
+# Backend .gitignore
+node_modules/
+.env
+.env.*
+!.env.example
+data/whatsapp_sessions/
+data/test_wa_session/
+*.session
+*.log
+.DS_Store
+Thumbs.db

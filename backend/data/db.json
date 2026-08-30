@@ -1,0 +1,289 @@
+{
+  "users": [
+    {
+      "id": "usr-demo-1",
+      "email": "demo@omnibot.io",
+      "password_hash": "$2a$10$wN3bZ5.P/x8q5wE4/rU8QOPv7YV7mK0n8qGkL4s6x4K7h6u9.1w3u",
+      "full_name": "Alex Vance",
+      "business_name": "Apex Digital Solutions",
+      "plan_tier": "pro",
+      "created_at": "2026-08-30T15:37:06.788Z"
+    }
+  ],
+  "bots": [
+    {
+      "id": "bot-ec0db899",
+      "created_at": "2026-08-30T16:02:52.879Z",
+      "updated_at": "2026-08-30T16:15:25.862Z",
+      "is_active": true,
+      "allowed_domains": [
+        "*"
+      ],
+      "whatsapp_status": "connected",
+      "whatsapp_type": "qr",
+      "user_id": "usr-demo-1",
+      "bot_name": "Suresh Polai",
+      "bot_avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      "primary_color": "#7c3aed",
+      "welcome_message": "Hi there! 👋 How can I help you today?",
+      "placeholder_text": "Type your question here...",
+      "quick_prompts": [
+        "What are your services?",
+        "Pricing information",
+        "Contact support"
+      ],
+      "system_instructions": "You are a polite, helpful, and highly knowledgeable AI sales representative. Guide the customer and capture their contact info when relevant.",
+      "business_knowledge": "",
+      "whatsapp_number": "+919820646838"
+    },
+    {
+      "id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "bot_name": "Apex AI Growth Assistant",
+      "bot_avatar_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80",
+      "primary_color": "#4f46e5",
+      "welcome_message": "Hi there! 👋 Welcome to Apex Digital. Looking to build a high-converting website, custom SaaS, or AI automation? How can I help you today?",
+      "placeholder_text": "Ask about our services, pricing, or book a demo...",
+      "quick_prompts": [
+        "What services do you offer?",
+        "How much does a custom SaaS cost?",
+        "Can I schedule a free discovery call?"
+      ],
+      "system_instructions": "You are the official AI representative for Apex Digital Solutions. You are friendly, consultative, concise, and focused on qualifying potential clients. Always encourage users to provide their email or WhatsApp phone number so the technical team can prepare a custom project proposal.",
+      "business_knowledge": "COMPANY: Apex Digital Solutions\nSERVICES:\n1. Full-Stack Web & SaaS Development: Custom React/Node/Python apps, enterprise dashboards. Pricing: $2,500 - $15,000.\n2. AI Chatbot & WhatsApp Automation: Custom RAG bots, CRM integrations, Lead scoring. Pricing: $999 - $3,500.\n3. High-Converting Landing Pages: Next.js + Tailwind, 95+ PageSpeed score. Pricing: $1,200.\nTIMELINE: Most projects are delivered in 2 to 4 weeks with weekly sprint updates.\nFREE OFFER: Free 30-minute technical architecture consultation for qualified inquiries.\nCONTACT: sales@apexdigital.io | WhatsApp: +1 (555) 019-2834",
+      "allowed_domains": [
+        "*"
+      ],
+      "whatsapp_number": "+15550192834",
+      "whatsapp_status": "pairing",
+      "whatsapp_type": "qr",
+      "is_active": true,
+      "created_at": "2026-08-23T15:37:06.791Z",
+      "updated_at": "2026-08-30T16:03:23.807Z"
+    },
+    {
+      "id": "bot-glowcare-dental",
+      "user_id": "usr-demo-1",
+      "bot_name": "GlowCare Dental Concierge",
+      "bot_avatar_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
+      "primary_color": "#0891b2",
+      "welcome_message": "Welcome to GlowCare Dental Studio! 🦷 Need help booking an appointment, checking treatments, or understanding pricing?",
+      "placeholder_text": "Ask about teeth whitening, implants, or booking...",
+      "quick_prompts": [
+        "Teeth Whitening options & pricing",
+        "Do you accept insurance?",
+        "Book an appointment"
+      ],
+      "system_instructions": "You are the gentle, reassuring AI assistant for GlowCare Dental Clinic. Guide patients through treatments, emergency hours, and capture their contact number for booking confirmations.",
+      "business_knowledge": "CLINIC: GlowCare Dental & Implant Studio\nHOURS: Mon-Sat: 9:00 AM - 7:00 PM | Sun: Emergency by appointment only.\nPOPULAR TREATMENTS:\n- Laser Teeth Whitening: $299 (Takes 45 mins, 8 shades brighter)\n- Invisible Clear Aligners: Starting from $1,800 or $99/month\n- Root Canal Therapy (Painless): $450\n- Dental Implants (Titanium + Zirconia Crown): $1,400\nINSURANCE: We accept major PPO insurance plans and offer 0% interest financing.\nLOCATION: 450 Medical Plaza, Suite 300. Phone: +1 (555) 749-0122",
+      "allowed_domains": [
+        "*"
+      ],
+      "whatsapp_number": "+15557490122",
+      "whatsapp_status": "disconnected",
+      "whatsapp_type": "qr",
+      "is_active": true,
+      "created_at": "2026-08-27T15:37:06.791Z"
+    }
+  ],
+  "leads": [
+    {
+      "id": "lead-0bd251cf",
+      "status": "new",
+      "created_at": "2026-08-30T16:15:42.023Z",
+      "updated_at": "2026-08-30T16:15:42.023Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_phone": "+91 98765 43210",
+      "lead_email": null,
+      "lead_requirement": "Hi, I need pricing details for your web development package.",
+      "channel": "whatsapp",
+      "session_id": "wa-919876543210"
+    },
+    {
+      "id": "lead-83a5c40a",
+      "status": "new",
+      "created_at": "2026-08-30T15:42:47.186Z",
+      "updated_at": "2026-08-30T15:42:47.186Z",
+      "bot_id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "lead_phone": "+91 98765 11223",
+      "lead_email": null,
+      "lead_requirement": "Hi, I am Rahul Verma, need quotation for custom React and Node SaaS",
+      "channel": "whatsapp",
+      "session_id": "wa-919876511223"
+    },
+    {
+      "id": "lead-033e6fd8",
+      "status": "new",
+      "created_at": "2026-08-30T15:42:35.703Z",
+      "updated_at": "2026-08-30T15:42:35.703Z",
+      "bot_id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "lead_name": "David Warner",
+      "lead_phone": "+1 (555) 998-1122",
+      "lead_email": "david@warnertech.io",
+      "lead_requirement": "Hello, my name is David Warner, email david@warnertech.io, phone +1 (555) 998-1122. How much is the AI Chatbot package?",
+      "channel": "website",
+      "session_id": "sess-2657f711-a"
+    },
+    {
+      "id": "lead-1",
+      "bot_id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "lead_name": "Marcus Sterling",
+      "lead_phone": "+1 (555) 234-8901",
+      "lead_email": "marcus@sterlingventures.com",
+      "lead_requirement": "Interested in building an AI-powered B2B real estate dashboard with automated lead routing.",
+      "channel": "website",
+      "status": "qualified",
+      "session_id": "sess-seed-01",
+      "created_at": "2026-08-30T13:37:06.791Z"
+    },
+    {
+      "id": "lead-2",
+      "bot_id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "lead_name": "Priya Sharma",
+      "lead_phone": "+91 98765 43210",
+      "lead_email": "priya@zenithapp.in",
+      "lead_requirement": "Needs WhatsApp bot with Gemini AI for customer support & order status tracking.",
+      "channel": "whatsapp",
+      "status": "new",
+      "session_id": "sess-seed-02",
+      "created_at": "2026-08-30T10:37:06.791Z"
+    },
+    {
+      "id": "lead-3",
+      "bot_id": "bot-glowcare-dental",
+      "user_id": "usr-demo-1",
+      "lead_name": "Sarah Jenkins",
+      "lead_phone": "+1 (555) 438-9921",
+      "lead_email": "sarah.j@gmail.com",
+      "lead_requirement": "Wants to schedule laser teeth whitening for next Friday afternoon.",
+      "channel": "website",
+      "status": "contacted",
+      "session_id": "sess-seed-03",
+      "created_at": "2026-08-30T03:37:06.791Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-1",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-seed-01",
+      "sender": "user",
+      "content": "Hi, what does it cost to build a custom SaaS MVP?",
+      "channel": "website",
+      "created_at": "2026-08-30T13:34:06.791Z"
+    },
+    {
+      "id": "msg-2",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-seed-01",
+      "sender": "bot",
+      "content": "Our custom SaaS MVPs typically range between $2,500 to $15,000 depending on complexity, features, and integrations. Most MVPs are delivered in 2 to 4 weeks. Would you like to share your project idea or email so we can send you a detailed scope estimate?",
+      "channel": "website",
+      "created_at": "2026-08-30T13:34:36.791Z"
+    },
+    {
+      "id": "msg-3",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-seed-01",
+      "sender": "user",
+      "content": "Sure! I am Marcus Sterling at marcus@sterlingventures.com, phone +1 (555) 234-8901. We want an AI real estate dashboard.",
+      "channel": "website",
+      "created_at": "2026-08-30T13:35:26.791Z"
+    },
+    {
+      "id": "msg-4",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-seed-01",
+      "sender": "bot",
+      "content": "Thank you Marcus! We have recorded your requirement for the AI real estate dashboard and our technical director will email you within 2 hours at marcus@sterlingventures.com.",
+      "channel": "website",
+      "created_at": "2026-08-30T13:36:06.791Z"
+    },
+    {
+      "id": "msg-02f6af43",
+      "created_at": "2026-08-30T15:42:35.699Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-2657f711-a",
+      "sender": "user",
+      "content": "Hello, my name is David Warner, email david@warnertech.io, phone +1 (555) 998-1122. How much is the AI Chatbot package?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-a841b5c7",
+      "created_at": "2026-08-30T15:42:35.705Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "sess-2657f711-a",
+      "sender": "bot",
+      "content": "Thank you! I have securely recorded your contact details. Our team at Apex AI Growth Assistant will review your request and reach out to you shortly via WhatsApp or email. Is there anything else you would like to know in the meantime? 😊",
+      "channel": "website"
+    },
+    {
+      "id": "msg-bfbcb048",
+      "created_at": "2026-08-30T15:42:47.182Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "wa-919876511223",
+      "sender": "user",
+      "content": "Hi, I am Rahul Verma, need quotation for custom React and Node SaaS",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-4cf99514",
+      "created_at": "2026-08-30T15:42:47.188Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "wa-919876511223",
+      "sender": "bot",
+      "content": "Thank you for reaching out to Apex AI Growth Assistant! Based on our services, we'd love to help you with that. If you'd like to receive full details or speak with a specialist, feel free to drop your phone number or email here! ✨",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-2565582d",
+      "created_at": "2026-08-30T15:46:25.892Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "play-y732ecz",
+      "sender": "user",
+      "content": "What services do you offer?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-6688e8d0",
+      "created_at": "2026-08-30T15:46:25.906Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "play-y732ecz",
+      "sender": "bot",
+      "content": "We specialize in the following:\n\nCOMPANY: Apex Digital Solutions\nSERVICES:\nFREE OFFER: Free 30-minute technical architecture consultation for qualified inquiries.\n\nWhich of these would you like to explore further?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-eff331cb",
+      "created_at": "2026-08-30T16:15:41.989Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "Hi, I need pricing details for your web development package.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-3f14a213",
+      "created_at": "2026-08-30T16:15:42.446Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "bot",
+      "content": "Our pricing is flexible based on your exact requirements. Could you share your email or phone number so our team can provide a customized quote?",
+      "channel": "whatsapp"
+    }
+  ],
+  "whatsapp_sessions": [
+    {
+      "id": "wa-session-1",
+      "bot_id": "bot-apex-agency",
+      "status": "connected",
+      "phone_number": "+1 (555) 019-2834",
+      "last_active": "2026-08-30T15:37:06.791Z"
+    }
+  ]
+}
