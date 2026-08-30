@@ -1,8 +1,8 @@
 # Backend .gitignore
 node_modules/
 .env
-.env.*
-!.env.example
+.env*
+*.env
 data/whatsapp_sessions/
 data/test_wa_session/
 *.session
