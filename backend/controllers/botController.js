@@ -33,7 +33,7 @@ export async function getPublicBotConfig(req, res) {
       return res.status(404).json({ error: 'Bot not found or inactive' });
     }
 
-    // Return safe, public properties only
+    // Return safe, public properties including appearance settings
     return res.json({
       id: bot.id,
       bot_name: bot.bot_name,
@@ -41,7 +41,12 @@ export async function getPublicBotConfig(req, res) {
       primary_color: bot.primary_color || '#4f46e5',
       welcome_message: bot.welcome_message,
       placeholder_text: bot.placeholder_text || 'Type a message...',
-      quick_prompts: bot.quick_prompts || []
+      quick_prompts: bot.quick_prompts || [],
+      launcher_icon: bot.launcher_icon || 'chat',
+      launcher_position: bot.launcher_position || 'bottom-right',
+      teaser_text: bot.teaser_text || '👋 Need help? Chat with our AI!',
+      show_teaser: bot.show_teaser !== false,
+      theme_mode: bot.theme_mode || 'light'
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to load public bot config' });
@@ -60,7 +65,12 @@ export async function createBot(req, res) {
       quick_prompts,
       system_instructions,
       business_knowledge,
-      whatsapp_number
+      whatsapp_number,
+      launcher_icon,
+      launcher_position,
+      teaser_text,
+      show_teaser,
+      theme_mode
     } = req.body;
 
     if (!bot_name) {
@@ -77,7 +87,12 @@ export async function createBot(req, res) {
       quick_prompts: quick_prompts || ['What services do you offer?', 'Pricing details'],
       system_instructions: system_instructions || 'You are a helpful AI business representative.',
       business_knowledge: business_knowledge || '',
-      whatsapp_number: whatsapp_number || null
+      whatsapp_number: whatsapp_number || null,
+      launcher_icon: launcher_icon || 'chat',
+      launcher_position: launcher_position || 'bottom-right',
+      teaser_text: teaser_text || '👋 Need help? Chat with our AI!',
+      show_teaser: show_teaser !== false,
+      theme_mode: theme_mode || 'light'
     });
 
     return res.status(201).json({ bot: newBot });

@@ -68,8 +68,8 @@ export default function BotBuilderModal({ onClose, onCreated }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(9, 13, 22, 0.85)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -80,11 +80,12 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         width: '720px',
         maxWidth: '100%',
         maxHeight: '90vh',
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-surface)',
         padding: '28px',
         position: 'relative',
         overflowY: 'auto',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid var(--border-subtle)'
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -93,7 +94,7 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #10b981, #06b6d4)',
+              background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -101,8 +102,8 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               <Bot size={22} color="#ffffff" />
             </div>
             <div>
-              <h3 style={{ fontSize: '19px', color: '#ffffff' }}>Create New AI Chatbot</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Create New AI Chatbot</h3>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
                 Configure identity, theme, and train on your business knowledge.
               </p>
             </div>
@@ -113,7 +114,7 @@ export default function BotBuilderModal({ onClose, onCreated }) {
             className="btn-outline"
             style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px' }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -145,9 +146,9 @@ export default function BotBuilderModal({ onClose, onCreated }) {
                       height: '28px',
                       borderRadius: '50%',
                       backgroundColor: color,
-                      border: formData.primary_color === color ? '2.5px solid #ffffff' : 'none',
+                      border: formData.primary_color === color ? '3px solid var(--text-primary)' : '2px solid transparent',
                       cursor: 'pointer',
-                      boxShadow: formData.primary_color === color ? `0 0 10px ${color}` : 'none'
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                     }}
                   />
                 ))}
@@ -166,14 +167,14 @@ export default function BotBuilderModal({ onClose, onCreated }) {
                   alt={`Preset ${idx + 1}`}
                   onClick={() => setFormData({ ...formData, bot_avatar_url: avatar })}
                   style={{
-                    width: '46px',
-                    height: '46px',
+                    width: '44px',
+                    height: '44px',
                     borderRadius: '50%',
                     objectFit: 'cover',
                     cursor: 'pointer',
-                    border: formData.bot_avatar_url === avatar ? '3px solid #6366f1' : '2px solid #334155',
-                    transform: formData.bot_avatar_url === avatar ? 'scale(1.1)' : 'scale(1)',
-                    transition: 'all 0.2s'
+                    border: formData.bot_avatar_url === avatar ? '3px solid var(--primary)' : '2px solid var(--border-subtle)',
+                    transform: formData.bot_avatar_url === avatar ? 'scale(1.08)' : 'scale(1)',
+                    transition: 'all 0.15s'
                   }}
                 />
               ))}
@@ -182,7 +183,7 @@ export default function BotBuilderModal({ onClose, onCreated }) {
 
           {/* Welcome Message */}
           <div className="form-group">
-            <label className="form-label">Greeting / Welcome Message</label>
+            <label className="form-label">Initial Welcome Greeting</label>
             <input
               type="text"
               className="form-input"
@@ -191,40 +192,41 @@ export default function BotBuilderModal({ onClose, onCreated }) {
             />
           </div>
 
-          {/* Business Knowledge Base */}
+          {/* Business Knowledge Base (RAG Training) */}
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label">Business Knowledge & FAQs (RAG Training)</label>
-              <span style={{ fontSize: '11px', color: '#38bdf8' }}>Gemini AI Contextual Brain</span>
+              <label className="form-label">
+                Business Knowledge Base (FAQs, Services, Pricing)
+              </label>
+              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>
+                ⚡ Gemini RAG Active
+              </span>
             </div>
             <textarea
               className="form-textarea"
-              placeholder="Paste your business details, pricing tiers, services offered, FAQs, working hours, and contact details here..."
-              rows={4}
+              style={{ minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
+              placeholder="Provide information about your business:&#10;- Services offered: Web development, SEO, AI Chatbots&#10;- Pricing: Starter plan is ₹4,999, Pro is ₹14,999&#10;- Working hours: 9 AM - 6 PM IST&#10;- Refund policy: 7-day money back guarantee"
               value={formData.business_knowledge}
               onChange={(e) => setFormData({ ...formData, business_knowledge: e.target.value })}
             />
           </div>
 
-          {/* System Instructions */}
-          <div className="form-group">
-            <label className="form-label">AI System Prompt / Personality</label>
-            <input
-              type="text"
-              className="form-input"
-              value={formData.system_instructions}
-              onChange={(e) => setFormData({ ...formData, system_instructions: e.target.value })}
-            />
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-            <button type="button" onClick={onClose} className="btn-secondary">
+          {/* Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary">
+            <button
+              type="submit"
+              disabled={loading || !formData.bot_name.trim()}
+              className="btn-primary"
+            >
               <Sparkles size={16} />
-              <span>{loading ? 'Creating Bot...' : 'Deploy AI Bot (₹0 Free)'}</span>
+              <span>{loading ? 'Creating...' : 'Deploy AI Bot'}</span>
             </button>
           </div>
         </form>

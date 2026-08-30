@@ -4,17 +4,17 @@ import {
   Plus, 
   Users, 
   MessageSquare, 
-  Sparkles, 
   Zap, 
-  Layers, 
   RefreshCw,
-  Search
+  Search,
+  CheckCircle2,
+  SlidersHorizontal
 } from 'lucide-react';
 import BotCard from '../components/bots/BotCard';
 import BotBuilderModal from '../components/bots/BotBuilderModal';
 import EmbedSnippetModal from '../components/bots/EmbedSnippetModal';
 
-export default function DashboardPage({ onSelectBot, onOpenWhatsApp }) {
+export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed }) {
   const [bots, setBots] = useState([]);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,155 +69,144 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp }) {
   const activeWhatsAppCount = bots.filter(b => b.whatsapp_status === 'connected').length;
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Top Banner / Welcome */}
+    <div style={{ padding: '28px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Top Banner */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '32px',
+        marginBottom: '24px',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '14px'
       }}>
         <div>
-          <h1 style={{ fontSize: '28px', color: '#ffffff', marginBottom: '6px' }}>
-            AI Chatbot Studio & Hub
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            Chatbot Studio
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-            Build, train, and deploy autonomous multi-tenant AI agents across websites & WhatsApp.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Manage and train autonomous AI customer agents across websites and WhatsApp.
           </p>
         </div>
 
         <button
           onClick={() => setIsBuilderOpen(true)}
           className="btn-primary"
-          style={{ padding: '12px 24px', fontSize: '15px' }}
+          style={{ padding: '9px 18px', fontSize: '13.5px' }}
         >
-          <Plus size={18} />
-          <span>Create New AI Bot</span>
+          <Plus size={16} />
+          <span>New Chatbot</span>
         </button>
       </div>
 
       {/* Metrics Row */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '20px',
-        marginBottom: '36px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px',
+        marginBottom: '28px'
       }}>
-        {/* Metric 1 */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Active AI Bots</span>
-            <div style={{ background: 'rgba(99, 102, 241, 0.15)', padding: '8px', borderRadius: '10px' }}>
-              <Bot size={20} color="#818cf8" />
-            </div>
+        <div className="glass-panel" style={{ padding: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Active Chatbots</span>
+            <Bot size={16} color="var(--primary)" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '2px' }}>
             {bots.length}
           </div>
-          <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 600 }}>Unlimited Free Tier</span>
+          <span style={{ fontSize: '11.5px', color: '#059669', fontWeight: 600 }}>Active</span>
         </div>
 
-        {/* Metric 2 */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Captured Leads</span>
-            <div style={{ background: 'rgba(16, 185, 129, 0.15)', padding: '8px', borderRadius: '10px' }}>
-              <Users size={20} color="#34d399" />
-            </div>
+        <div className="glass-panel" style={{ padding: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Captured Leads</span>
+            <Users size={16} color="#059669" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '2px' }}>
             {leads.length}
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Auto-extracted via AI Brain</span>
+          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Auto-extracted</span>
         </div>
 
-        {/* Metric 3 */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>WhatsApp Automation</span>
-            <div style={{ background: 'rgba(56, 189, 248, 0.15)', padding: '8px', borderRadius: '10px' }}>
-              <MessageSquare size={20} color="#38bdf8" />
-            </div>
+        <div className="glass-panel" style={{ padding: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>WhatsApp Channels</span>
+            <MessageSquare size={16} color="#0891b2" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', marginBottom: '4px' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '2px' }}>
             {activeWhatsAppCount} / {bots.length}
           </div>
-          <span style={{ fontSize: '12px', color: activeWhatsAppCount > 0 ? '#34d399' : '#fbbf24', fontWeight: 600 }}>
-            {activeWhatsAppCount > 0 ? 'Baileys QR Engine Linked' : 'Ready to Connect'}
+          <span style={{ fontSize: '11.5px', color: activeWhatsAppCount > 0 ? '#059669' : '#d97706', fontWeight: 600 }}>
+            {activeWhatsAppCount > 0 ? 'Connected' : 'Available'}
           </span>
         </div>
 
-        {/* Metric 4 */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)' }}>Infrastructure Cost</span>
-            <div style={{ background: 'rgba(236, 72, 153, 0.15)', padding: '8px', borderRadius: '10px' }}>
-              <Zap size={20} color="#f472b6" />
-            </div>
+        <div className="glass-panel" style={{ padding: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>Infrastructure Cost</span>
+            <Zap size={16} color="#059669" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#34d399', marginBottom: '4px' }}>
-            ₹0 / mo
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#059669', marginBottom: '2px' }}>
+            ₹0.00
           </div>
-          <span style={{ fontSize: '12px', color: '#38bdf8' }}>Google Gemini + Supabase Free</span>
+          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Free Tier</span>
         </div>
       </div>
 
       {/* Bots Grid Section */}
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <h2 style={{ fontSize: '20px', color: '#ffffff' }}>Your AI Chatbots</h2>
-          <span className="badge badge-purple">{bots.length} Active</span>
-        </div>
+      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)' }}>Chatbots</h2>
 
         {/* Search */}
-        <div style={{ position: 'relative', width: '280px' }}>
-          <Search size={16} color="var(--text-dark)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+        <div style={{ position: 'relative', width: '260px' }}>
+          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '11px', top: '10px' }} />
           <input
             type="text"
             className="form-input"
-            style={{ paddingLeft: '36px', width: '100%', fontSize: '13px' }}
-            placeholder="Search bots..."
+            style={{ paddingLeft: '32px', width: '100%', fontSize: '12.5px', padding: '7px 10px 7px 32px' }}
+            placeholder="Search chatbots..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Grid */}
-      {filteredBots.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '48px', textAlign: 'center' }}>
-          <Bot size={48} color="#6366f1" style={{ margin: '0 auto 16px' }} />
-          <h3 style={{ fontSize: '18px', color: '#ffffff', marginBottom: '8px' }}>No Chatbots Found</h3>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '20px' }}>
-            Create your first AI bot to get an embeddable widget & connect WhatsApp automation.
+      {/* Grid of Bot Cards */}
+      {loading ? (
+        <div style={{ padding: '50px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
+          <p style={{ fontSize: '13px' }}>Loading chatbots...</p>
+        </div>
+      ) : filteredBots.length === 0 ? (
+        <div className="glass-panel" style={{ padding: '40px', textAlign: 'center' }}>
+          <Bot size={36} color="var(--primary)" style={{ margin: '0 auto 12px auto', opacity: 0.6 }} />
+          <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '6px' }}>No Chatbots Found</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px', maxWidth: '360px', margin: '0 auto 16px auto' }}>
+            Create your first AI customer agent to get started.
           </p>
-          <button onClick={() => setIsBuilderOpen(true)} className="btn-primary">
-            <Plus size={16} />
-            <span>Create AI Bot Now</span>
+          <button onClick={() => setIsBuilderOpen(true)} className="btn-primary" style={{ padding: '8px 16px' }}>
+            <Plus size={15} /> New Chatbot
           </button>
         </div>
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
-          gap: '24px'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+          gap: '18px'
         }}>
           {filteredBots.map((bot) => (
             <BotCard
               key={bot.id}
               bot={bot}
-              onSelectStudio={onSelectBot}
-              onOpenEmbed={(b) => setSelectedEmbedBot(b)}
-              onOpenWhatsApp={onOpenWhatsApp}
-              onDelete={handleDeleteBot}
+              onSelect={() => onSelectBot(bot)}
+              onOpenWhatsApp={() => onOpenWhatsApp(bot)}
+              onOpenEmbed={() => onOpenEmbed ? onOpenEmbed(bot) : setSelectedEmbedBot(bot)}
+              onDelete={() => handleDeleteBot(bot.id)}
             />
           ))}
         </div>
       )}
 
-      {/* Modals */}
+      {/* Create Bot Modal */}
       {isBuilderOpen && (
         <BotBuilderModal
           onClose={() => setIsBuilderOpen(false)}
@@ -225,6 +214,7 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp }) {
         />
       )}
 
+      {/* Embed Code Modal */}
       {selectedEmbedBot && (
         <EmbedSnippetModal
           bot={selectedEmbedBot}

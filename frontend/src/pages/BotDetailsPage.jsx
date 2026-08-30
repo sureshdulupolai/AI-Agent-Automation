@@ -1,246 +1,221 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  ArrowLeft, 
-  Save, 
   Bot, 
   Sparkles, 
-  Send, 
-  Trash2, 
-  Code, 
-  BookOpen, 
-  Sliders, 
   Palette, 
-  MessageSquare,
+  Shield, 
+  Code2, 
+  Save, 
+  Send, 
+  Check, 
+  Copy, 
+  MessageSquare, 
+  Headphones, 
+  Image, 
+  Layout, 
   CheckCircle2,
   RefreshCw,
-  UserCheck
+  ArrowLeft
 } from 'lucide-react';
-import EmbedSnippetModal from '../components/bots/EmbedSnippetModal';
 
-const COLOR_PRESETS = ['#4f46e5', '#0891b2', '#059669', '#d97706', '#e11d48', '#7c3aed'];
-
-export default function BotDetailsPage({ botId, onBack, onOpenWhatsApp }) {
+export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
   const [bot, setBot] = useState(null);
-  const [activeTab, setActiveTab] = useState('knowledge');
+  const [activeTab, setActiveTab] = useState('appearance');
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Playground state
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [sessionId] = useState(() => `play-${Math.random().toString(36).substring(2, 9)}`);
-  const chatBottomRef = useRef(null);
+  // Form State
+  const [botName, setBotName] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#4f46e5');
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [placeholderText, setPlaceholderText] = useState('Type your message...');
+  const [businessKnowledge, setBusinessKnowledge] = useState('');
+  const [systemInstructions, setSystemInstructions] = useState('');
+  const [launcherIcon, setLauncherIcon] = useState('chat');
+  const [launcherPosition, setLauncherPosition] = useState('bottom-right');
+  const [teaserText, setTeaserText] = useState('How can I help you today?');
+  const [showTeaser, setShowTeaser] = useState(true);
+  const [themeMode, setThemeMode] = useState('light');
+  const [avatarUrl, setAvatarUrl] = useState('');
 
-  // Fetch bot details
-  useEffect(() => {
-    async function loadBot() {
-      try {
-        const res = await fetch(`/api/bots/${botId}`);
-        const data = await res.json();
-        if (data.bot) {
-          setBot(data.bot);
-          // Initial greeting in sandbox
-          setMessages([
-            {
-              sender: 'bot',
-              content: data.bot.welcome_message || 'Hello! How can I help you today?',
-              timestamp: new Date().toISOString()
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Failed to load bot:', err);
-      }
-    }
-    loadBot();
-  }, [botId]);
+  // Interactive Sandbox Chat State
+  const [sandboxMessages, setSandboxMessages] = useState([]);
+  const [sandboxInput, setSandboxInput] = useState('');
+  const [sandboxTyping, setSandboxTyping] = useState(false);
 
-  // Auto scroll sandbox
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  const handleSave = async () => {
-    if (!bot) return;
-    setSaving(true);
+  const fetchBot = async () => {
     try {
-      const res = await fetch(`/api/bots/${bot.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bot)
-      });
-      const data = await res.json();
+      const res = await fetch(`/api/bots/${botId}`);
       if (res.ok) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2500);
+        const data = await res.json();
+        const b = data.bot;
+        setBot(b);
+        setBotName(b.bot_name || '');
+        setPrimaryColor(b.primary_color || '#4f46e5');
+        setWelcomeMessage(b.welcome_message || 'Hello! How can I help you today?');
+        setPlaceholderText(b.placeholder_text || 'Type your message...');
+        setBusinessKnowledge(b.business_knowledge || '');
+        setSystemInstructions(b.system_instructions || '');
+        setLauncherIcon(b.launcher_icon || 'chat');
+        setLauncherPosition(b.launcher_position || 'bottom-right');
+        setTeaserText(b.teaser_text || 'How can I help you today?');
+        setShowTeaser(b.show_teaser !== false);
+        setThemeMode(b.theme_mode || 'light');
+        setAvatarUrl(b.bot_avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80');
+
+        setSandboxMessages([
+          { sender: 'bot', content: b.welcome_message || 'Hello! How can I help you today?' }
+        ]);
       }
     } catch (err) {
-      alert('Error saving bot: ' + err.message);
+      console.error('Error loading bot details:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBot();
+  }, [botId]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSavedSuccess(false);
+
+    try {
+      const res = await fetch(`/api/bots/${botId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bot_name: botName,
+          primary_color: primaryColor,
+          welcome_message: welcomeMessage,
+          placeholder_text: placeholderText,
+          business_knowledge: businessKnowledge,
+          system_instructions: systemInstructions,
+          launcher_icon: launcherIcon,
+          launcher_position: launcherPosition,
+          teaser_text: teaserText,
+          show_teaser: showTeaser,
+          theme_mode: themeMode,
+          bot_avatar_url: avatarUrl
+        })
+      });
+
+      if (res.ok) {
+        setSavedSuccess(true);
+        setTimeout(() => setSavedSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving bot:', err);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSendMessage = async (customText = null) => {
-    const textToSend = customText || inputText;
-    if (!textToSend || !textToSend.trim() || isTyping) return;
+  const handleSandboxSend = async (e) => {
+    e.preventDefault();
+    if (!sandboxInput.trim() || sandboxTyping) return;
 
-    setInputText('');
-    const userMsg = {
-      sender: 'user',
-      content: textToSend.trim(),
-      timestamp: new Date().toISOString()
-    };
+    const userText = sandboxInput.trim();
+    setSandboxInput('');
 
-    setMessages(prev => [...prev, userMsg]);
-    setIsTyping(true);
+    setSandboxMessages(prev => [...prev, { sender: 'user', content: userText }]);
+    setSandboxTyping(true);
 
     try {
-      const res = await fetch(`/api/chat/${bot.id}`, {
+      const res = await fetch(`/api/chat/${botId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: textToSend.trim(),
-          sessionId
+          message: userText,
+          sessionId: 'sandbox-session-preview'
         })
       });
 
-      const data = await res.json();
-      setIsTyping(false);
-
-      if (data.reply) {
-        setMessages(prev => [
-          ...prev,
-          {
-            sender: 'bot',
-            content: data.reply,
-            timestamp: data.timestamp || new Date().toISOString()
-          }
-        ]);
+      if (res.ok) {
+        const data = await res.json();
+        setSandboxMessages(prev => [...prev, { sender: 'bot', content: data.reply }]);
       }
     } catch (err) {
-      setIsTyping(false);
-      setMessages(prev => [
-        ...prev,
-        {
-          sender: 'bot',
-          content: 'Error connecting to AI service.',
-          timestamp: new Date().toISOString()
-        }
-      ]);
+      setSandboxMessages(prev => [...prev, { sender: 'bot', content: 'Connection issue. Please verify backend is running.' }]);
+    } finally {
+      setSandboxTyping(false);
     }
   };
 
-  const handleSimulateLead = () => {
-    const sampleLeads = [
-      "Hi! I'm John Doe, john.doe@acme.com, phone +1 (555) 345-6789. What would a custom package cost?",
-      "My name is Sarah Miller, sarah@cloudpulse.io. Can we schedule a demo call?",
-      "Hello, I am Vikram (+91 98123 45678). Interested in pricing and setup."
-    ];
-    const picked = sampleLeads[Math.floor(Math.random() * sampleLeads.length)];
-    handleSendMessage(picked);
-  };
-
-  if (!bot) {
+  if (loading) {
     return (
       <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <RefreshCw size={32} className="animate-spin" style={{ margin: '0 auto 16px' }} />
-        <p>Loading Bot Studio...</p>
+        <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
+        <p style={{ fontSize: '13px' }}>Loading configuration...</p>
       </div>
     );
   }
 
-  return (
-    <div style={{ padding: '32px', maxWidth: '1440px', margin: '0 auto' }}>
-      {/* Top Navigation & Action Bar */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={onBack} className="btn-outline" style={{ padding: '8px 12px' }}>
-            <ArrowLeft size={16} />
-            <span>Back to Bots</span>
-          </button>
+  const colorPresets = [
+    { label: 'Indigo', color: '#4f46e5' },
+    { label: 'Emerald', color: '#059669' },
+    { label: 'Violet', color: '#7c3aed' },
+    { label: 'Cyan', color: '#0891b2' },
+    { label: 'Rose', color: '#e11d48' },
+    { label: 'Slate', color: '#334155' }
+  ];
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <img
-              src={bot.bot_avatar_url}
-              alt={bot.bot_name}
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '14px',
-                objectFit: 'cover',
-                border: `2px solid ${bot.primary_color || '#6366f1'}`
-              }}
-            />
-            <div>
-              <h1 style={{ fontSize: '22px', color: '#ffffff' }}>{bot.bot_name}</h1>
-              <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 600 }}>
-                ● Online • Multi-Channel Ready
-              </span>
-            </div>
+  const iconOptions = [
+    { id: 'chat', label: 'Chat Bubble', icon: MessageSquare },
+    { id: 'sparkles', label: 'Sparkles', icon: Sparkles },
+    { id: 'headset', label: 'Support', icon: Headphones },
+    { id: 'bot', label: 'Assistant', icon: Bot },
+    { id: 'avatar', label: 'Avatar', icon: Image }
+  ];
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Top Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button onClick={onBack} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12.5px' }}>
+            <ArrowLeft size={14} /> Back
+          </button>
+          <div>
+            <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{botName || 'Chatbot'} Studio</h1>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+              Configure appearance, icons, knowledge base, and live preview.
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            onClick={() => onOpenWhatsApp(bot)}
-            className="btn-secondary"
-          >
-            <MessageSquare size={16} color="#38bdf8" />
-            <span>WhatsApp: {bot.whatsapp_status === 'connected' ? 'Connected' : 'Connect'}</span>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => onOpenEmbed(bot)} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 14px' }}>
+            <Code2 size={14} /> Embed Code
           </button>
 
-          <button
-            onClick={() => setIsEmbedModalOpen(true)}
-            className="btn-secondary"
-          >
-            <Code size={16} color="#c084fc" />
-            <span>Embed Widget</span>
-          </button>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-primary"
-            style={{ minWidth: '130px' }}
-          >
-            {saveSuccess ? <CheckCircle2 size={16} color="#34d399" /> : <Save size={16} />}
-            <span>{saving ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}</span>
+          <button onClick={handleSave} disabled={saving} className="btn-primary" style={{ fontSize: '13px', padding: '8px 16px' }}>
+            {savedSuccess ? <CheckCircle2 size={15} /> : <Save size={15} />}
+            <span>{saving ? 'Saving...' : savedSuccess ? 'Saved' : 'Save Changes'}</span>
           </button>
         </div>
       </div>
 
-      {/* Main Studio Grid: Left Config, Right Live Sandbox */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.2fr) minmax(380px, 0.8fr)',
-        gap: '24px',
-        alignItems: 'start'
-      }}>
-        {/* Left Column: Studio Tabs */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          {/* Tab Selector */}
+      {/* Main Grid: Left Tabs/Settings, Right Live Preview */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr', gap: '24px', alignItems: 'start' }}>
+        {/* Left Settings Panel */}
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          {/* Navigation Tabs */}
           <div style={{
             display: 'flex',
-            gap: '8px',
-            background: '#090d16',
-            padding: '4px',
-            borderRadius: '12px',
-            marginBottom: '24px'
+            gap: '6px',
+            borderBottom: '1px solid var(--border-subtle)',
+            paddingBottom: '12px',
+            marginBottom: '18px'
           }}>
             {[
-              { id: 'knowledge', label: 'Business Knowledge (RAG)', icon: BookOpen },
-              { id: 'identity', label: 'Visual & Identity', icon: Palette },
-              { id: 'prompt', label: 'AI Guardrails & Prompt', icon: Sliders }
+              { id: 'appearance', label: 'Widget & Icons', icon: Palette },
+              { id: 'knowledge', label: 'Knowledge Base', icon: Sparkles },
+              { id: 'personality', label: 'Instructions & Tone', icon: Shield },
+              { id: 'embed', label: 'Embed Script', icon: Code2 }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -249,80 +224,172 @@ export default function BotDetailsPage({ botId, onBack, onOpenWhatsApp }) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   style={{
-                    flex: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    padding: '10px 14px',
-                    border: 'none',
-                    borderRadius: '10px',
-                    background: isActive ? 'var(--primary)' : 'transparent',
-                    color: isActive ? '#ffffff' : 'var(--text-muted)',
+                    gap: '6px',
+                    padding: '7px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid',
+                    borderColor: isActive ? 'var(--primary)' : 'transparent',
+                    backgroundColor: isActive ? 'var(--bg-subtle)' : 'transparent',
+                    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                     fontWeight: isActive ? 600 : 500,
-                    fontSize: '13.5px',
+                    fontSize: '12.5px',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.15s'
                   }}
                 >
-                  <Icon size={16} />
+                  <Icon size={14} />
                   <span>{tab.label}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* TAB 1: KNOWLEDGE BASE */}
-          {activeTab === 'knowledge' && (
-            <div className="animate-fade-in">
-              <div style={{ marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '16px', color: '#ffffff', marginBottom: '4px' }}>
-                  Business Knowledge Base & FAQ Training
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Provide your pricing tables, products, service descriptions, policies, and contact information. Gemini AI will answer visitor queries strictly based on this content.
-                </p>
+          {/* TAB 1: Widget & Icon Appearance */}
+          {activeTab === 'appearance' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* 1. Launcher Icon Style */}
+              <div>
+                <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>
+                  Launcher Icon
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                  {iconOptions.map((opt) => {
+                    const Icon = opt.icon;
+                    const isSelected = launcherIcon === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setLauncherIcon(opt.id)}
+                        style={{
+                          padding: '10px 6px',
+                          borderRadius: '8px',
+                          border: `1.5px solid ${isSelected ? primaryColor : 'var(--border-subtle)'}`,
+                          backgroundColor: isSelected ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '6px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        <Icon size={18} color={isSelected ? primaryColor : 'var(--text-secondary)'} />
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                          {opt.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="form-group">
-                <textarea
-                  className="form-textarea"
-                  style={{ minHeight: '340px', fontFamily: 'var(--font-mono)', fontSize: '13px' }}
-                  value={bot.business_knowledge || ''}
-                  onChange={(e) => setBot({ ...bot, business_knowledge: e.target.value })}
-                  placeholder="Paste your business details, pricing lists, services, FAQs, etc."
+              {/* 2. Position & Theme */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Launcher Position</label>
+                  <select
+                    value={launcherPosition}
+                    onChange={(e) => setLauncherPosition(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="bottom-right">Bottom Right</option>
+                    <option value="bottom-left">Bottom Left</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Widget Theme</label>
+                  <select
+                    value={themeMode}
+                    onChange={(e) => setThemeMode(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 3. Popup Teaser Callout */}
+              <div className="form-group" style={{ background: 'var(--bg-subtle)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <label className="form-label" style={{ marginBottom: 0 }}>
+                    Greeting Callout Bubble
+                  </label>
+                  <input
+                    type="checkbox"
+                    checked={showTeaser}
+                    onChange={(e) => setShowTeaser(e.target.checked)}
+                    style={{ width: '15px', height: '15px', accentColor: primaryColor }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={teaserText}
+                  onChange={(e) => setTeaserText(e.target.value)}
+                  placeholder="e.g. How can I help you today?"
+                  className="form-input"
+                  style={{ width: '100%', fontSize: '13px' }}
                 />
               </div>
 
-              <div style={{
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                fontSize: '12.5px',
-                color: '#34d399',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <Sparkles size={16} />
-                <span>
-                  Tip: Use clear headers (e.g. <code>SERVICES:</code>, <code>PRICING:</code>, <code>HOURS:</code>) for maximum AI retrieval precision.
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: VISUAL & IDENTITY */}
-          {activeTab === 'identity' && (
-            <div className="animate-fade-in">
+              {/* 4. Brand Color */}
               <div className="form-group">
-                <label className="form-label">Bot Display Name</label>
+                <label className="form-label">Primary Color</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {colorPresets.map((p) => (
+                    <button
+                      key={p.color}
+                      type="button"
+                      onClick={() => setPrimaryColor(p.color)}
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        backgroundColor: p.color,
+                        border: primaryColor === p.color ? '2.5px solid var(--text-primary)' : '1px solid transparent',
+                        cursor: 'pointer'
+                      }}
+                      title={p.label}
+                    />
+                  ))}
+                  <input
+                    type="color"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                  />
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    className="form-input"
+                    style={{ width: '90px', fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+                  />
+                </div>
+              </div>
+
+              {/* 5. Name & Greeting */}
+              <div className="form-group">
+                <label className="form-label">Display Name</label>
                 <input
                   type="text"
+                  value={botName}
+                  onChange={(e) => setBotName(e.target.value)}
                   className="form-input"
-                  value={bot.bot_name}
-                  onChange={(e) => setBot({ ...bot, bot_name: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Welcome Message</label>
+                <textarea
+                  value={welcomeMessage}
+                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                  className="form-textarea"
+                  style={{ minHeight: '65px' }}
                 />
               </div>
 
@@ -330,260 +397,259 @@ export default function BotDetailsPage({ botId, onBack, onOpenWhatsApp }) {
                 <label className="form-label">Avatar Image URL</label>
                 <input
                   type="text"
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
                   className="form-input"
-                  value={bot.bot_avatar_url}
-                  onChange={(e) => setBot({ ...bot, bot_avatar_url: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Theme Color Accent</label>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '6px' }}>
-                  {COLOR_PRESETS.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setBot({ ...bot, primary_color: color })}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        backgroundColor: color,
-                        border: bot.primary_color === color ? '3px solid #ffffff' : 'none',
-                        cursor: 'pointer',
-                        boxShadow: bot.primary_color === color ? `0 0 12px ${color}` : 'none'
-                      }}
-                    />
-                  ))}
-                  <input
-                    type="color"
-                    value={bot.primary_color || '#4f46e5'}
-                    onChange={(e) => setBot({ ...bot, primary_color: e.target.value })}
-                    style={{
-                      width: '34px',
-                      height: '34px',
-                      borderRadius: '8px',
-                      background: 'none',
-                      border: '1px solid var(--border-color)',
-                      cursor: 'pointer'
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Welcome Message / Initial Greeting</label>
-                <textarea
-                  className="form-textarea"
-                  style={{ minHeight: '80px' }}
-                  value={bot.welcome_message}
-                  onChange={(e) => setBot({ ...bot, welcome_message: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Chat Input Placeholder</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={bot.placeholder_text || ''}
-                  onChange={(e) => setBot({ ...bot, placeholder_text: e.target.value })}
+                  style={{ fontSize: '12.5px' }}
                 />
               </div>
             </div>
           )}
 
-          {/* TAB 3: PROMPT GUARDRAILS */}
-          {activeTab === 'prompt' && (
-            <div className="animate-fade-in">
+          {/* TAB 2: Knowledge Base */}
+          {activeTab === 'knowledge' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="form-group">
-                <label className="form-label">System Personality & Role</label>
+                <label className="form-label">Business Knowledge & FAQs</label>
                 <textarea
+                  value={businessKnowledge}
+                  onChange={(e) => setBusinessKnowledge(e.target.value)}
                   className="form-textarea"
-                  style={{ minHeight: '120px' }}
-                  value={bot.system_instructions || ''}
-                  onChange={(e) => setBot({ ...bot, system_instructions: e.target.value })}
+                  style={{ minHeight: '260px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
+                  placeholder="Enter services, pricing, company policies, FAQs, working hours..."
                 />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Allowed Embedding Domains (CORS Security)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. * or yourwebsite.com, myshopify.com"
-                  value={(bot.allowed_domains || ['*']).join(', ')}
-                  onChange={(e) => setBot({ ...bot, allowed_domains: e.target.value.split(',').map(s => s.trim()) })}
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-dark)', marginTop: '4px' }}>
-                  Use <code>*</code> to permit all domains, or specify exact domains separated by commas.
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  The AI model references this knowledge base to generate responses.
                 </span>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Right Column: Live Interactive Sandbox */}
-        <div className="glass-panel" style={{
-          padding: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '620px',
-          backgroundColor: '#0c121e',
-          borderColor: 'rgba(99, 102, 241, 0.3)'
-        }}>
-          {/* Sandbox Header */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            paddingBottom: '14px',
-            borderBottom: '1px solid var(--border-color)',
-            marginBottom: '14px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={16} color="#818cf8" />
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>
-                Live AI Sandbox
-              </span>
-              <span className="badge badge-green" style={{ fontSize: '10px', padding: '1px 6px' }}>
-                Realtime
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                onClick={handleSimulateLead}
-                className="btn-outline"
-                style={{ padding: '4px 8px', fontSize: '11px' }}
-                title="Send simulated contact message to test lead capture"
-              >
-                <UserCheck size={12} />
-                <span>Test Lead Capture</span>
-              </button>
-
-              <button
-                onClick={() => setMessages([{ sender: 'bot', content: bot.welcome_message, timestamp: new Date().toISOString() }])}
-                className="btn-outline"
-                style={{ padding: '4px 8px', fontSize: '11px' }}
-                title="Clear chat"
-              >
-                <Trash2 size={12} />
-              </button>
-            </div>
-          </div>
-
-          {/* Sandbox Chat Stream */}
-          <div style={{
-            flex: 1,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            paddingRight: '6px',
-            marginBottom: '14px'
-          }}>
-            {messages.map((m, idx) => {
-              const isBot = m.sender === 'bot';
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    display: 'flex',
-                    alignSelf: isBot ? 'flex-start' : 'flex-end',
-                    maxWidth: '85%',
-                    gap: '8px'
-                  }}
-                >
-                  <div style={{
-                    backgroundColor: isBot ? '#1e293b' : (bot.primary_color || '#4f46e5'),
-                    color: '#ffffff',
-                    padding: '10px 14px',
-                    borderRadius: '14px',
-                    borderBottomLeftRadius: isBot ? '3px' : '14px',
-                    borderBottomRightRadius: isBot ? '14px' : '3px',
-                    fontSize: '13px',
-                    lineHeight: 1.45,
-                    border: isBot ? '1px solid var(--border-color)' : 'none',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {m.content}
-                  </div>
-                </div>
-              );
-            })}
-
-            {isTyping && (
-              <div style={{
-                alignSelf: 'flex-start',
-                backgroundColor: '#1e293b',
-                padding: '8px 14px',
-                borderRadius: '14px',
-                borderBottomLeftRadius: '3px',
-                fontSize: '12px',
-                color: 'var(--text-muted)'
-              }}>
-                Typing...
+          {/* TAB 3: Personality */}
+          {activeTab === 'personality' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label className="form-label">System Instructions</label>
+                <textarea
+                  value={systemInstructions}
+                  onChange={(e) => setSystemInstructions(e.target.value)}
+                  className="form-textarea"
+                  style={{ minHeight: '200px' }}
+                  placeholder="You are an expert sales consultant for our agency. Always be professional, helpful..."
+                />
               </div>
-            )}
-            <div ref={chatBottomRef} />
-          </div>
-
-          {/* Quick prompt suggestions */}
-          {bot.quick_prompts && bot.quick_prompts.length > 0 && (
-            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '8px' }}>
-              {bot.quick_prompts.map((qp, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSendMessage(qp)}
-                  style={{
-                    whiteSpace: 'nowrap',
-                    background: '#131d31',
-                    border: '1px solid var(--border-color)',
-                    color: '#38bdf8',
-                    fontSize: '11.5px',
-                    padding: '4px 10px',
-                    borderRadius: '9999px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {qp}
-                </button>
-              ))}
             </div>
           )}
 
-          {/* Chat input footer */}
-          <form
-            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-            style={{ display: 'flex', gap: '8px' }}
-          >
-            <input
-              type="text"
-              className="form-input"
-              style={{ flex: 1, padding: '8px 12px', fontSize: '13px' }}
-              placeholder={bot.placeholder_text || 'Type your message...'}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-            />
-            <button
-              type="submit"
-              disabled={isTyping || !inputText.trim()}
-              className="btn-primary"
-              style={{ padding: '8px 14px' }}
+          {/* TAB 4: Embed Code */}
+          {activeTab === 'embed' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                Add this script tag to your website:
+              </p>
+              <div style={{ position: 'relative' }}>
+                <pre style={{
+                  background: 'var(--bg-subtle)',
+                  padding: '14px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontFamily: 'var(--font-mono)',
+                  overflowX: 'auto',
+                  border: '1px solid var(--border-subtle)'
+                }}>
+                  {`<script src="http://localhost:5000/widget.js" data-bot-id="${botId}"></script>`}
+                </pre>
+                <button
+                  onClick={() => navigator.clipboard.writeText(`<script src="http://localhost:5000/widget.js" data-bot-id="${botId}"></script>`)}
+                  className="btn-secondary"
+                  style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 10px', fontSize: '11px' }}
+                >
+                  <Copy size={12} /> Copy
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Live Interactive Preview */}
+        <div style={{ position: 'sticky', top: '75px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Interactive Preview
+            </span>
+            <span className="badge badge-green" style={{ fontSize: '10.5px' }}>
+              Live
+            </span>
+          </div>
+
+          {/* Widget Preview Container */}
+          <div style={{
+            background: themeMode === 'dark' ? '#090d16' : '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid var(--border-subtle)',
+            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '520px'
+          }}>
+            {/* Header */}
+            <div style={{
+              backgroundColor: primaryColor,
+              padding: '12px 16px',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img
+                  src={avatarUrl}
+                  alt={botName}
+                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.7)' }}
+                />
+                <div>
+                  <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#ffffff' }}>{botName}</h4>
+                  <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.85)' }}>Online</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Body */}
+            <div style={{
+              flex: 1,
+              padding: '14px',
+              overflowY: 'auto',
+              background: themeMode === 'dark' ? '#090d16' : '#f8fafc',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px'
+            }}>
+              {sandboxMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%',
+                    padding: '9px 13px',
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    lineHeight: 1.45,
+                    backgroundColor: msg.sender === 'user' 
+                      ? primaryColor 
+                      : (themeMode === 'dark' ? '#1e293b' : '#ffffff'),
+                    color: msg.sender === 'user' ? '#ffffff' : (themeMode === 'dark' ? '#f8fafc' : '#0f172a'),
+                    border: msg.sender === 'user' ? 'none' : '1px solid var(--border-subtle)'
+                  }}
+                >
+                  {msg.content}
+                </div>
+              ))}
+
+              {sandboxTyping && (
+                <div style={{
+                  alignSelf: 'flex-start',
+                  padding: '7px 11px',
+                  borderRadius: '10px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  fontSize: '11.5px',
+                  color: 'var(--text-muted)'
+                }}>
+                  Thinking...
+                </div>
+              )}
+            </div>
+
+            {/* Chat Footer */}
+            <form
+              onSubmit={handleSandboxSend}
+              style={{
+                padding: '10px 12px',
+                borderTop: '1px solid var(--border-subtle)',
+                background: themeMode === 'dark' ? '#0f172a' : '#ffffff',
+                display: 'flex',
+                gap: '6px'
+              }}
             >
-              <Send size={15} />
-            </button>
-          </form>
+              <input
+                type="text"
+                placeholder={placeholderText}
+                value={sandboxInput}
+                onChange={(e) => setSandboxInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '8px',
+                  padding: '7px 11px',
+                  fontSize: '12.5px',
+                  background: themeMode === 'dark' ? '#131d31' : '#f1f5f9',
+                  color: themeMode === 'dark' ? '#ffffff' : '#0f172a',
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  background: primaryColor,
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <Send size={14} />
+              </button>
+            </form>
+          </div>
+
+          {/* Launcher Preview */}
+          <div style={{ marginTop: '10px', display: 'flex', justifyContent: launcherPosition === 'bottom-left' ? 'flex-start' : 'flex-end', alignItems: 'center', gap: '8px' }}>
+            {showTeaser && teaserText && (
+              <div style={{
+                background: 'var(--bg-surface)',
+                color: 'var(--text-primary)',
+                padding: '6px 11px',
+                borderRadius: '10px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                fontSize: '12px',
+                fontWeight: 600,
+                border: '1px solid var(--border-subtle)'
+              }}>
+                {teaserText}
+              </div>
+            )}
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '50%',
+              backgroundColor: primaryColor,
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
+            }}>
+              {launcherIcon === 'avatar' && avatarUrl ? (
+                <img src={avatarUrl} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="Launcher" />
+              ) : launcherIcon === 'sparkles' ? (
+                <Sparkles size={20} />
+              ) : launcherIcon === 'headset' ? (
+                <Headphones size={20} />
+              ) : launcherIcon === 'bot' ? (
+                <Bot size={20} />
+              ) : (
+                <MessageSquare size={20} />
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {isEmbedModalOpen && (
-        <EmbedSnippetModal
-          bot={bot}
-          onClose={() => setIsEmbedModalOpen(false)}
-        />
-      )}
     </div>
   );
 }

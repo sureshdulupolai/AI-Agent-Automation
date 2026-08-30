@@ -10,9 +10,7 @@ import {
   Globe, 
   Copy, 
   Check, 
-  Sliders, 
   Zap,
-  Sparkles,
   Key,
   ShieldCheck
 } from 'lucide-react';
@@ -20,8 +18,8 @@ import confetti from 'canvas-confetti';
 
 export default function WhatsAppPage({ bots = [], initialBotId = null }) {
   const [selectedBotId, setSelectedBotId] = useState(initialBotId || (bots[0]?.id || ''));
-  const [activeTab, setActiveTab] = useState('qr'); // 'qr' or 'meta'
-  const [connectMethod, setConnectMethod] = useState('pairing-code'); // 'pairing-code' or 'qr-scan'
+  const [activeTab, setActiveTab] = useState('qr');
+  const [connectMethod, setConnectMethod] = useState('pairing-code');
   
   const [statusData, setStatusData] = useState(null);
   const [qrCodeData, setQrCodeData] = useState(null);
@@ -56,7 +54,6 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
     }
   };
 
-  // Poll status every 3 seconds while in pairing state
   useEffect(() => {
     if (selectedBotId) {
       fetchStatus();
@@ -65,25 +62,40 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
     }
   }, [selectedBotId]);
 
-  // Request 8-Digit Pairing Code
+  const handleGenerateQR = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/whatsapp/${selectedBotId}/qr`);
+      const data = await res.json();
+      if (data.qrCode) {
+        setQrCodeData(data.qrCode);
+      }
+    } catch (err) {
+      alert('Error initiating QR scanner: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRequestPairingCode = async () => {
-    if (!selectedBotId || !inputPhoneNumber.trim()) {
-      alert('Please enter your WhatsApp Phone Number (e.g. 919876543210)');
+    if (!inputPhoneNumber.trim()) {
+      alert('Please enter your WhatsApp mobile number.');
       return;
     }
+    setLoading(true);
+    setPairingCodeData(null);
+
     try {
-      setLoading(true);
       const res = await fetch(`/api/whatsapp/${selectedBotId}/pairing-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phoneNumber: inputPhoneNumber.trim() })
       });
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to request pairing code');
+      if (!res.ok) throw new Error(data.error || 'Failed to generate code');
 
       setPairingCodeData(data.pairingCode);
-      setQrCodeData(null);
-      fetchStatus();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -91,61 +103,48 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
     }
   };
 
-  // Generate QR Code
-  const handleGenerateQR = async () => {
-    if (!selectedBotId) return;
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/whatsapp/${selectedBotId}/qr`);
-      const data = await res.json();
-      setQrCodeData(data.qrCode);
-      setPairingCodeData(null);
-      fetchStatus();
-    } catch (err) {
-      alert('Failed to generate WhatsApp QR');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSimulateScan = async () => {
-    if (!selectedBotId) return;
-    try {
-      const res = await fetch(`/api/whatsapp/${selectedBotId}/pair`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: inputPhoneNumber || '+91 98765 43210' })
-      });
-      if (res.ok) {
-        confetti({ particleCount: 50, spread: 70 });
-        setQrCodeData(null);
-        setPairingCodeData(null);
-        fetchStatus();
-      }
-    } catch (err) {
-      alert('Failed to connect WhatsApp');
-    }
-  };
-
   const handleDisconnect = async () => {
-    if (!selectedBotId) return;
+    if (!window.confirm('Disconnect WhatsApp number from this bot?')) return;
     try {
       await fetch(`/api/whatsapp/${selectedBotId}/disconnect`, { method: 'POST' });
+      setStatusData({ status: 'disconnected', phoneNumber: null });
       setQrCodeData(null);
       setPairingCodeData(null);
-      fetchStatus();
     } catch (err) {
       alert('Failed to disconnect');
     }
   };
 
-  const handleRunSimulator = async () => {
-    if (!selectedBotId || !simMessage.trim()) return;
-    setSimulating(true);
+  const handleSimulateScan = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/whatsapp/${selectedBotId}/pair-confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: inputPhoneNumber || '+91 98206 46838' })
+      });
+      const data = await res.json();
+      setStatusData({
+        status: 'connected',
+        phoneNumber: data.bot?.whatsapp_number || '+91 98206 46838'
+      });
+      setQrCodeData(null);
+      setPairingCodeData(null);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+    } catch (err) {
+      alert('Pairing simulation failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleSendSimulation = async (e) => {
+    e.preventDefault();
+    if (!simMessage.trim() || simulating) return;
+
+    setSimulating(true);
     const userEntry = {
       sender: 'user',
-      phone: simSenderPhone,
       message: simMessage.trim(),
       time: new Date().toLocaleTimeString()
     };
@@ -188,33 +187,33 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
   const verifyToken = 'omnibot_verify_token_2026';
 
   return (
-    <div style={{ padding: '32px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '28px', maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '28px',
+        marginBottom: '24px',
         flexWrap: 'wrap',
-        gap: '16px'
+        gap: '14px'
       }}>
         <div>
-          <h1 style={{ fontSize: '26px', color: '#ffffff', marginBottom: '6px' }}>
-            WhatsApp Automation Center
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px' }}>
+            WhatsApp Automation Hub
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-            Connect your personal or business WhatsApp number directly to Google Gemini AI.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+            Connect your WhatsApp phone number to automate AI responses and capture leads.
           </p>
         </div>
 
-        {/* Bot selector dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Active Bot:</span>
+        {/* Bot selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Active Bot:</span>
           <select
             className="form-select"
             value={selectedBotId}
             onChange={(e) => setSelectedBotId(e.target.value)}
-            style={{ padding: '8px 14px', minWidth: '220px' }}
+            style={{ padding: '7px 12px', minWidth: '200px', fontSize: '13px' }}
           >
             {bots.map((b) => (
               <option key={b.id} value={b.id}>
@@ -228,11 +227,12 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
       {/* Main Tabs */}
       <div style={{
         display: 'flex',
-        gap: '8px',
-        background: '#090d16',
-        padding: '4px',
-        borderRadius: '12px',
-        marginBottom: '24px',
+        gap: '6px',
+        background: 'var(--bg-subtle)',
+        border: '1px solid var(--border-subtle)',
+        padding: '3px',
+        borderRadius: '8px',
+        marginBottom: '20px',
         width: 'fit-content'
       }}>
         <button
@@ -240,20 +240,20 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
+            gap: '6px',
+            padding: '7px 14px',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '6px',
             background: activeTab === 'qr' ? 'var(--primary)' : 'transparent',
-            color: activeTab === 'qr' ? '#ffffff' : 'var(--text-muted)',
+            color: activeTab === 'qr' ? '#ffffff' : 'var(--text-secondary)',
             fontWeight: 600,
-            fontSize: '13.5px',
+            fontSize: '12.5px',
             cursor: 'pointer',
-            transition: 'all 0.2s'
+            transition: 'all 0.15s'
           }}
         >
-          <Zap size={16} />
-          <span>Direct WhatsApp Web Engine (100% Free)</span>
+          <Zap size={14} />
+          <span>Direct WhatsApp Web</span>
         </button>
 
         <button
@@ -261,20 +261,20 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
+            gap: '6px',
+            padding: '7px 14px',
             border: 'none',
-            borderRadius: '10px',
+            borderRadius: '6px',
             background: activeTab === 'meta' ? 'var(--primary)' : 'transparent',
-            color: activeTab === 'meta' ? '#ffffff' : 'var(--text-muted)',
+            color: activeTab === 'meta' ? '#ffffff' : 'var(--text-secondary)',
             fontWeight: 600,
-            fontSize: '13.5px',
+            fontSize: '12.5px',
             cursor: 'pointer',
-            transition: 'all 0.2s'
+            transition: 'all 0.15s'
           }}
         >
-          <Globe size={16} />
-          <span>Meta WhatsApp Cloud API</span>
+          <Globe size={14} />
+          <span>Meta Cloud API</span>
         </button>
       </div>
 
@@ -282,68 +282,68 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
       {activeTab === 'qr' && (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.2fr) minmax(380px, 0.8fr)',
-          gap: '24px'
+          gridTemplateColumns: 'minmax(0, 1.2fr) minmax(360px, 0.8fr)',
+          gap: '20px'
         }}>
-          {/* Pairing & Connection Panel */}
-          <div className="glass-panel" style={{ padding: '28px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Smartphone size={22} color="#25d366" />
-                <h3 style={{ fontSize: '18px', color: '#ffffff' }}>Connect WhatsApp Account</h3>
+          {/* Connection Panel */}
+          <div className="glass-panel" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Smartphone size={18} color="#059669" />
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>Account Connection</h3>
               </div>
 
-              <span className={`badge ${isConnected ? 'badge-green' : 'badge-amber'}`}>
-                {isConnected ? '🟢 Live & Connected' : '🟡 Disconnected'}
+              <span className={`badge ${isConnected ? 'badge-green' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
+                {isConnected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
 
             {isConnected ? (
               <div style={{
-                background: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                padding: '28px',
-                borderRadius: '16px',
+                background: 'rgba(16, 185, 129, 0.06)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                padding: '24px',
+                borderRadius: '12px',
                 textAlign: 'center',
-                marginBottom: '20px'
+                marginBottom: '16px'
               }}>
-                <CheckCircle2 size={52} color="#34d399" style={{ margin: '0 auto 14px' }} />
-                <h4 style={{ fontSize: '20px', color: '#ffffff', marginBottom: '6px' }}>
-                  WhatsApp Linked & Active!
+                <CheckCircle2 size={44} color="#059669" style={{ margin: '0 auto 10px' }} />
+                <h4 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  WhatsApp Connected
                 </h4>
-                <p style={{ fontSize: '15px', color: '#34d399', fontWeight: 700, marginBottom: '6px' }}>
-                  Active Number: {statusData?.phoneNumber || '+91 98765 43210'}
+                <p style={{ fontSize: '14px', color: '#059669', fontWeight: 700, marginBottom: '6px' }}>
+                  {statusData?.phoneNumber || '+91 98206 46838'}
                 </p>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px', margin: '0 auto 20px auto' }}>
-                  Every message sent by your customers to this number will receive instant AI responses powered by Gemini Flash and logged into Leads CRM.
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', maxWidth: '380px', margin: '0 auto 16px auto' }}>
+                  Incoming customer messages will automatically receive AI responses powered by Gemini Flash.
                 </p>
 
-                <button onClick={handleDisconnect} className="btn-danger">
-                  Disconnect WhatsApp Number
+                <button onClick={handleDisconnect} className="btn-danger" style={{ fontSize: '12.5px', padding: '6px 14px' }}>
+                  Disconnect Number
                 </button>
               </div>
             ) : (
               <div>
-                {/* Method selector: 8-Digit Code vs QR Camera */}
+                {/* Method selector */}
                 <div style={{
                   display: 'flex',
-                  gap: '8px',
-                  background: '#070a12',
-                  padding: '4px',
-                  borderRadius: '10px',
-                  marginBottom: '20px'
+                  gap: '6px',
+                  background: 'var(--bg-subtle)',
+                  padding: '3px',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
                 }}>
                   <button
                     onClick={() => setConnectMethod('pairing-code')}
                     style={{
                       flex: 1,
-                      padding: '8px 12px',
+                      padding: '7px 10px',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       background: connectMethod === 'pairing-code' ? 'var(--primary)' : 'transparent',
-                      color: connectMethod === 'pairing-code' ? '#ffffff' : 'var(--text-muted)',
+                      color: connectMethod === 'pairing-code' ? '#ffffff' : 'var(--text-secondary)',
                       fontWeight: 600,
-                      fontSize: '13px',
+                      fontSize: '12.5px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -351,21 +351,21 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
                       gap: '6px'
                     }}
                   >
-                    <Key size={14} />
-                    <span>8-Digit Pairing Code (Recommended - Fast)</span>
+                    <Key size={13} />
+                    <span>Pairing Code</span>
                   </button>
 
                   <button
                     onClick={() => setConnectMethod('qr-scan')}
                     style={{
                       flex: 1,
-                      padding: '8px 12px',
+                      padding: '7px 10px',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       background: connectMethod === 'qr-scan' ? 'var(--primary)' : 'transparent',
-                      color: connectMethod === 'qr-scan' ? '#ffffff' : 'var(--text-muted)',
+                      color: connectMethod === 'qr-scan' ? '#ffffff' : 'var(--text-secondary)',
                       fontWeight: 600,
-                      fontSize: '13px',
+                      fontSize: '12.5px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -373,38 +373,24 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
                       gap: '6px'
                     }}
                   >
-                    <QrCode size={14} />
-                    <span>QR Camera Scan</span>
+                    <QrCode size={13} />
+                    <span>QR Camera</span>
                   </button>
                 </div>
 
-                {/* METHOD 1: 8-DIGIT PAIRING CODE */}
+                {/* Pairing Code */}
                 {connectMethod === 'pairing-code' && (
                   <div className="animate-fade-in">
-                    <div style={{
-                      background: 'rgba(99, 102, 241, 0.08)',
-                      border: '1px solid rgba(99, 102, 241, 0.25)',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      marginBottom: '20px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <Sparkles size={16} color="#818cf8" />
-                        <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#ffffff' }}>
-                          No Camera Scan Required!
-                        </span>
-                      </div>
-                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                        Enter your WhatsApp phone number below. OmniBot will give you an 8-character code. On your phone, tap <strong>"Link with phone number instead"</strong> and enter this code!
-                      </p>
-                    </div>
+                    <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                      Enter your phone number to receive an 8-character pairing code.
+                    </p>
 
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                       <input
                         type="text"
                         className="form-input"
-                        style={{ flex: 1, fontSize: '14px', padding: '10px 14px' }}
-                        placeholder="Enter phone with country code (e.g. 919876543210)"
+                        style={{ flex: 1, fontSize: '13px', padding: '8px 12px' }}
+                        placeholder="e.g. 919876543210"
                         value={inputPhoneNumber}
                         onChange={(e) => setInputPhoneNumber(e.target.value)}
                       />
@@ -412,107 +398,87 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
                         onClick={handleRequestPairingCode}
                         disabled={loading || !inputPhoneNumber.trim()}
                         className="btn-primary"
-                        style={{ padding: '10px 18px', whiteSpace: 'nowrap' }}
+                        style={{ padding: '8px 14px', whiteSpace: 'nowrap', fontSize: '12.5px' }}
                       >
-                        <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-                        <span>{loading ? 'Generating Code...' : 'Get 8-Digit Code'}</span>
+                        <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                        <span>{loading ? 'Generating...' : 'Get Code'}</span>
                       </button>
                     </div>
 
-                    {/* Display Generated Pairing Code */}
+                    {/* Display Code */}
                     {pairingCodeData && (
                       <div className="animate-fade-in" style={{
-                        background: '#070a12',
-                        border: '2px solid #6366f1',
-                        borderRadius: '16px',
-                        padding: '24px',
+                        background: 'var(--bg-subtle)',
+                        border: '1.5px solid var(--primary)',
+                        borderRadius: '12px',
+                        padding: '18px',
                         textAlign: 'center',
-                        marginBottom: '20px'
+                        marginBottom: '16px'
                       }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                          Your WhatsApp Pairing Code
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          Pairing Code
                         </span>
 
                         <div style={{
-                          fontSize: '36px',
+                          fontSize: '30px',
                           fontWeight: 800,
                           fontFamily: 'var(--font-mono)',
-                          color: '#38bdf8',
-                          letterSpacing: '0.15em',
-                          margin: '12px 0'
+                          color: 'var(--primary)',
+                          letterSpacing: '0.12em',
+                          margin: '8px 0'
                         }}>
                           {pairingCodeData}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(pairingCodeData.replace('-', ''));
-                              setCopiedCode(true);
-                              setTimeout(() => setCopiedCode(false), 2000);
-                            }}
-                            className="btn-secondary"
-                            style={{ padding: '6px 14px', fontSize: '12px' }}
-                          >
-                            {copiedCode ? <Check size={14} color="#34d399" /> : <Copy size={14} />}
-                            <span>{copiedCode ? 'Copied Code!' : 'Copy Code'}</span>
-                          </button>
-                        </div>
-
-                        <div style={{
-                          marginTop: '16px',
-                          padding: '12px',
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          borderRadius: '8px',
-                          fontSize: '12.5px',
-                          color: 'var(--text-muted)',
-                          lineHeight: 1.5
-                        }}>
-                          📱 <strong>On your phone:</strong> Look at your WhatsApp screen 👉 Click <u>"Link with phone number instead"</u> at the bottom 👉 Type <strong>{pairingCodeData}</strong>.
-                        </div>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(pairingCodeData.replace('-', ''));
+                            setCopiedCode(true);
+                            setTimeout(() => setCopiedCode(false), 2000);
+                          }}
+                          className="btn-secondary"
+                          style={{ padding: '4px 10px', fontSize: '11.5px' }}
+                        >
+                          {copiedCode ? <Check size={12} color="#059669" /> : <Copy size={12} />}
+                          <span>{copiedCode ? 'Copied' : 'Copy'}</span>
+                        </button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* METHOD 2: QR CAMERA SCAN */}
+                {/* QR Scanner */}
                 {connectMethod === 'qr-scan' && (
                   <div className="animate-fade-in">
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                      Scan the fresh QR code below using your WhatsApp camera (WhatsApp 👉 Linked Devices 👉 Link a Device).
-                    </p>
-
                     <div style={{
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      padding: '24px',
-                      background: '#070a12',
-                      borderRadius: '16px',
-                      border: '1px solid var(--border-color)',
-                      marginBottom: '20px'
+                      padding: '18px',
+                      background: 'var(--bg-subtle)',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-subtle)',
+                      marginBottom: '16px'
                     }}>
                       {qrCodeData ? (
                         <div>
                           <img
                             src={qrCodeData}
                             alt="WhatsApp QR Code"
-                            style={{ width: '220px', height: '220px', borderRadius: '12px', background: '#ffffff', padding: '8px' }}
+                            style={{ width: '180px', height: '180px', borderRadius: '8px', background: '#ffffff', padding: '6px' }}
                           />
-                          <p style={{ fontSize: '12px', color: '#34d399', marginTop: '10px', textAlign: 'center', fontWeight: 600 }}>
-                            ● Fresh QR Active (Auto-syncing with phone...)
-                          </p>
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'center', padding: '30px 20px' }}>
-                          <QrCode size={64} color="#6366f1" style={{ margin: '0 auto 16px', opacity: 0.8 }} />
+                        <div style={{ textAlign: 'center', padding: '20px 10px' }}>
+                          <QrCode size={48} color="var(--primary)" style={{ margin: '0 auto 12px', opacity: 0.7 }} />
                           <button
                             onClick={handleGenerateQR}
                             disabled={loading}
                             className="btn-primary"
+                            style={{ fontSize: '12.5px', padding: '7px 14px' }}
                           >
-                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                            <span>{loading ? 'Generating...' : 'Generate Instant QR Code'}</span>
+                            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                            <span>{loading ? 'Generating...' : 'Generate QR Code'}</span>
                           </button>
                         </div>
                       )}
@@ -522,55 +488,51 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
 
                 {/* Quick Simulation Mode */}
                 <div style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  padding: '14px 18px',
-                  borderRadius: '12px',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
                   <div>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', display: 'block' }}>
-                      Testing Mode (Simulate WhatsApp Connection)
+                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>
+                      Simulation Mode
                     </span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      Simulate a live phone pair to test the AI replies right now
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      Simulate a live phone pair to test responses
                     </span>
                   </div>
-                  <button onClick={handleSimulateScan} className="btn-secondary" style={{ fontSize: '12px' }}>
-                    <Sparkles size={14} color="#818cf8" />
-                    <span>Quick Pair Test</span>
+                  <button onClick={handleSimulateScan} className="btn-secondary" style={{ fontSize: '11.5px', padding: '5px 10px' }}>
+                    <span>Pair Test</span>
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* WhatsApp Interactive Live Simulator */}
+          {/* Simulator */}
           <div className="glass-panel" style={{
-            padding: '24px',
-            backgroundColor: '#0b131f',
-            borderColor: 'rgba(37, 211, 102, 0.3)',
+            padding: '20px',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column',
-            height: '620px'
+            height: '560px'
           }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              paddingBottom: '12px',
-              borderBottom: '1px solid var(--border-color)',
-              marginBottom: '14px'
+              paddingBottom: '10px',
+              borderBottom: '1px solid var(--border-subtle)',
+              marginBottom: '12px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Smartphone size={18} color="#25d366" />
-                <span style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>
-                  WhatsApp Live Chat Tester
-                </span>
-              </div>
-              <span className="badge badge-green" style={{ fontSize: '10.5px' }}>Live Gemini Brain</span>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                WhatsApp Chat Tester
+              </span>
+              <span className="badge badge-green" style={{ fontSize: '10.5px' }}>Live Brain</span>
             </div>
 
             {/* Conversation Log */}
@@ -579,15 +541,14 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px',
-              paddingRight: '6px',
-              marginBottom: '14px'
+              gap: '10px',
+              marginBottom: '12px'
             }}>
               {simLogs.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-dark)' }}>
-                  <MessageSquare size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                  <p style={{ fontSize: '13px' }}>
-                    Send a test customer message from below to see Gemini AI reply and auto-create a lead in your CRM!
+                <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                  <MessageSquare size={28} style={{ margin: '0 auto 8px', opacity: 0.3 }} />
+                  <p style={{ fontSize: '12px' }}>
+                    Send a test customer message to verify auto-reply.
                   </p>
                 </div>
               ) : (
@@ -599,105 +560,102 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
                       style={{
                         alignSelf: isUser ? 'flex-end' : 'flex-start',
                         maxWidth: '85%',
-                        backgroundColor: isUser ? '#075e54' : '#1f2c34',
-                        color: '#ffffff',
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        lineHeight: 1.45,
-                        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)',
-                        whiteSpace: 'pre-wrap'
+                        padding: '8px 12px',
+                        borderRadius: '10px',
+                        background: isUser ? '#059669' : 'var(--bg-subtle)',
+                        color: isUser ? '#ffffff' : 'var(--text-primary)',
+                        border: isUser ? 'none' : '1px solid var(--border-subtle)',
+                        fontSize: '12.5px',
+                        lineHeight: 1.4
                       }}
                     >
-                      {isUser && (
-                        <div style={{ fontSize: '10.5px', color: '#8696a0', marginBottom: '2px' }}>
-                          From: {item.phone}
-                        </div>
-                      )}
-                      {item.message}
+                      <p>{item.message}</p>
                     </div>
                   );
                 })
               )}
             </div>
 
-            {/* Simulator Controls */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ width: '140px', fontSize: '12px', padding: '6px 10px' }}
-                  placeholder="Sender Phone"
-                  value={simSenderPhone}
-                  onChange={(e) => setSimSenderPhone(e.target.value)}
-                />
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ flex: 1, fontSize: '12px', padding: '6px 10px' }}
-                  placeholder="Customer WhatsApp message..."
-                  value={simMessage}
-                  onChange={(e) => setSimMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleRunSimulator()}
-                />
-                <button
-                  onClick={handleRunSimulator}
-                  disabled={simulating || !simMessage.trim()}
-                  className="btn-primary"
-                  style={{ padding: '6px 14px', background: '#25d366' }}
-                >
-                  <Send size={14} />
-                </button>
-              </div>
-            </div>
+            {/* Input */}
+            <form onSubmit={handleSendSimulation} style={{ display: 'flex', gap: '6px' }}>
+              <input
+                type="text"
+                placeholder="Type test message..."
+                value={simMessage}
+                onChange={(e) => setSimMessage(e.target.value)}
+                className="form-input"
+                style={{ flex: 1, fontSize: '12.5px', padding: '7px 10px' }}
+              />
+              <button
+                type="submit"
+                disabled={simulating || !simMessage.trim()}
+                className="btn-primary"
+                style={{ background: '#059669', borderColor: '#059669', padding: '7px 12px' }}
+              >
+                <Send size={13} />
+              </button>
+            </form>
           </div>
         </div>
       )}
 
       {/* TAB 2: META CLOUD API */}
       {activeTab === 'meta' && (
-        <div className="glass-panel animate-fade-in" style={{ padding: '28px', maxWidth: '800px' }}>
-          <h3 style={{ fontSize: '18px', color: '#ffffff', marginBottom: '8px' }}>
-            Meta Official WhatsApp Cloud API
+        <div className="glass-panel animate-fade-in" style={{ padding: '24px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
+            Meta WhatsApp Cloud API Configuration
           </h3>
-          <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '24px' }}>
-            Official WhatsApp Business Cloud API webhook.
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+            Configure official Meta Webhook callback and token.
           </p>
 
-          <div className="form-group">
-            <label className="form-label">Webhook Callback URL</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="text" className="form-input" value={webhookUrl} readOnly />
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(webhookUrl);
-                  setCopiedWebhook(true);
-                  setTimeout(() => setCopiedWebhook(false), 2000);
-                }}
-                className="btn-secondary"
-              >
-                {copiedWebhook ? <Check size={16} color="#34d399" /> : <Copy size={16} />}
-              </button>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label className="form-label">Callback URL</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={webhookUrl}
+                  className="form-input"
+                  style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '12px', paddingRight: '60px' }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(webhookUrl);
+                    setCopiedWebhook(true);
+                    setTimeout(() => setCopiedWebhook(false), 2000);
+                  }}
+                  className="btn-secondary"
+                  style={{ position: 'absolute', right: '4px', top: '4px', padding: '4px 8px', fontSize: '11px' }}
+                >
+                  {copiedWebhook ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">Verify Token</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="text" className="form-input" value={verifyToken} readOnly />
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(verifyToken);
-                  setCopiedToken(true);
-                  setTimeout(() => setCopiedToken(false), 2000);
-                }}
-                className="btn-secondary"
-              >
-                {copiedToken ? <Check size={16} color="#34d399" /> : <Copy size={16} />}
-              </button>
+            <div>
+              <label className="form-label">Verify Token</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={verifyToken}
+                  className="form-input"
+                  style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '12px', paddingRight: '60px' }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(verifyToken);
+                    setCopiedToken(true);
+                    setTimeout(() => setCopiedToken(false), 2000);
+                  }}
+                  className="btn-secondary"
+                  style={{ position: 'absolute', right: '4px', top: '4px', padding: '4px 8px', fontSize: '11px' }}
+                >
+                  {copiedToken ? 'Copied' : 'Copy'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

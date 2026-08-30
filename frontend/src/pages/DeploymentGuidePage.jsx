@@ -68,14 +68,14 @@ JWT_SECRET=super_secure_production_secret`
     <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', borderRadius: '9999px', fontSize: '12px', fontWeight: 600, marginBottom: '12px' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: 'rgba(16, 185, 129, 0.12)', color: '#059669', borderRadius: '9999px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
           <DollarSign size={14} />
           <span>Verified ₹0 Free Infrastructure Stack</span>
         </div>
-        <h1 style={{ fontSize: '28px', color: '#ffffff', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
           Zero-Cost Production Deployment Guide
         </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
           Follow this 4-step blueprint to take your OmniBot SaaS platform from local development to worldwide deployment at zero cost.
         </p>
       </div>
@@ -86,13 +86,13 @@ JWT_SECRET=super_secure_production_secret`
           const Icon = step.icon;
           return (
             <div key={idx} className="glass-panel" style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                   <div style={{
                     width: '42px',
                     height: '42px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+                    background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -100,7 +100,7 @@ JWT_SECRET=super_secure_production_secret`
                     <Icon size={20} color="#ffffff" />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '17px', color: '#ffffff' }}>{step.title}</h3>
+                    <h3 style={{ fontSize: '16.5px', fontWeight: 700, color: 'var(--text-primary)' }}>{step.title}</h3>
                     <span className="badge badge-green" style={{ fontSize: '11px', marginTop: '2px' }}>
                       {step.badge}
                     </span>
@@ -119,21 +119,22 @@ JWT_SECRET=super_secure_production_secret`
                 </a>
               </div>
 
-              <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
                 {step.desc}
               </p>
 
               {step.code && (
                 <div style={{ position: 'relative' }}>
                   <pre style={{
-                    background: '#070a12',
-                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
                     padding: '12px 16px',
                     borderRadius: '10px',
                     fontSize: '12.5px',
                     fontFamily: 'var(--font-mono)',
-                    color: '#38bdf8',
-                    overflowX: 'auto'
+                    color: 'var(--primary)',
+                    overflowX: 'auto',
+                    lineHeight: 1.5
                   }}>
                     {step.code}
                   </pre>
@@ -148,7 +149,7 @@ JWT_SECRET=super_secure_production_secret`
                       fontSize: '11px'
                     }}
                   >
-                    {copiedKey === `step-${idx}` ? <Check size={13} color="#34d399" /> : <Copy size={13} />}
+                    {copiedKey === `step-${idx}` ? <Check size={13} color="#059669" /> : <Copy size={13} />}
                     <span>{copiedKey === `step-${idx}` ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>

@@ -3,17 +3,31 @@ import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
 import DashboardPage from './pages/DashboardPage';
 import BotDetailsPage from './pages/BotDetailsPage';
+import InboxPage from './pages/InboxPage';
 import WhatsAppPage from './pages/WhatsAppPage';
 import LeadsPage from './pages/LeadsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import DemoSitePage from './pages/DemoSitePage';
 import DeploymentGuidePage from './pages/DeploymentGuidePage';
+import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedBotId, setSelectedBotId] = useState(null);
   const [bots, setBots] = useState([]);
+  const [theme, setTheme] = useState(() => localStorage.getItem('omnibot_theme') || 'light');
+  const [embedModalBot, setEmbedModalBot] = useState(null);
+
+  // Sync theme with DOM
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('omnibot_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   // Fetch all bots for global state
   const loadBots = async () => {
@@ -45,13 +59,19 @@ export default function App() {
     setCurrentPage('whatsapp');
   };
 
+  const handleOpenEmbed = (bot) => {
+    setEmbedModalBot(bot);
+  };
+
   return (
     <AuthProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-main)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
         {/* Navbar */}
         <Navbar 
           onNavigate={(page) => setCurrentPage(page)} 
           currentPage={currentPage}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
 
         {/* Body layout */}
@@ -70,6 +90,7 @@ export default function App() {
               <DashboardPage
                 onSelectBot={handleSelectBotStudio}
                 onOpenWhatsApp={handleOpenWhatsApp}
+                onOpenEmbed={handleOpenEmbed}
               />
             )}
 
@@ -78,7 +99,12 @@ export default function App() {
                 botId={selectedBotId || bots[0]?.id}
                 onBack={() => setCurrentPage('dashboard')}
                 onOpenWhatsApp={handleOpenWhatsApp}
+                onOpenEmbed={handleOpenEmbed}
               />
+            )}
+
+            {currentPage === 'inbox' && (
+              <InboxPage />
             )}
 
             {currentPage === 'whatsapp' && (
@@ -111,6 +137,14 @@ export default function App() {
             )}
           </main>
         </div>
+
+        {/* 1-Click Embed Snippet Modal */}
+        {embedModalBot && (
+          <EmbedSnippetModal
+            bot={embedModalBot}
+            onClose={() => setEmbedModalBot(null)}
+          />
+        )}
       </div>
     </AuthProvider>
   );

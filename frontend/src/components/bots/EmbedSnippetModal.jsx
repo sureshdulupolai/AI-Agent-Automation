@@ -83,8 +83,8 @@ export default function RootLayout({ children }) {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(9, 13, 22, 0.85)',
-      backdropFilter: 'blur(10px)',
+      backgroundColor: 'rgba(15, 23, 42, 0.65)',
+      backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -94,10 +94,11 @@ export default function RootLayout({ children }) {
       <div className="glass-panel animate-fade-in" style={{
         width: '680px',
         maxWidth: '100%',
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-surface)',
         padding: '28px',
         position: 'relative',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        border: '1px solid var(--border-subtle)'
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -106,7 +107,7 @@ export default function RootLayout({ children }) {
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+              background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -114,8 +115,8 @@ export default function RootLayout({ children }) {
               <Code size={20} color="#ffffff" />
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', color: '#ffffff' }}>1-Click Embed Snippet</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>1-Click Embed Snippet</h3>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
                 Embed <strong>{bot.bot_name}</strong> on any website or CMS in 10 seconds.
               </p>
             </div>
@@ -126,7 +127,7 @@ export default function RootLayout({ children }) {
             className="btn-outline"
             style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px' }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
@@ -134,7 +135,8 @@ export default function RootLayout({ children }) {
         <div style={{
           display: 'flex',
           gap: '8px',
-          background: '#090d16',
+          background: 'var(--bg-subtle)',
+          border: '1px solid var(--border-subtle)',
           padding: '4px',
           borderRadius: '10px',
           marginBottom: '16px'
@@ -154,11 +156,11 @@ export default function RootLayout({ children }) {
                 border: 'none',
                 borderRadius: '8px',
                 background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
-                color: activeTab === tab.id ? '#ffffff' : 'var(--text-muted)',
+                color: activeTab === tab.id ? '#ffffff' : 'var(--text-secondary)',
                 fontWeight: activeTab === tab.id ? 600 : 500,
                 fontSize: '12.5px',
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.15s'
               }}
             >
               {tab.label}
@@ -169,16 +171,15 @@ export default function RootLayout({ children }) {
         {/* Code Snippet Box */}
         <div style={{ position: 'relative', marginBottom: '20px' }}>
           <pre style={{
-            background: '#070a12',
-            border: '1px solid var(--border-color)',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            padding: '18px',
             borderRadius: '12px',
-            padding: '16px 20px',
-            fontSize: '13px',
             fontFamily: 'var(--font-mono)',
-            color: '#38bdf8',
+            fontSize: '13px',
             overflowX: 'auto',
-            maxHeight: '220px',
-            lineHeight: 1.6
+            lineHeight: 1.5
           }}>
             {snippets[activeTab]}
           </pre>
@@ -190,31 +191,25 @@ export default function RootLayout({ children }) {
               position: 'absolute',
               top: '12px',
               right: '12px',
-              padding: '6px 14px',
+              padding: '6px 12px',
               fontSize: '12px'
             }}
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copied ? 'Copied to Clipboard!' : 'Copy Code'}</span>
+            <span>{copied ? 'Copied Code!' : 'Copy'}</span>
           </button>
         </div>
 
-        {/* Instructions footer */}
+        {/* Instructions */}
         <div style={{
-          background: 'rgba(99, 102, 241, 0.08)',
-          border: '1px solid rgba(99, 102, 241, 0.2)',
+          background: 'var(--bg-subtle)',
           padding: '14px',
           borderRadius: '10px',
+          border: '1px solid var(--border-subtle)',
           fontSize: '12.5px',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
+          color: 'var(--text-secondary)'
         }}>
-          <Sparkles size={18} color="#818cf8" style={{ flexShrink: 0 }} />
-          <span>
-            The widget runs completely in an isolated <strong>Shadow DOM</strong> (&lt; 15KB). It will not conflict with Tailwind, Bootstrap, or any CSS on your target website.
-          </span>
+          💡 <strong>Tip:</strong> Paste this code right before the closing <code>&lt;/body&gt;</code> tag of your website. The widget loads asynchronously without affecting site speed.
         </div>
       </div>
     </div>

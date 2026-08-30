@@ -12,6 +12,8 @@ import * as chatController from './controllers/chatController.js';
 import * as leadController from './controllers/leadController.js';
 import * as whatsappController from './controllers/whatsappController.js';
 
+import * as inboxController from './controllers/inboxController.js';
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -89,6 +91,13 @@ app.delete('/api/bots/:botId', authenticateToken, botController.deleteBot);
 app.post('/api/chat/:botId', chatController.handleWidgetChat);
 app.get('/api/chat/:botId/history/:sessionId', chatController.getSessionHistory);
 app.post('/api/chat/:botId/lead', chatController.submitLeadForm);
+
+// ----------------------------------------------------
+// Unified Real-Time Inbox Routes (Website + WhatsApp)
+// ----------------------------------------------------
+app.get('/api/inbox/conversations', authenticateToken, inboxController.listConversations);
+app.get('/api/inbox/conversations/:sessionId', authenticateToken, inboxController.getConversationDetails);
+app.post('/api/inbox/reply', authenticateToken, inboxController.sendAgentReply);
 
 // ----------------------------------------------------
 // Lead Management CRM Routes

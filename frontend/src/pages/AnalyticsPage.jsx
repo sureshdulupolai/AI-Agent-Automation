@@ -45,10 +45,10 @@ export default function AnalyticsPage({ bots = [] }) {
         gap: '16px'
       }}>
         <div>
-          <h1 style={{ fontSize: '26px', color: '#ffffff', marginBottom: '6px' }}>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
             Analytics & AI Intelligence
           </h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
             Track conversation volume, engagement trends, and autonomous lead conversion.
           </p>
         </div>
@@ -73,28 +73,28 @@ export default function AnalyticsPage({ bots = [] }) {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '20px',
+        gap: '18px',
         marginBottom: '28px'
       }}>
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Avg AI Response Latency</span>
-            <Clock size={18} color="#38bdf8" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Avg AI Latency</span>
+            <Clock size={18} color="#0284c7" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#38bdf8' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: '#0284c7' }}>
             340 ms
           </div>
-          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
+          <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>
             Powered by Gemini 2.0 Flash
           </span>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Lead Capture Conversion</span>
-            <TrendingUp size={18} color="#34d399" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Lead Conversion</span>
+            <TrendingUp size={18} color="#059669" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#34d399' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: '#059669' }}>
             24.6%
           </div>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
@@ -104,27 +104,27 @@ export default function AnalyticsPage({ bots = [] }) {
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Deflection / Auto-Resolved</span>
-            <CheckCircle size={18} color="#a855f7" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Autonomous Resolution</span>
+            <CheckCircle size={18} color="#7c3aed" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#c084fc' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: '#7c3aed' }}>
             91.2%
           </div>
           <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            No human intervention needed
+            Handled with zero human intervention
           </span>
         </div>
 
         <div className="glass-panel" style={{ padding: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Cost Per Conversation</span>
-            <Sparkles size={18} color="#f43f5e" />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>Cost Per Conversation</span>
+            <Sparkles size={18} color="#059669" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 800, color: '#ffffff' }}>
+          <div style={{ fontSize: '26px', fontWeight: 800, color: '#059669' }}>
             ₹0.00
           </div>
-          <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 600 }}>
-            100% Free Cloud Tier
+          <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>
+            100% Free Tier Infrastructure
           </span>
         </div>
       </div>
@@ -137,18 +137,18 @@ export default function AnalyticsPage({ bots = [] }) {
       }}>
         {/* Popular Inquiries / Topics */}
         <div className="glass-panel" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '17px', color: '#ffffff', marginBottom: '6px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
             Top Customer Inquiries & Intents
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
             Most frequent questions asked by visitors across Website and WhatsApp channels.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {popularTopics.map((item, idx) => (
               <div key={idx} style={{
-                background: '#090d16',
-                border: '1px solid var(--border-color)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
                 padding: '14px 18px',
                 borderRadius: '12px',
                 display: 'flex',
@@ -156,14 +156,14 @@ export default function AnalyticsPage({ bots = [] }) {
                 alignItems: 'center'
               }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
                     {item.topic}
                   </div>
                   <span className="badge badge-purple" style={{ fontSize: '10.5px' }}>
                     {item.tag}
                   </span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#38bdf8' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>
                   {item.count}
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function AnalyticsPage({ bots = [] }) {
 
         {/* Channel Distribution */}
         <div className="glass-panel" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '17px', color: '#ffffff', marginBottom: '6px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
             Channel Engagement
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
@@ -183,32 +183,32 @@ export default function AnalyticsPage({ bots = [] }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                <span style={{ color: '#38bdf8', fontWeight: 600 }}>Website Embed Widget</span>
-                <span style={{ color: '#ffffff', fontWeight: 700 }}>65%</span>
+                <span style={{ color: '#0284c7', fontWeight: 600 }}>Website Embed Widget</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>65%</span>
               </div>
-              <div style={{ width: '100%', height: '10px', background: '#090d16', borderRadius: '9999px', overflow: 'hidden' }}>
-                <div style={{ width: '65%', height: '100%', background: 'linear-gradient(90deg, #6366f1, #38bdf8)', borderRadius: '9999px' }} />
+              <div style={{ width: '100%', height: '10px', background: 'var(--bg-subtle)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ width: '65%', height: '100%', background: 'linear-gradient(90deg, #4f46e5, #0284c7)', borderRadius: '9999px' }} />
               </div>
             </div>
 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                <span style={{ color: '#34d399', fontWeight: 600 }}>WhatsApp Automation (Baileys + Meta)</span>
-                <span style={{ color: '#ffffff', fontWeight: 700 }}>35%</span>
+                <span style={{ color: '#059669', fontWeight: 600 }}>WhatsApp Automation (Baileys + Meta)</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>35%</span>
               </div>
-              <div style={{ width: '100%', height: '10px', background: '#090d16', borderRadius: '9999px', overflow: 'hidden' }}>
-                <div style={{ width: '35%', height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '9999px' }} />
+              <div style={{ width: '100%', height: '10px', background: 'var(--bg-subtle)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ width: '35%', height: '100%', background: 'linear-gradient(90deg, #059669, #10b981)', borderRadius: '9999px' }} />
               </div>
             </div>
 
             <div style={{
               marginTop: '12px',
-              background: 'rgba(99, 102, 241, 0.08)',
-              border: '1px solid rgba(99, 102, 241, 0.2)',
+              background: 'rgba(79, 70, 229, 0.08)',
+              border: '1px solid rgba(79, 70, 229, 0.2)',
               padding: '14px',
               borderRadius: '12px',
               fontSize: '12.5px',
-              color: 'var(--text-muted)'
+              color: 'var(--text-secondary)'
             }}>
               💡 <strong>Insight:</strong> WhatsApp leads convert <strong>3.2x faster</strong> than website visitors because of instant notification delivery to personal devices.
             </div>

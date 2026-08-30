@@ -28,10 +28,11 @@ export default function DemoSitePage({ bots = [] }) {
   }, [selectedBotId]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#020617', color: '#f8fafc', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
       {/* SaaS Simulation Banner */}
       <div style={{
         background: 'linear-gradient(90deg, #4f46e5, #0891b2)',
+        color: '#ffffff',
         padding: '10px 24px',
         display: 'flex',
         justifyContent: 'space-between',
@@ -50,12 +51,13 @@ export default function DemoSitePage({ bots = [] }) {
             value={selectedBotId}
             onChange={(e) => setSelectedBotId(e.target.value)}
             style={{
-              background: '#090d16',
-              color: '#ffffff',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
+              background: '#ffffff',
+              color: '#0f172a',
+              border: '1px solid rgba(255, 255, 255, 0.5)',
               borderRadius: '6px',
               padding: '4px 8px',
-              fontSize: '12px'
+              fontSize: '12px',
+              fontWeight: 600
             }}
           >
             {bots.map(b => (
@@ -71,17 +73,18 @@ export default function DemoSitePage({ bots = [] }) {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        borderBottom: '1px solid #1e293b'
+        borderBottom: '1px solid #e2e8f0',
+        backgroundColor: '#ffffff'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={18} color="#020617" />
+          <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Zap size={18} color="#ffffff" />
           </div>
-          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em' }}>Apex Digital Studio</span>
+          <span style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>Apex Digital Studio</span>
         </div>
 
-        <nav style={{ display: 'flex', gap: '28px', fontSize: '14px', color: '#94a3b8', fontWeight: 500 }}>
-          <span style={{ color: '#ffffff', cursor: 'pointer' }}>Services</span>
+        <nav style={{ display: 'flex', gap: '28px', fontSize: '14px', color: '#475569', fontWeight: 500 }}>
+          <span style={{ color: '#4f46e5', fontWeight: 600, cursor: 'pointer' }}>Services</span>
           <span style={{ cursor: 'pointer' }}>Case Studies</span>
           <span style={{ cursor: 'pointer' }}>Pricing</span>
           <span style={{ cursor: 'pointer' }}>About Us</span>
@@ -104,27 +107,29 @@ export default function DemoSitePage({ bots = [] }) {
           alignItems: 'center',
           gap: '8px',
           padding: '6px 14px',
-          background: 'rgba(56, 189, 248, 0.1)',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
+          background: 'rgba(79, 70, 229, 0.08)',
+          border: '1px solid rgba(79, 70, 229, 0.25)',
           borderRadius: '9999px',
           fontSize: '13px',
-          color: '#38bdf8',
-          marginBottom: '24px'
+          color: '#4f46e5',
+          marginBottom: '24px',
+          fontWeight: 600
         }}>
-          <Star size={14} fill="#38bdf8" />
+          <Star size={14} fill="#4f46e5" />
           <span>Award-Winning Web & AI SaaS Development Agency</span>
         </div>
 
         <h1 style={{
-          fontSize: '52px',
+          fontSize: '50px',
           fontWeight: 800,
           lineHeight: 1.15,
           marginBottom: '20px',
-          letterSpacing: '-0.03em'
+          letterSpacing: '-0.03em',
+          color: '#0f172a'
         }}>
           We Engineer High-Performance <br />
           <span style={{
-            background: 'linear-gradient(135deg, #38bdf8, #818cf8, #c084fc)',
+            background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
@@ -133,8 +138,8 @@ export default function DemoSitePage({ bots = [] }) {
         </h1>
 
         <p style={{
-          fontSize: '18px',
-          color: '#94a3b8',
+          fontSize: '17px',
+          color: '#475569',
           maxWidth: '680px',
           margin: '0 auto 36px auto',
           lineHeight: 1.6
@@ -156,56 +161,31 @@ export default function DemoSitePage({ bots = [] }) {
       {/* Services Grid */}
       <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px 100px 24px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '32px', borderRadius: '18px' }}>
-            <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#ffffff' }}>Custom Web & SaaS Apps</h3>
-            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '32px', borderRadius: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '19px', fontWeight: 700, marginBottom: '10px', color: '#0f172a' }}>Custom Web & SaaS Apps</h3>
+            <p style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
               Tailored React, Next.js, and Node.js solutions built for performance, security, and global scale.
             </p>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>From $2,500</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#4f46e5' }}>From ₹25,000</span>
           </div>
 
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '32px', borderRadius: '18px' }}>
-            <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#ffffff' }}>AI Chatbot & WhatsApp RAG</h3>
-            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '32px', borderRadius: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '19px', fontWeight: 700, marginBottom: '10px', color: '#0f172a' }}>AI Chatbot & WhatsApp RAG</h3>
+            <p style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
               Autonomous 24/7 customer support, lead capture, and instant booking trained on your knowledge base.
             </p>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>From $999</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#4f46e5' }}>From ₹9,999</span>
           </div>
 
-          <div style={{ background: '#0f172a', border: '1px solid #1e293b', padding: '32px', borderRadius: '18px' }}>
-            <h3 style={{ fontSize: '20px', marginBottom: '10px', color: '#ffffff' }}>High-Converting Funnels</h3>
-            <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '32px', borderRadius: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+            <h3 style={{ fontSize: '19px', fontWeight: 700, marginBottom: '10px', color: '#0f172a' }}>High-Converting Funnels</h3>
+            <p style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6, marginBottom: '20px' }}>
               Blazing fast landing pages engineered to maximize conversions and generate inbound pipeline.
             </p>
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>From $1,200</span>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#4f46e5' }}>From ₹12,000</span>
           </div>
         </div>
       </section>
-
-      {/* Floating Prompt Box pointing to Widget */}
-      <div style={{
-        position: 'fixed',
-        bottom: '100px',
-        right: '24px',
-        maxWidth: '300px',
-        background: 'rgba(15, 23, 42, 0.95)',
-        border: '1px solid #6366f1',
-        borderRadius: '16px',
-        padding: '16px',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 50
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <Sparkles size={16} color="#818cf8" />
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>
-            Embedded Widget Active
-          </span>
-        </div>
-        <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.4 }}>
-          Look below! The floating chat bubble is the live OmniBot widget embedded via 1 line of code. Click to test!
-        </p>
-      </div>
     </div>
   );
 }

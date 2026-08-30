@@ -1,117 +1,107 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Bot, Sparkles, Zap, Globe, ShieldCheck } from 'lucide-react';
+import { Bot, Sun, Moon, Globe } from 'lucide-react';
 
-export default function Navbar({ onNavigate, currentPage }) {
+export default function Navbar({ onNavigate, currentPage, theme, onToggleTheme }) {
   const { user } = useAuth();
 
   return (
     <header style={{
-      height: '70px',
-      borderBottom: '1px solid var(--border-color)',
-      backgroundColor: 'rgba(9, 13, 22, 0.85)',
-      backdropFilter: 'blur(16px)',
+      height: '62px',
+      borderBottom: '1px solid var(--border-subtle)',
+      backgroundColor: 'var(--bg-surface)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 28px',
+      padding: '0 24px',
       position: 'sticky',
       top: 0,
-      zIndex: 40
+      zIndex: 40,
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.02)'
     }}>
       {/* Brand */}
       <div 
         onClick={() => onNavigate('dashboard')}
-        style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+        style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
       >
         <div style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #6366f1, #06b6d4)',
+          width: '34px',
+          height: '34px',
+          borderRadius: '8px',
+          background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 0 20px rgba(99, 102, 241, 0.4)'
+          boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)'
         }}>
-          <Bot size={24} color="#ffffff" />
+          <Bot size={20} color="#ffffff" />
         </div>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '19px', fontWeight: 800, fontFamily: 'var(--font-heading)' }} className="gradient-text">
-              OmniBot
-            </span>
-            <span style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-              color: 'white',
-              padding: '2px 6px',
-              borderRadius: '6px',
-              letterSpacing: '0.05em'
-            }}>
-              SAAS FREE
-            </span>
-          </div>
-          <span style={{ fontSize: '11px', color: 'var(--text-dark)' }}>
-            100% Free AI Chatbot & WhatsApp Platform
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '17px', fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+            OmniBot
+          </span>
+          <span style={{
+            fontSize: '10px',
+            fontWeight: 700,
+            background: 'var(--bg-subtle)',
+            color: 'var(--primary)',
+            border: '1px solid var(--border-subtle)',
+            padding: '2px 7px',
+            borderRadius: '6px'
+          }}>
+            PRO
           </span>
         </div>
       </div>
 
-      {/* Center status badge */}
-      <div style={{
-        display: 'none',
-        alignItems: 'center',
-        gap: '8px',
-        background: 'rgba(16, 185, 129, 0.1)',
-        border: '1px solid rgba(16, 185, 129, 0.25)',
-        padding: '6px 14px',
-        borderRadius: '9999px',
-        fontSize: '12.5px',
-        color: '#34d399'
-      }} className="pulse-green md-flex">
-        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></span>
-        <span style={{ fontWeight: 600 }}>Gemini 2.0 Flash & Baileys QR: 100% Active</span>
-      </div>
-
       {/* Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Theme Toggle (Light / Dark) */}
+        <button
+          onClick={onToggleTheme}
+          className="btn-secondary"
+          style={{ padding: '6px 12px', fontSize: '12.5px', borderRadius: '8px' }}
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {theme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="#4f46e5" />}
+          <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+        </button>
+
+        {/* Live Demo Site Button */}
         <button
           onClick={() => onNavigate('demo-site')}
           className="btn-secondary"
-          style={{ padding: '8px 14px', fontSize: '13px' }}
+          style={{ padding: '6px 13px', fontSize: '12.5px', borderRadius: '8px' }}
         >
-          <Globe size={16} color="#38bdf8" />
-          <span>Live Demo Site</span>
+          <Globe size={14} />
+          <span>Demo Site</span>
         </button>
 
+        {/* User Badge */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '6px 12px',
-          background: 'rgba(255, 255, 255, 0.04)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)'
+          gap: '8px',
+          padding: '4px 10px',
+          background: 'var(--bg-subtle)',
+          borderRadius: '8px',
+          border: '1px solid var(--border-subtle)'
         }}>
           <div style={{
-            width: '32px',
-            height: '32px',
+            width: '24px',
+            height: '24px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #a855f7, #6366f1)',
+            background: 'var(--primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 700,
-            fontSize: '13px'
+            fontSize: '11px',
+            color: '#ffffff'
           }}>
             {user?.full_name?.charAt(0) || 'A'}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>{user?.full_name}</span>
-            <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>₹0 Free Pro Plan</span>
-          </div>
+          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.full_name}</span>
         </div>
       </div>
     </header>

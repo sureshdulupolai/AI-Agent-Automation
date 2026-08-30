@@ -1,48 +1,47 @@
 import React from 'react';
 import { 
   Bot, 
+  Inbox, 
   MessageSquare, 
   Users, 
   BarChart3, 
   Globe, 
   CloudLightning, 
-  Layers,
-  Sparkles,
-  ExternalLink
+  ShieldCheck
 } from 'lucide-react';
 
 export default function Sidebar({ currentPage, onNavigate }) {
   const navItems = [
-    { id: 'dashboard', label: 'AI Bots Studio', icon: Bot, badge: 'Active' },
-    { id: 'whatsapp', label: 'WhatsApp Hub', icon: MessageSquare, badge: 'QR/Meta' },
-    { id: 'leads', label: 'Leads CRM', icon: Users, badge: 'Realtime' },
+    { id: 'dashboard', label: 'AI Bots Studio', icon: Bot },
+    { id: 'inbox', label: 'Live Inbox', icon: Inbox },
+    { id: 'whatsapp', label: 'WhatsApp Hub', icon: MessageSquare },
+    { id: 'leads', label: 'Leads CRM', icon: Users },
     { id: 'analytics', label: 'Analytics & Logs', icon: BarChart3 },
-    { id: 'demo-site', label: 'Live Client Demo', icon: Globe, highlight: true },
-    { id: 'deployment', label: 'Free Cloud Deploy', icon: CloudLightning }
+    { id: 'demo-site', label: 'Client Demo Site', icon: Globe },
+    { id: 'deployment', label: 'Cloud Deployment', icon: CloudLightning }
   ];
 
   return (
     <aside style={{
-      width: '260px',
-      borderRight: '1px solid var(--border-color)',
-      backgroundColor: 'rgba(15, 23, 42, 0.4)',
-      backdropFilter: 'blur(10px)',
+      width: '240px',
+      borderRight: '1px solid var(--border-subtle)',
+      backgroundColor: 'var(--bg-surface)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      padding: '24px 16px',
-      minHeight: 'calc(100vh - 70px)'
+      padding: '16px 12px',
+      minHeight: 'calc(100vh - 62px)'
     }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <div style={{
           fontSize: '11px',
           fontWeight: 700,
-          color: 'var(--text-dark)',
+          color: 'var(--text-muted)',
           textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          padding: '0 12px 8px 12px'
+          letterSpacing: '0.06em',
+          padding: '6px 10px 10px 10px'
         }}>
-          OmniBot Control Center
+          Navigation
         </div>
 
         {navItems.map((item) => {
@@ -56,80 +55,53 @@ export default function Sidebar({ currentPage, onNavigate }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                borderRadius: '12px',
+                gap: '10px',
+                padding: '9px 12px',
+                borderRadius: '8px',
                 border: 'none',
-                background: isActive 
-                  ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.1))' 
-                  : 'transparent',
-                color: isActive ? '#ffffff' : 'var(--text-muted)',
+                background: isActive ? 'var(--bg-subtle)' : 'transparent',
+                color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
                 fontWeight: isActive ? 600 : 500,
-                fontSize: '14px',
+                fontSize: '13px',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.15s ease',
                 outline: 'none',
-                boxShadow: isActive ? 'inset 0 0 0 1px rgba(99, 102, 241, 0.4)' : 'none'
+                textAlign: 'left'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.background = 'var(--bg-subtle)';
+                  e.currentTarget.style.color = 'var(--text-primary)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-muted)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
                 }
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Icon size={18} color={isActive ? '#818cf8' : 'currentColor'} />
-                <span>{item.label}</span>
-              </div>
-
-              {item.badge && (
-                <span style={{
-                  fontSize: '10.5px',
-                  fontWeight: 700,
-                  padding: '2px 7px',
-                  borderRadius: '9999px',
-                  background: isActive ? 'var(--primary)' : 'rgba(255, 255, 255, 0.06)',
-                  color: isActive ? '#ffffff' : 'var(--text-muted)'
-                }}>
-                  {item.badge}
-                </span>
-              )}
+              <Icon size={16} color={isActive ? 'var(--primary)' : 'currentColor'} />
+              <span>{item.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Free Tier Capacity Card */}
-      <div className="glass-panel" style={{
-        padding: '16px',
-        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(16, 185, 129, 0.05))',
-        borderColor: 'rgba(99, 102, 241, 0.2)'
+      {/* Clean Status Card */}
+      <div style={{
+        padding: '12px',
+        background: 'var(--bg-subtle)',
+        borderRadius: '8px',
+        border: '1px solid var(--border-subtle)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <Sparkles size={16} color="#34d399" />
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
-            Zero-Cost Stack
-          </span>
-        </div>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: '10px' }}>
-          Running on Gemini 2.0 Flash (1.5k free/day), Supabase 500MB DB & Vercel Edge.
-        </p>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          color: '#34d399',
-          fontWeight: 600
-        }}>
-          <span>Current Cost: ₹0 / $0</span>
-          <span>100% Free</span>
+        <ShieldCheck size={16} color="#059669" />
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>System Operational</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Gemini & Local DB</span>
         </div>
       </div>
     </aside>

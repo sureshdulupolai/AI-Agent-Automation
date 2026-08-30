@@ -275,6 +275,24 @@
       "sender": "bot",
       "content": "Our pricing is flexible based on your exact requirements. Could you share your email or phone number so our team can provide a customized quote?",
       "channel": "whatsapp"
+    },
+    {
+      "id": "msg-0e124e8a",
+      "created_at": "2026-08-30T17:04:24.733Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess_iyx4iw3mtg26s4n",
+      "sender": "user",
+      "content": "What are your services?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-3b8e7091",
+      "created_at": "2026-08-30T17:04:27.720Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess_iyx4iw3mtg26s4n",
+      "sender": "bot",
+      "content": "Hello! We provide full-service solutions tailored to your business needs. What specific project or goal are you working on today?",
+      "channel": "website"
     }
   ],
   "whatsapp_sessions": [
