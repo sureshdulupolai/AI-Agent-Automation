@@ -59,16 +59,29 @@ export default function App() {
 
   return (
     <AuthProvider>
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
-        {/* Navbar */}
+      <div style={{
+        height: '100vh',
+        maxHeight: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-page)'
+      }}>
+        {/* Sleek Compact Navbar */}
         <Navbar 
           onNavigate={(page) => setCurrentPage(page)} 
           currentPage={currentPage}
         />
 
-        {/* Body layout */}
-        <div style={{ display: 'flex', flex: 1 }}>
-          {/* Hide Sidebar only on fullscreen Demo Site page */}
+        {/* Full-Height Body Container (100vh - 50px Navbar) */}
+        <div style={{
+          height: 'calc(100vh - 50px)',
+          display: 'flex',
+          flex: 1,
+          overflow: 'hidden'
+        }}>
+          {/* Sidebar */}
           {currentPage !== 'demo-site' && (
             <Sidebar
               currentPage={currentPage}
@@ -76,8 +89,15 @@ export default function App() {
             />
           )}
 
-          {/* Main Content Area */}
-          <main style={{ flex: 1, overflowY: 'auto' }}>
+          {/* Main Scrollable Viewport */}
+          <main style={{
+            flex: 1,
+            height: '100%',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            backgroundColor: 'var(--bg-page)',
+            position: 'relative'
+          }}>
             {currentPage === 'dashboard' && (
               <DashboardPage
                 onSelectBot={handleSelectBotStudio}

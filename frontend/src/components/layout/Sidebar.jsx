@@ -23,23 +23,26 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
   return (
     <aside style={{
-      width: '240px',
+      width: '220px',
+      flexShrink: 0,
       borderRight: '1px solid var(--border-subtle)',
-      backgroundColor: 'var(--bg-surface)',
+      backgroundColor: '#ffffff',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      padding: '16px 12px',
-      minHeight: 'calc(100vh - 62px)'
+      padding: '12px 10px',
+      height: '100%',
+      overflowY: 'auto',
+      boxSizing: 'border-box'
     }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
         <div style={{
-          fontSize: '11px',
+          fontSize: '10.5px',
           fontWeight: 700,
           color: 'var(--text-muted)',
           textTransform: 'uppercase',
           letterSpacing: '0.06em',
-          padding: '6px 10px 10px 10px'
+          padding: '4px 8px 8px 8px'
         }}>
           Navigation
         </div>
@@ -55,18 +58,19 @@ export default function Sidebar({ currentPage, onNavigate }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '9px 12px',
-                borderRadius: '8px',
+                gap: '9px',
+                padding: '8px 10px',
+                borderRadius: '6px',
                 border: 'none',
                 background: isActive ? 'var(--bg-subtle)' : 'transparent',
                 color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: isActive ? 600 : 500,
-                fontSize: '13px',
+                fontWeight: isActive ? 700 : 500,
+                fontSize: '12.5px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all 0.12s ease',
                 outline: 'none',
-                textAlign: 'left'
+                textAlign: 'left',
+                width: '100%'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
@@ -81,7 +85,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
                 }
               }}
             >
-              <Icon size={16} color={isActive ? 'var(--primary)' : 'currentColor'} />
+              <Icon size={15} color={isActive ? 'var(--primary)' : 'currentColor'} />
               <span>{item.label}</span>
             </button>
           );
@@ -90,7 +94,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
 
       {/* Clean Status Card */}
       <div style={{
-        padding: '12px',
+        padding: '10px',
         background: 'var(--bg-subtle)',
         borderRadius: '8px',
         border: '1px solid var(--border-subtle)',
@@ -98,10 +102,10 @@ export default function Sidebar({ currentPage, onNavigate }) {
         alignItems: 'center',
         gap: '8px'
       }}>
-        <ShieldCheck size={16} color="#059669" />
+        <ShieldCheck size={15} color="#059669" />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>System Operational</span>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Gemini & Local DB</span>
+          <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-primary)' }}>System Operational</span>
+          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Gemini & Local DB</span>
         </div>
       </div>
     </aside>

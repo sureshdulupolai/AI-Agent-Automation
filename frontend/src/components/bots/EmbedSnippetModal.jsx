@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Code, Globe, Terminal, Sparkles } from 'lucide-react';
+import { X, Copy, Check, Code } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function EmbedSnippetModal({ bot, onClose }) {
@@ -53,8 +53,9 @@ export default function RootLayout({ children }) {
   );
 }`;
 
-  const wordpressCode = `1. Go to your WordPress Dashboard -> Appearance -> Theme File Editor (or install 'Insert Headers and Footers' plugin).
-2. Paste the following script right before the closing </body> tag:
+  const wordpressCode = `<!-- WordPress / Webflow Integration -->
+1. Open Theme Editor or Header/Footer script injection.
+2. Paste before closing </body> tag:
 
 <script src="${scriptUrl}" data-bot-id="${bot.id}"></script>`;
 
@@ -92,31 +93,31 @@ export default function RootLayout({ children }) {
       padding: '20px'
     }}>
       <div className="glass-panel animate-fade-in" style={{
-        width: '680px',
+        width: '640px',
         maxWidth: '100%',
-        backgroundColor: 'var(--bg-surface)',
-        padding: '28px',
+        backgroundColor: '#ffffff',
+        padding: '24px',
         position: 'relative',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         border: '1px solid var(--border-subtle)'
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '8px',
               background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Code size={20} color="#ffffff" />
+              <Code size={18} color="#ffffff" />
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>1-Click Embed Snippet</h3>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>1-Click Embed Snippet</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 Embed <strong>{bot.bot_name}</strong> on any website or CMS in 10 seconds.
               </p>
             </div>
@@ -125,41 +126,47 @@ export default function RootLayout({ children }) {
           <button
             onClick={onClose}
             className="btn-outline"
-            style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px' }}
+            style={{ padding: '5px', borderRadius: '50%', width: '30px', height: '30px' }}
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
-        {/* Tab Selector */}
+        {/* Tab Selector - Fixed Height & Non-wrapping */}
         <div style={{
-          display: 'flex',
-          gap: '8px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '6px',
           background: 'var(--bg-subtle)',
           border: '1px solid var(--border-subtle)',
-          padding: '4px',
-          borderRadius: '10px',
-          marginBottom: '16px'
+          padding: '3px',
+          borderRadius: '8px',
+          marginBottom: '14px',
+          height: '38px',
+          boxSizing: 'border-box'
         }}>
           {[
-            { id: 'html', label: 'HTML / PHP / Shopify' },
-            { id: 'react', label: 'React.js' },
+            { id: 'html', label: 'HTML / JS' },
+            { id: 'react', label: 'React' },
             { id: 'nextjs', label: 'Next.js' },
-            { id: 'wordpress', label: 'WordPress / Webflow' }
+            { id: 'wordpress', label: 'WordPress' }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                flex: 1,
-                padding: '8px 12px',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 background: activeTab === tab.id ? 'var(--primary)' : 'transparent',
                 color: activeTab === tab.id ? '#ffffff' : 'var(--text-secondary)',
-                fontWeight: activeTab === tab.id ? 600 : 500,
+                fontWeight: activeTab === tab.id ? 700 : 500,
                 fontSize: '12.5px',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
                 transition: 'all 0.15s'
               }}
             >
@@ -168,18 +175,24 @@ export default function RootLayout({ children }) {
           ))}
         </div>
 
-        {/* Code Snippet Box */}
-        <div style={{ position: 'relative', marginBottom: '20px' }}>
+        {/* Code Snippet Box - Fixed Rigid Height */}
+        <div style={{ position: 'relative', marginBottom: '14px' }}>
           <pre style={{
             background: 'var(--bg-subtle)',
             border: '1px solid var(--border-subtle)',
             color: 'var(--text-primary)',
-            padding: '18px',
-            borderRadius: '12px',
+            padding: '16px',
+            borderRadius: '10px',
             fontFamily: 'var(--font-mono)',
-            fontSize: '13px',
+            fontSize: '12.5px',
             overflowX: 'auto',
-            lineHeight: 1.5
+            overflowY: 'auto',
+            lineHeight: 1.45,
+            height: '180px',
+            minHeight: '180px',
+            maxHeight: '180px',
+            boxSizing: 'border-box',
+            margin: 0
           }}>
             {snippets[activeTab]}
           </pre>
@@ -189,27 +202,29 @@ export default function RootLayout({ children }) {
             className="btn-primary"
             style={{
               position: 'absolute',
-              top: '12px',
-              right: '12px',
-              padding: '6px 12px',
-              fontSize: '12px'
+              top: '10px',
+              right: '10px',
+              padding: '5px 10px',
+              fontSize: '11.5px',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
             }}
           >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copied ? 'Copied Code!' : 'Copy'}</span>
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            <span>{copied ? 'Copied!' : 'Copy'}</span>
           </button>
         </div>
 
         {/* Instructions */}
         <div style={{
           background: 'var(--bg-subtle)',
-          padding: '14px',
-          borderRadius: '10px',
+          padding: '10px 14px',
+          borderRadius: '8px',
           border: '1px solid var(--border-subtle)',
-          fontSize: '12.5px',
-          color: 'var(--text-secondary)'
+          fontSize: '12px',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.4
         }}>
-          💡 <strong>Tip:</strong> Paste this code right before the closing <code>&lt;/body&gt;</code> tag of your website. The widget loads asynchronously without affecting site speed.
+          <strong>Tip:</strong> Paste this code right before the closing <code>&lt;/body&gt;</code> tag of your website.
         </div>
       </div>
     </div>
