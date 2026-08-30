@@ -4,12 +4,9 @@ import {
   MessageSquare, 
   Code, 
   Settings, 
-  ExternalLink, 
-  Play, 
-  CheckCircle2, 
-  AlertCircle,
   Trash2
 } from 'lucide-react';
+import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 
 export default function BotCard({ 
   bot, 
@@ -19,6 +16,8 @@ export default function BotCard({
   onDelete
 }) {
   const isWhatsAppConnected = bot.whatsapp_status === 'connected';
+  const initial = getInitialLetter(bot.bot_name || 'Bot');
+  const avatarBg = getInitialColor(bot.bot_name || 'Bot');
 
   return (
     <div className="glass-panel glass-panel-hover animate-fade-in" style={{
@@ -29,36 +28,42 @@ export default function BotCard({
       position: 'relative',
       overflow: 'hidden'
     }}>
-      {/* Top Bar with Avatar, Name, Status */}
+      {/* Top Bar with Letter Initial Avatar, Name, Status */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <div style={{ position: 'relative' }}>
-              <img
-                src={bot.bot_avatar_url}
-                alt={bot.bot_name}
+              <div
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '14px',
-                  objectFit: 'cover',
-                  border: `2px solid ${bot.primary_color || 'var(--primary)'}`
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  backgroundColor: avatarBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '18px',
+                  color: '#ffffff',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
                 }}
-              />
+              >
+                {initial}
+              </div>
               <span style={{
                 position: 'absolute',
                 bottom: '-2px',
                 right: '-2px',
-                width: '11px',
-                height: '11px',
+                width: '10px',
+                height: '10px',
                 borderRadius: '50%',
                 backgroundColor: '#10b981',
-                border: '2px solid var(--bg-surface)'
+                border: '2px solid #ffffff'
               }} />
             </div>
 
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '3px' }}>
+              <h3 style={{ fontSize: '15.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '3px' }}>
                 {bot.bot_name}
               </h3>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -66,8 +71,8 @@ export default function BotCard({
                   Live on Edge
                 </span>
                 <span style={{
-                  width: '9px',
-                  height: '9px',
+                  width: '8px',
+                  height: '8px',
                   borderRadius: '50%',
                   backgroundColor: bot.primary_color || 'var(--primary)',
                   display: 'inline-block'

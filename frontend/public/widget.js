@@ -92,7 +92,7 @@
       return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`;
     }
     if (iconType === 'bot') {
-      return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 relaxation 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`;
+      return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`;
     }
     // Default chat bubble
     return `<svg class="icon-chat" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
@@ -102,6 +102,9 @@
     const primary = botConfig.primary_color || '#4f46e5';
     const isLeft = botConfig.launcher_position === 'bottom-left';
     const isDark = botConfig.theme_mode === 'dark';
+    const botInitial = (botConfig.bot_name || 'Bot').trim().charAt(0).toUpperCase() || 'B';
+    const initialPalette = ['#4f46e5', '#059669', '#0891b2', '#7c3aed', '#d97706', '#e11d48', '#2563eb', '#0d9488'];
+    const botInitialBg = initialPalette[(botInitial.charCodeAt(0) || 65) % initialPalette.length];
 
     shadow.innerHTML = `
       <style>
@@ -268,6 +271,19 @@
           width: 40px;
           height: 40px;
           border-radius: 50%;
+        }
+
+        .avatar-initial {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 16px;
+          color: #ffffff;
+          border: 2px solid rgba(255, 255, 255, 0.7);
         }
 
         .avatar-img {
@@ -463,7 +479,7 @@
         <div class="chat-header">
           <div class="header-left">
             <div class="avatar-wrap">
-              <img class="avatar-img" id="bot-avatar" src="${botConfig.bot_avatar_url}" alt="${botConfig.bot_name}" />
+              <div class="avatar-initial" style="background: ${botInitialBg};">${botInitial}</div>
               <div class="avatar-status"></div>
             </div>
             <div class="bot-meta">

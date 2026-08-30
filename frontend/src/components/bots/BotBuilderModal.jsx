@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
-import { X, Bot, Sparkles, Check, Palette, BookOpen } from 'lucide-react';
+import { X, Bot, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
-
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-];
+import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 
 const COLOR_PRESETS = [
   '#4f46e5', // Indigo
-  '#0891b2', // Cyan
   '#059669', // Emerald
+  '#0891b2', // Cyan
   '#d97706', // Amber
   '#e11d48', // Rose
   '#7c3aed'  // Purple
@@ -22,16 +15,18 @@ const COLOR_PRESETS = [
 export default function BotBuilderModal({ onClose, onCreated }) {
   const [formData, setFormData] = useState({
     bot_name: '',
-    bot_avatar_url: AVATAR_PRESETS[0],
     primary_color: COLOR_PRESETS[0],
-    welcome_message: 'Hi there! 👋 How can I help you today?',
-    placeholder_text: 'Type your question here...',
-    system_instructions: 'You are a polite, helpful, and highly knowledgeable AI sales representative. Guide the customer and capture their contact info when relevant.',
+    welcome_message: 'Hello! How can I help you today?',
+    placeholder_text: 'Type your message...',
+    system_instructions: 'You are a polite, helpful, and knowledgeable AI sales representative. Guide the customer and capture their contact info when relevant.',
     business_knowledge: '',
-    quick_prompts: ['What are your services?', 'Pricing information', 'Contact support']
+    quick_prompts: ['What services do you offer?', 'Pricing details', 'Talk to support']
   });
 
   const [loading, setLoading] = useState(false);
+
+  const botInitial = getInitialLetter(formData.bot_name || 'Bot');
+  const botInitialBg = getInitialColor(formData.bot_name || 'Bot');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,10 +72,10 @@ export default function BotBuilderModal({ onClose, onCreated }) {
       padding: '20px'
     }}>
       <div className="glass-panel animate-fade-in" style={{
-        width: '720px',
+        width: '680px',
         maxWidth: '100%',
         maxHeight: '90vh',
-        backgroundColor: 'var(--bg-surface)',
+        backgroundColor: '#ffffff',
         padding: '28px',
         position: 'relative',
         overflowY: 'auto',
@@ -91,20 +86,20 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
+              width: '38px',
+              height: '38px',
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Bot size={22} color="#ffffff" />
+              <Bot size={20} color="#ffffff" />
             </div>
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Create New AI Chatbot</h3>
               <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                Configure identity, theme, and train on your business knowledge.
+                Configure identity, theme, and knowledge base.
               </p>
             </div>
           </div>
@@ -119,34 +114,53 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Bot Name & Avatar */}
+          {/* Bot Name & Initial Badge Preview */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label">Chatbot Name *</label>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="e.g. Zenith Tech Assistant"
-                value={formData.bot_name}
-                onChange={(e) => setFormData({ ...formData, bot_name: e.target.value })}
-                required
-              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  backgroundColor: botInitialBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  color: '#ffffff',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
+                  flexShrink: 0
+                }}>
+                  {botInitial}
+                </div>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Zenith Support"
+                  value={formData.bot_name}
+                  onChange={(e) => setFormData({ ...formData, bot_name: e.target.value })}
+                  required
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
 
             <div className="form-group">
-              <label className="form-label">Theme Color</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+              <label className="form-label">Brand Color</label>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
                 {COLOR_PRESETS.map((color) => (
                   <button
                     type="button"
                     key={color}
                     onClick={() => setFormData({ ...formData, primary_color: color })}
                     style={{
-                      width: '28px',
-                      height: '28px',
+                      width: '26px',
+                      height: '26px',
                       borderRadius: '50%',
                       backgroundColor: color,
-                      border: formData.primary_color === color ? '3px solid var(--text-primary)' : '2px solid transparent',
+                      border: formData.primary_color === color ? '2.5px solid var(--text-primary)' : '2px solid transparent',
                       cursor: 'pointer',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                     }}
@@ -156,34 +170,9 @@ export default function BotBuilderModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Avatar Presets */}
-          <div className="form-group">
-            <label className="form-label">Select Avatar Preset</label>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-              {AVATAR_PRESETS.map((avatar, idx) => (
-                <img
-                  key={idx}
-                  src={avatar}
-                  alt={`Preset ${idx + 1}`}
-                  onClick={() => setFormData({ ...formData, bot_avatar_url: avatar })}
-                  style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    cursor: 'pointer',
-                    border: formData.bot_avatar_url === avatar ? '3px solid var(--primary)' : '2px solid var(--border-subtle)',
-                    transform: formData.bot_avatar_url === avatar ? 'scale(1.08)' : 'scale(1)',
-                    transition: 'all 0.15s'
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
           {/* Welcome Message */}
           <div className="form-group">
-            <label className="form-label">Initial Welcome Greeting</label>
+            <label className="form-label">Welcome Message</label>
             <input
               type="text"
               className="form-input"
@@ -196,16 +185,16 @@ export default function BotBuilderModal({ onClose, onCreated }) {
           <div className="form-group">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label className="form-label">
-                Business Knowledge Base (FAQs, Services, Pricing)
+                Knowledge Base (FAQs, Services, Pricing)
               </label>
-              <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 600 }}>
-                ⚡ Gemini RAG Active
+              <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>
+                Gemini Active
               </span>
             </div>
             <textarea
               className="form-textarea"
               style={{ minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
-              placeholder="Provide information about your business:&#10;- Services offered: Web development, SEO, AI Chatbots&#10;- Pricing: Starter plan is ₹4,999, Pro is ₹14,999&#10;- Working hours: 9 AM - 6 PM IST&#10;- Refund policy: 7-day money back guarantee"
+              placeholder="Provide information about your business:&#10;- Services offered: Web development, AI Chatbots&#10;- Pricing: Starter is ₹4,999, Pro is ₹14,999&#10;- Working hours: 9 AM - 6 PM IST"
               value={formData.business_knowledge}
               onChange={(e) => setFormData({ ...formData, business_knowledge: e.target.value })}
             />
@@ -225,8 +214,8 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               disabled={loading || !formData.bot_name.trim()}
               className="btn-primary"
             >
-              <Sparkles size={16} />
-              <span>{loading ? 'Creating...' : 'Deploy AI Bot'}</span>
+              <Sparkles size={15} />
+              <span>{loading ? 'Creating...' : 'Create Chatbot'}</span>
             </button>
           </div>
         </form>

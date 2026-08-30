@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Bot, ArrowRight, Check, Star, ShieldCheck, Zap, Sparkles, MessageSquare } from 'lucide-react';
+import { ArrowRight, Star, Zap } from 'lucide-react';
 
 export default function DemoSitePage({ bots = [] }) {
-  const [selectedBotId, setSelectedBotId] = useState(bots[0]?.id || 'bot-apex-agency');
-  const activeBot = bots.find(b => b.id === selectedBotId) || bots[0];
+  const selectedBotId = bots[0]?.id || 'bot-apex-agency';
 
-  // Dynamically inject widget.js when mounting or changing bot
+  // Dynamically inject widget.js when mounting
   useEffect(() => {
     // Remove previous widget host if any
     const existingHost = document.getElementById('omnibot-widget-host');
@@ -29,47 +28,9 @@ export default function DemoSitePage({ bots = [] }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', position: 'relative' }}>
-      {/* SaaS Simulation Banner */}
-      <div style={{
-        background: 'linear-gradient(90deg, #4f46e5, #0891b2)',
-        color: '#ffffff',
-        padding: '10px 24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: '13px',
-        fontWeight: 600
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={16} />
-          <span>Live Client Website Simulation: Testing <strong>{activeBot?.bot_name}</strong></span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', opacity: 0.9 }}>Switch Active Demo Bot:</span>
-          <select
-            value={selectedBotId}
-            onChange={(e) => setSelectedBotId(e.target.value)}
-            style={{
-              background: '#ffffff',
-              color: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
-              borderRadius: '6px',
-              padding: '4px 8px',
-              fontSize: '12px',
-              fontWeight: 600
-            }}
-          >
-            {bots.map(b => (
-              <option key={b.id} value={b.id}>{b.bot_name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
       {/* Demo Site Navbar */}
       <header style={{
-        padding: '20px 48px',
+        padding: '18px 48px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',

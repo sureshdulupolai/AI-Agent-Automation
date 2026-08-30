@@ -11,12 +11,11 @@ import {
   Copy, 
   MessageSquare, 
   Headphones, 
-  Image, 
-  Layout, 
   CheckCircle2,
   RefreshCw,
   ArrowLeft
 } from 'lucide-react';
+import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
 
 export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
   const [bot, setBot] = useState(null);
@@ -36,8 +35,6 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
   const [launcherPosition, setLauncherPosition] = useState('bottom-right');
   const [teaserText, setTeaserText] = useState('How can I help you today?');
   const [showTeaser, setShowTeaser] = useState(true);
-  const [themeMode, setThemeMode] = useState('light');
-  const [avatarUrl, setAvatarUrl] = useState('');
 
   // Interactive Sandbox Chat State
   const [sandboxMessages, setSandboxMessages] = useState([]);
@@ -61,8 +58,6 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
         setLauncherPosition(b.launcher_position || 'bottom-right');
         setTeaserText(b.teaser_text || 'How can I help you today?');
         setShowTeaser(b.show_teaser !== false);
-        setThemeMode(b.theme_mode || 'light');
-        setAvatarUrl(b.bot_avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80');
 
         setSandboxMessages([
           { sender: 'bot', content: b.welcome_message || 'Hello! How can I help you today?' }
@@ -97,9 +92,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
           launcher_icon: launcherIcon,
           launcher_position: launcherPosition,
           teaser_text: teaserText,
-          show_teaser: showTeaser,
-          theme_mode: themeMode,
-          bot_avatar_url: avatarUrl
+          show_teaser: showTeaser
         })
       });
 
@@ -167,9 +160,11 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
     { id: 'chat', label: 'Chat Bubble', icon: MessageSquare },
     { id: 'sparkles', label: 'Sparkles', icon: Sparkles },
     { id: 'headset', label: 'Support', icon: Headphones },
-    { id: 'bot', label: 'Assistant', icon: Bot },
-    { id: 'avatar', label: 'Avatar', icon: Image }
+    { id: 'bot', label: 'Assistant', icon: Bot }
   ];
+
+  const botInitial = getInitialLetter(botName || 'Bot');
+  const botInitialBg = getInitialColor(botName || 'Bot');
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -252,9 +247,9 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
               {/* 1. Launcher Icon Style */}
               <div>
                 <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>
-                  Launcher Icon
+                  Launcher Icon Style
                 </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
                   {iconOptions.map((opt) => {
                     const Icon = opt.icon;
                     const isSelected = launcherIcon === opt.id;
@@ -264,7 +259,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                         type="button"
                         onClick={() => setLauncherIcon(opt.id)}
                         style={{
-                          padding: '10px 6px',
+                          padding: '12px 8px',
                           borderRadius: '8px',
                           border: `1.5px solid ${isSelected ? primaryColor : 'var(--border-subtle)'}`,
                           backgroundColor: isSelected ? 'var(--bg-subtle)' : 'var(--bg-surface)',
@@ -277,7 +272,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                         }}
                       >
                         <Icon size={18} color={isSelected ? primaryColor : 'var(--text-secondary)'} />
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                           {opt.label}
                         </span>
                       </button>
@@ -286,31 +281,17 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                 </div>
               </div>
 
-              {/* 2. Position & Theme */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Launcher Position</label>
-                  <select
-                    value={launcherPosition}
-                    onChange={(e) => setLauncherPosition(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="bottom-right">Bottom Right</option>
-                    <option value="bottom-left">Bottom Left</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Widget Theme</label>
-                  <select
-                    value={themeMode}
-                    onChange={(e) => setThemeMode(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </div>
+              {/* 2. Position */}
+              <div className="form-group">
+                <label className="form-label">Launcher Position</label>
+                <select
+                  value={launcherPosition}
+                  onChange={(e) => setLauncherPosition(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                </select>
               </div>
 
               {/* 3. Popup Teaser Callout */}
@@ -338,7 +319,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
 
               {/* 4. Brand Color */}
               <div className="form-group">
-                <label className="form-label">Primary Color</label>
+                <label className="form-label">Brand Color</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   {colorPresets.map((p) => (
                     <button
@@ -372,7 +353,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                 </div>
               </div>
 
-              {/* 5. Name & Greeting */}
+              {/* 5. Display Name */}
               <div className="form-group">
                 <label className="form-label">Display Name</label>
                 <input
@@ -383,6 +364,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                 />
               </div>
 
+              {/* 6. Welcome Message */}
               <div className="form-group">
                 <label className="form-label">Welcome Message</label>
                 <textarea
@@ -390,17 +372,6 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                   onChange={(e) => setWelcomeMessage(e.target.value)}
                   className="form-textarea"
                   style={{ minHeight: '65px' }}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Avatar Image URL</label>
-                <input
-                  type="text"
-                  value={avatarUrl}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                  className="form-input"
-                  style={{ fontSize: '12.5px' }}
                 />
               </div>
             </div>
@@ -484,7 +455,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
 
           {/* Widget Preview Container */}
           <div style={{
-            background: themeMode === 'dark' ? '#090d16' : '#ffffff',
+            background: '#ffffff',
             borderRadius: '16px',
             border: '1px solid var(--border-subtle)',
             boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)',
@@ -503,11 +474,21 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
               justifyContent: 'space-between'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img
-                  src={avatarUrl}
-                  alt={botName}
-                  style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(255,255,255,0.7)' }}
-                />
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: botInitialBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  color: '#ffffff',
+                  border: '1.5px solid rgba(255,255,255,0.7)'
+                }}>
+                  {botInitial}
+                </div>
                 <div>
                   <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#ffffff' }}>{botName}</h4>
                   <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.85)' }}>Online</span>
@@ -520,7 +501,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
               flex: 1,
               padding: '14px',
               overflowY: 'auto',
-              background: themeMode === 'dark' ? '#090d16' : '#f8fafc',
+              background: '#f8fafc',
               display: 'flex',
               flexDirection: 'column',
               gap: '10px'
@@ -535,10 +516,8 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                     borderRadius: '12px',
                     fontSize: '13px',
                     lineHeight: 1.45,
-                    backgroundColor: msg.sender === 'user' 
-                      ? primaryColor 
-                      : (themeMode === 'dark' ? '#1e293b' : '#ffffff'),
-                    color: msg.sender === 'user' ? '#ffffff' : (themeMode === 'dark' ? '#f8fafc' : '#0f172a'),
+                    backgroundColor: msg.sender === 'user' ? primaryColor : '#ffffff',
+                    color: msg.sender === 'user' ? '#ffffff' : '#0f172a',
                     border: msg.sender === 'user' ? 'none' : '1px solid var(--border-subtle)'
                   }}
                 >
@@ -551,7 +530,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                   alignSelf: 'flex-start',
                   padding: '7px 11px',
                   borderRadius: '10px',
-                  background: 'var(--bg-surface)',
+                  background: '#ffffff',
                   border: '1px solid var(--border-subtle)',
                   fontSize: '11.5px',
                   color: 'var(--text-muted)'
@@ -567,7 +546,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
               style={{
                 padding: '10px 12px',
                 borderTop: '1px solid var(--border-subtle)',
-                background: themeMode === 'dark' ? '#0f172a' : '#ffffff',
+                background: '#ffffff',
                 display: 'flex',
                 gap: '6px'
               }}
@@ -583,8 +562,8 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
                   borderRadius: '8px',
                   padding: '7px 11px',
                   fontSize: '12.5px',
-                  background: themeMode === 'dark' ? '#131d31' : '#f1f5f9',
-                  color: themeMode === 'dark' ? '#ffffff' : '#0f172a',
+                  background: '#f1f5f9',
+                  color: '#0f172a',
                   outline: 'none'
                 }}
               />
@@ -612,8 +591,8 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
           <div style={{ marginTop: '10px', display: 'flex', justifyContent: launcherPosition === 'bottom-left' ? 'flex-start' : 'flex-end', alignItems: 'center', gap: '8px' }}>
             {showTeaser && teaserText && (
               <div style={{
-                background: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
+                background: '#ffffff',
+                color: '#0f172a',
                 padding: '6px 11px',
                 borderRadius: '10px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
@@ -635,9 +614,7 @@ export default function BotDetailsPage({ botId, onBack, onOpenEmbed }) {
               justifyContent: 'center',
               boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
             }}>
-              {launcherIcon === 'avatar' && avatarUrl ? (
-                <img src={avatarUrl} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} alt="Launcher" />
-              ) : launcherIcon === 'sparkles' ? (
+              {launcherIcon === 'sparkles' ? (
                 <Sparkles size={20} />
               ) : launcherIcon === 'headset' ? (
                 <Headphones size={20} />

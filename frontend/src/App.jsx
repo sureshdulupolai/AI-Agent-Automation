@@ -16,18 +16,12 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedBotId, setSelectedBotId] = useState(null);
   const [bots, setBots] = useState([]);
-  const [theme, setTheme] = useState(() => localStorage.getItem('omnibot_theme') || 'light');
   const [embedModalBot, setEmbedModalBot] = useState(null);
 
-  // Sync theme with DOM
+  // Set pristine light theme as permanent standard
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('omnibot_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
+    document.documentElement.setAttribute('data-theme', 'light');
+  }, []);
 
   // Fetch all bots for global state
   const loadBots = async () => {
@@ -70,8 +64,6 @@ export default function App() {
         <Navbar 
           onNavigate={(page) => setCurrentPage(page)} 
           currentPage={currentPage}
-          theme={theme}
-          onToggleTheme={toggleTheme}
         />
 
         {/* Body layout */}

@@ -1,15 +1,19 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Bot, Sun, Moon, Globe } from 'lucide-react';
+import { Bot, Globe } from 'lucide-react';
+import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 
-export default function Navbar({ onNavigate, currentPage, theme, onToggleTheme }) {
+export default function Navbar({ onNavigate, currentPage }) {
   const { user } = useAuth();
+  const userName = user?.full_name || 'Suresh Polai';
+  const initial = getInitialLetter(userName);
+  const avatarBg = getInitialColor(userName);
 
   return (
     <header style={{
-      height: '62px',
+      height: '60px',
       borderBottom: '1px solid var(--border-subtle)',
-      backgroundColor: 'var(--bg-surface)',
+      backgroundColor: '#ffffff',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -25,19 +29,19 @@ export default function Navbar({ onNavigate, currentPage, theme, onToggleTheme }
         style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
       >
         <div style={{
-          width: '34px',
-          height: '34px',
+          width: '32px',
+          height: '32px',
           borderRadius: '8px',
           background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)'
+          boxShadow: '0 2px 6px rgba(79, 70, 229, 0.2)'
         }}>
-          <Bot size={20} color="#ffffff" />
+          <Bot size={18} color="#ffffff" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '17px', fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+          <span style={{ fontSize: '16.5px', fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', color: '#0f172a' }}>
             OmniBot
           </span>
           <span style={{
@@ -46,8 +50,8 @@ export default function Navbar({ onNavigate, currentPage, theme, onToggleTheme }
             background: 'var(--bg-subtle)',
             color: 'var(--primary)',
             border: '1px solid var(--border-subtle)',
-            padding: '2px 7px',
-            borderRadius: '6px'
+            padding: '2px 6px',
+            borderRadius: '5px'
           }}>
             PRO
           </span>
@@ -55,53 +59,45 @@ export default function Navbar({ onNavigate, currentPage, theme, onToggleTheme }
       </div>
 
       {/* Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        {/* Theme Toggle (Light / Dark) */}
-        <button
-          onClick={onToggleTheme}
-          className="btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '12.5px', borderRadius: '8px' }}
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {theme === 'dark' ? <Sun size={15} color="#f59e0b" /> : <Moon size={15} color="#4f46e5" />}
-          <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
-        </button>
-
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         {/* Live Demo Site Button */}
         <button
           onClick={() => onNavigate('demo-site')}
           className="btn-secondary"
-          style={{ padding: '6px 13px', fontSize: '12.5px', borderRadius: '8px' }}
+          style={{ padding: '6px 12px', fontSize: '12.5px', borderRadius: '7px' }}
         >
           <Globe size={14} />
           <span>Demo Site</span>
         </button>
 
-        {/* User Badge */}
+        {/* User Profile Badge with Deterministic Initial Color */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '4px 10px',
+          padding: '4px 10px 4px 6px',
           background: 'var(--bg-subtle)',
-          borderRadius: '8px',
+          borderRadius: '20px',
           border: '1px solid var(--border-subtle)'
         }}>
           <div style={{
-            width: '24px',
-            height: '24px',
+            width: '26px',
+            height: '26px',
             borderRadius: '50%',
-            background: 'var(--primary)',
+            backgroundColor: avatarBg,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontWeight: 700,
-            fontSize: '11px',
-            color: '#ffffff'
+            fontSize: '12px',
+            color: '#ffffff',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            {user?.full_name?.charAt(0) || 'A'}
+            {initial}
           </div>
-          <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.full_name}</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {userName}
+          </span>
         </div>
       </div>
     </header>
