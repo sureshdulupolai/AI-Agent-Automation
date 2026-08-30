@@ -11,16 +11,21 @@ import {
   Mail, 
   Clock, 
   CheckCircle2, 
-  Sparkles,
-  RefreshCw,
-  SlidersHorizontal
+  RefreshCw, 
+  Filter, 
+  Paperclip, 
+  Smile, 
+  ChevronDown, 
+  CheckCheck,
+  XCircle
 } from 'lucide-react';
+import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
 
 export default function InboxPage() {
   const [conversations, setConversations] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [sessionDetails, setSessionDetails] = useState(null);
-  const [channelFilter, setChannelFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all'); // all, unread, live
   const [searchQuery, setSearchQuery] = useState('');
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -28,7 +33,7 @@ export default function InboxPage() {
 
   const fetchConversations = async () => {
     try {
-      const res = await fetch(`/api/inbox/conversations?channel=${channelFilter === 'all' ? '' : channelFilter}&search=${encodeURIComponent(searchQuery)}`);
+      const res = await fetch(`/api/inbox/conversations?search=${encodeURIComponent(searchQuery)}`);
       if (res.ok) {
         const data = await res.json();
         setConversations(data.conversations || []);
@@ -58,9 +63,9 @@ export default function InboxPage() {
 
   useEffect(() => {
     fetchConversations();
-    const interval = setInterval(fetchConversations, 4000);
+    const interval = setInterval(fetchConversations, 3000);
     return () => clearInterval(interval);
-  }, [channelFilter, searchQuery]);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (selectedSessionId) {
@@ -69,7 +74,7 @@ export default function InboxPage() {
   }, [selectedSessionId]);
 
   const handleSendReply = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!replyText.trim() || !selectedSessionId || sendingReply) return;
 
     const currentConv = conversations.find(c => c.sessionId === selectedSessionId);
@@ -98,77 +103,101 @@ export default function InboxPage() {
     }
   };
 
+  const handleCloseConversation = () => {
+    alert('Conversation marked as resolved and closed.');
+  };
+
+  const filteredConversations = conversations.filter(c => {
+    if (activeFilter === 'unread') return true;
+    if (activeFilter === 'live') return c.channel === 'whatsapp' || c.channel === 'website';
+    return true;
+  });
+
   const activeConv = conversations.find(c => c.sessionId === selectedSessionId);
 
   return (
-    <div style={{ padding: '20px 24px', maxWidth: '1400px', margin: '0 auto', height: 'calc(100vh - 86px)', display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
+    <div style={{ padding: '18px 24px', maxWidth: '1400px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+      {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)' }}>Conversations Inbox</h1>
-          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-            Real-time messages across Website Chatbots and WhatsApp.
-          </p>
-        </div>
+        <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+          Conversations
+        </h1>
 
-        <button 
-          onClick={fetchConversations}
-          className="btn-secondary"
-          style={{ padding: '6px 12px', fontSize: '12px' }}
-        >
-          <RefreshCw size={13} />
-          <span>Refresh</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            onClick={fetchConversations}
+            className="btn-secondary"
+            style={{ padding: '5px 10px', fontSize: '12px' }}
+          >
+            <RefreshCw size={13} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
-      {/* Main Split Layout */}
+      {/* Main Chatzy Split Layout Container */}
       <div className="glass-panel" style={{
         flex: 1,
         display: 'grid',
-        gridTemplateColumns: '340px 1fr',
+        gridTemplateColumns: '360px 1fr',
         overflow: 'hidden',
-        border: '1px solid var(--border-subtle)'
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '14px',
+        backgroundColor: '#ffffff'
       }}>
-        {/* Left Column: Conversation List */}
+        {/* Left Column: Conversations List */}
         <div style={{
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: 'var(--bg-surface)'
+          backgroundColor: '#ffffff'
         }}>
-          {/* Search & Channel Filter Bar */}
-          <div style={{ padding: '12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Search & Filter Header */}
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+              Search (by name, email, or phone number)
+            </span>
+
             <div style={{ position: 'relative' }}>
-              <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '10px', top: '10px' }} />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder="Search contacts"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="form-input"
-                style={{ paddingLeft: '30px', width: '100%', fontSize: '12.5px', padding: '6px 10px 6px 30px' }}
+                style={{ width: '100%', fontSize: '12.5px', padding: '6px 30px 6px 10px' }}
               />
+              <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', right: '10px', top: '9px' }} />
             </div>
 
-            {/* Filter Tabs */}
-            <div style={{ display: 'flex', gap: '4px' }}>
+            {/* Filter Pills */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                className="btn-secondary"
+                style={{ padding: '4px 8px', borderRadius: '6px' }}
+                title="Filters"
+              >
+                <Filter size={13} />
+              </button>
+
+              <div style={{ height: '16px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+
               {[
                 { id: 'all', label: 'All' },
-                { id: 'website', label: 'Website' },
-                { id: 'whatsapp', label: 'WhatsApp' }
+                { id: 'unread', label: 'Unread' },
+                { id: 'live', label: 'Live' }
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setChannelFilter(tab.id)}
+                  onClick={() => setActiveFilter(tab.id)}
                   style={{
-                    flex: 1,
-                    padding: '5px 8px',
-                    borderRadius: '6px',
+                    padding: '4px 12px',
+                    borderRadius: '16px',
                     border: '1px solid',
-                    borderColor: channelFilter === tab.id ? 'var(--primary)' : 'var(--border-subtle)',
-                    background: channelFilter === tab.id ? 'var(--bg-subtle)' : 'transparent',
-                    color: channelFilter === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: 600,
+                    borderColor: activeFilter === tab.id ? 'var(--primary)' : 'var(--border-subtle)',
+                    background: activeFilter === tab.id ? 'var(--bg-subtle)' : 'transparent',
+                    color: activeFilter === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
+                    fontWeight: 700,
                     fontSize: '11.5px',
                     cursor: 'pointer',
                     transition: 'all 0.15s'
@@ -180,63 +209,112 @@ export default function InboxPage() {
             </div>
           </div>
 
-          {/* Conversation List */}
+          {/* Conversation List Stream */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            {conversations.length === 0 ? (
+            {filteredConversations.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <Inbox size={28} style={{ margin: '0 auto 8px auto', opacity: 0.4 }} />
+                <Inbox size={26} style={{ margin: '0 auto 8px auto', opacity: 0.3 }} />
                 <p style={{ fontSize: '12.5px', fontWeight: 600 }}>No conversations found</p>
               </div>
             ) : (
-              conversations.map((c) => {
+              filteredConversations.map((c) => {
                 const isSelected = selectedSessionId === c.sessionId;
                 const isWa = c.channel === 'whatsapp';
+                const initial = getInitialLetter(c.senderName || 'User');
+                const avatarBg = getInitialColor(c.senderName || 'User');
 
                 return (
                   <div
                     key={c.sessionId}
                     onClick={() => setSelectedSessionId(c.sessionId)}
                     style={{
-                      padding: '11px 14px',
+                      padding: '12px 14px',
                       borderBottom: '1px solid var(--border-subtle)',
                       backgroundColor: isSelected ? 'var(--bg-subtle)' : 'transparent',
                       cursor: 'pointer',
-                      borderLeft: isSelected ? '3px solid var(--primary)' : '3px solid transparent',
-                      transition: 'all 0.15s'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      transition: 'background 0.15s'
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {c.senderName}
-                        </span>
-                        <span style={{
-                          fontSize: '10px',
-                          padding: '1px 5px',
-                          borderRadius: '4px',
-                          background: isWa ? 'rgba(16, 185, 129, 0.12)' : 'rgba(79, 70, 229, 0.1)',
-                          color: isWa ? '#059669' : 'var(--primary)',
-                          fontWeight: 700
-                        }}>
-                          {isWa ? 'WhatsApp' : 'Web'}
-                        </span>
+                    {/* Avatar with Channel Overlay Dot */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        backgroundColor: avatarBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: '13px',
+                        color: '#ffffff'
+                      }}>
+                        {initial}
                       </div>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        {new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+
+                      {/* Channel Badge Overlay */}
+                      <span style={{
+                        position: 'absolute',
+                        bottom: '-2px',
+                        right: '-2px',
+                        width: '14px',
+                        height: '14px',
+                        borderRadius: '50%',
+                        backgroundColor: isWa ? '#059669' : '#4f46e5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1.5px solid #ffffff'
+                      }}>
+                        {isWa ? <Phone size={8} color="#ffffff" /> : <Globe size={8} color="#ffffff" />}
                       </span>
                     </div>
 
-                    <p style={{
-                      fontSize: '12px',
-                      color: 'var(--text-secondary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      lineHeight: 1.4
-                    }}>
-                      <span style={{ fontWeight: 600 }}>{c.lastMessageSender === 'bot' ? 'AI: ' : c.lastMessageSender === 'agent' ? 'Agent: ' : ''}</span>
-                      {c.lastMessage}
-                    </p>
+                    {/* Metadata & Message */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{
+                            width: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: '#059669',
+                            display: 'inline-block'
+                          }} />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {c.senderName}
+                          </span>
+                          <span style={{
+                            fontSize: '9.5px',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: 'rgba(79, 70, 229, 0.1)',
+                            color: 'var(--primary)',
+                            fontWeight: 700
+                          }}>
+                            Conv. AI
+                          </span>
+                        </div>
+
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {new Date(c.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <p style={{
+                        fontSize: '12px',
+                        color: 'var(--text-secondary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        lineHeight: 1.35
+                      }}>
+                        {c.lastMessage}
+                      </p>
+                    </div>
                   </div>
                 );
               })
@@ -244,60 +322,100 @@ export default function InboxPage() {
           </div>
         </div>
 
-        {/* Right Column: Chat Transcript */}
-        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-page)' }}>
+        {/* Right Column: Chat Transcript & Action Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#fcfdfd' }}>
           {activeConv ? (
             <>
-              {/* Header Info */}
+              {/* Header Info matching Chatzy Image 1 */}
               <div style={{
                 padding: '12px 20px',
                 borderBottom: '1px solid var(--border-subtle)',
-                backgroundColor: 'var(--bg-surface)',
+                backgroundColor: '#ffffff',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{
-                    width: '34px',
-                    height: '34px',
+                    width: '36px',
+                    height: '36px',
                     borderRadius: '50%',
-                    background: activeConv.channel === 'whatsapp' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(79, 70, 229, 0.12)',
+                    backgroundColor: getInitialColor(activeConv.senderName),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: activeConv.channel === 'whatsapp' ? '#059669' : 'var(--primary)'
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    color: '#ffffff'
                   }}>
-                    {activeConv.channel === 'whatsapp' ? <Phone size={16} /> : <User size={16} />}
+                    {getInitialLetter(activeConv.senderName)}
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h3 style={{ fontSize: '14.5px', fontWeight: 700, color: 'var(--text-primary)' }}>{activeConv.senderName}</h3>
-                      <span className={activeConv.channel === 'whatsapp' ? 'badge badge-green' : 'badge badge-blue'} style={{ fontSize: '10.5px' }}>
-                        {activeConv.channel === 'whatsapp' ? 'WhatsApp' : 'Website'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                      {activeConv.leadPhone && <span>Phone: <strong style={{ color: 'var(--text-primary)' }}>{activeConv.leadPhone}</strong></span>}
-                      {activeConv.leadEmail && <span>Email: <strong style={{ color: 'var(--text-primary)' }}>{activeConv.leadEmail}</strong></span>}
-                    </div>
+                    <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {activeConv.senderName}
+                    </h3>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      Assigned to: <strong>Conv AI Agent ({activeConv.botId})</strong>
+                    </span>
                   </div>
                 </div>
 
-                <span className="badge badge-purple" style={{ fontSize: '11px', padding: '3px 8px' }}>
-                  Gemini Active
-                </span>
+                {/* Right Header Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={handleCloseConversation}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.08)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      color: '#ef4444',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Close Conversation
+                  </button>
+
+                  <button
+                    onClick={() => fetchSessionDetails(selectedSessionId)}
+                    className="btn-secondary"
+                    style={{ padding: '5px 8px', borderRadius: '6px' }}
+                    title="Refresh Chat"
+                  >
+                    <RefreshCw size={13} />
+                  </button>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '5px 10px',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 500
+                  }}>
+                    <User size={13} color="var(--text-muted)" />
+                    <span>Not yet assigned</span>
+                    <ChevronDown size={13} color="var(--text-muted)" />
+                  </div>
+                </div>
               </div>
 
               {/* Message Transcript Stream */}
               <div style={{
                 flex: 1,
-                padding: '16px 20px',
+                padding: '20px 24px',
                 overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '10px'
+                gap: '14px',
+                backgroundColor: '#ffffff'
               }}>
                 {sessionDetails?.messages?.map((msg, i) => {
                   const isUser = msg.sender === 'user';
@@ -310,74 +428,99 @@ export default function InboxPage() {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: isUser ? 'flex-end' : 'flex-start',
-                        maxWidth: '80%',
+                        maxWidth: '75%',
                         alignSelf: isUser ? 'flex-end' : 'flex-start'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                        <span>{isUser ? 'Visitor' : isAgent ? 'Agent' : 'AI Assistant'}</span>
-                        <span>•</span>
-                        <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-
                       <div style={{
-                        padding: '9px 13px',
-                        borderRadius: '12px',
+                        padding: '12px 16px',
+                        borderRadius: '14px',
                         fontSize: '13px',
-                        lineHeight: 1.45,
+                        lineHeight: 1.5,
                         backgroundColor: isUser 
-                          ? 'var(--primary)' 
+                          ? '#f3f4f6' 
                           : isAgent 
                             ? '#0891b2' 
-                            : 'var(--bg-surface)',
-                        color: (isUser || isAgent) ? '#ffffff' : 'var(--text-primary)',
-                        border: (isUser || isAgent) ? 'none' : '1px solid var(--border-subtle)',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                            : '#f8fafc',
+                        color: isAgent ? '#ffffff' : '#0f172a',
+                        border: isAgent ? 'none' : '1px solid #e2e8f0',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         whiteSpace: 'pre-wrap'
                       }}>
                         {msg.content}
+                      </div>
+
+                      {/* Timestamp & Double Checkmarks */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span>{new Date(msg.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}, {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <CheckCheck size={13} color="#059669" />
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Live Human Reply Input Bar */}
+              {/* Bottom Input Bar matching Chatzy Image 1 */}
               <form 
                 onSubmit={handleSendReply}
                 style={{
-                  padding: '12px 18px',
+                  padding: '12px 20px',
                   borderTop: '1px solid var(--border-subtle)',
-                  backgroundColor: 'var(--bg-surface)',
+                  backgroundColor: '#ffffff',
                   display: 'flex',
-                  gap: '8px',
+                  gap: '10px',
                   alignItems: 'center'
                 }}
               >
+                <button
+                  type="button"
+                  className="btn-outline"
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: 'var(--primary)',
+                    borderColor: 'rgba(79, 70, 229, 0.3)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Send Template
+                </button>
+
                 <input
                   type="text"
-                  placeholder={`Reply to ${activeConv.senderName}...`}
+                  placeholder="Type your message..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   className="form-input"
                   style={{ flex: 1, fontSize: '13px', padding: '8px 12px' }}
                 />
-                <button
-                  type="submit"
-                  disabled={!replyText.trim() || sendingReply}
-                  className="btn-primary"
-                  style={{ padding: '8px 16px', fontSize: '12.5px' }}
-                >
-                  <Send size={14} />
-                  <span>{sendingReply ? 'Sending...' : 'Send'}</span>
-                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button type="button" className="btn-secondary" style={{ padding: '6px', borderRadius: '6px' }} title="Attach file">
+                    <Paperclip size={15} />
+                  </button>
+
+                  <button type="button" className="btn-secondary" style={{ padding: '6px', borderRadius: '6px' }} title="Emoji picker">
+                    <Smile size={15} />
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={!replyText.trim() || sendingReply}
+                    className="btn-primary"
+                    style={{ padding: '7px 12px', borderRadius: '8px' }}
+                  >
+                    <Send size={14} />
+                  </button>
+                </div>
               </form>
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>
-              <Inbox size={40} style={{ opacity: 0.3, marginBottom: '10px' }} />
-              <h3 style={{ fontSize: '15px', fontWeight: 600 }}>Select a Conversation</h3>
-              <p style={{ fontSize: '12.5px' }}>Click any thread to view and respond.</p>
+              <Inbox size={36} style={{ opacity: 0.3, marginBottom: '8px' }} />
+              <h3 style={{ fontSize: '15px', fontWeight: 700 }}>Select a Conversation</h3>
+              <p style={{ fontSize: '12px' }}>Click any thread to view and respond.</p>
             </div>
           )}
         </div>

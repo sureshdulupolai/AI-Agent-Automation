@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import BotDetailsPage from './pages/BotDetailsPage';
 import InboxPage from './pages/InboxPage';
 import WhatsAppPage from './pages/WhatsAppPage';
+import WebsiteChannelPage from './pages/WebsiteChannelPage';
 import LeadsPage from './pages/LeadsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import DemoSitePage from './pages/DemoSitePage';
@@ -54,7 +55,8 @@ export default function App() {
   };
 
   const handleOpenEmbed = (bot) => {
-    setEmbedModalBot(bot);
+    if (bot) setSelectedBotId(bot.id);
+    setCurrentPage('website-channel');
   };
 
   return (
@@ -115,6 +117,12 @@ export default function App() {
               />
             )}
 
+            {currentPage === 'website-channel' && (
+              <WebsiteChannelPage
+                bots={bots}
+              />
+            )}
+
             {currentPage === 'inbox' && (
               <InboxPage />
             )}
@@ -123,6 +131,7 @@ export default function App() {
               <WhatsAppPage
                 bots={bots}
                 initialBotId={selectedBotId}
+                onNavigate={(page) => setCurrentPage(page)}
               />
             )}
 
