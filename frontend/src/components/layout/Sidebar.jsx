@@ -25,7 +25,9 @@ import {
   GitBranch,
   Search,
   Plug,
-  Send
+  Send,
+  Activity,
+  Cpu
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
@@ -231,6 +233,31 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
             >
               <Bot size={16} color={isItemActive('/dashboard', ['/', '/dashboard', '/bots']) ? 'var(--primary)' : 'currentColor'} />
               {!isCollapsed && <span>AI Bots Studio</span>}
+            </button>
+
+            {/* Universal Dynamic Agent Studio */}
+            <button
+              onClick={() => navigate('/universal-studio')}
+              title={isCollapsed ? 'Universal Adaptive Brain' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                gap: '10px',
+                padding: isCollapsed ? '10px 0' : '8px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: isItemActive('/universal-studio', ['/universal-studio', '/universal']) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/universal-studio', ['/universal-studio', '/universal']) ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/universal-studio', ['/universal-studio', '/universal']) ? 700 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <Cpu size={16} color={isItemActive('/universal-studio', ['/universal-studio', '/universal']) ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && <span>Universal AI Studio</span>}
             </button>
 
             {/* Conversations */}
@@ -445,6 +472,38 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
             >
               <Plug size={16} color={isItemActive('/integrations') ? 'var(--primary)' : 'currentColor'} />
               {!isCollapsed && <span>Integrations</span>}
+            </button>
+
+            {/* Autonomous Task Command Center */}
+            <button
+              onClick={() => navigate('/tasks')}
+              title={isCollapsed ? 'Autonomous Tasks' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                gap: '10px',
+                padding: isCollapsed ? '10px 0' : '8px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: isItemActive('/tasks') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/tasks') ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/tasks') ? 700 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <Activity size={16} color={isItemActive('/tasks') ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>Tasks Center</span>
+                  <span style={{ fontSize: '10px', fontWeight: 800, backgroundColor: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '10px' }}>
+                    Auto
+                  </span>
+                </div>
+              )}
             </button>
 
             {/* Analytics & Logs */}

@@ -1,0 +1,54 @@
+{
+  "bot-ec0db899": {
+    "business_name": "NovaByte AI Assistant",
+    "industry_category": "Full-Stack Web & AI Automation",
+    "brand_voice": "Warm, Consultative, and Authoritative Senior Specialist",
+    "fulfillment_type": "custom_quote",
+    "core_offerings": [
+      {
+        "name": "Custom High-Converting Websites",
+        "category": "Web Development",
+        "pricing_type": "tier_based",
+        "price_range": "$499 - $999",
+        "turnaround": "3 to 7 Days",
+        "description": "Modern Next.js / React responsive web platforms with SEO.",
+        "required_fields": [
+          "project_scope",
+          "target_launch_date"
+        ]
+      },
+      {
+        "name": "24/7 Autonomous WhatsApp & Web AI Chatbots",
+        "category": "AI Automation",
+        "pricing_type": "tier_based",
+        "price_range": "$399 - $899",
+        "turnaround": "24 to 48 Hours",
+        "description": "Automated lead qualification, instant FAQs, and appointment scheduling.",
+        "required_fields": [
+          "business_category",
+          "whatsapp_number"
+        ]
+      }
+    ],
+    "qualification_rules": [
+      {
+        "field_key": "project_budget",
+        "label": "Budget Range",
+        "is_mandatory": true,
+        "prompt_nudge": "Ask about budget expectations"
+      },
+      {
+        "field_key": "timeline",
+        "label": "Target Delivery Date",
+        "is_mandatory": false,
+        "prompt_nudge": "Ask about desired launch deadline"
+      }
+    ],
+    "policies_and_faqs": {
+      "operating_hours": "Mon-Sat: 9:00 AM - 7:00 PM",
+      "location_address": "Global Remote & Virtual Consultations",
+      "payment_terms": "50% deposit, 50% upon final verified deployment.",
+      "custom_policies": "Full technical support and warranty on all deployments."
+    }
+  }
+}

@@ -18,6 +18,8 @@ import JourneyDetailsPage from './pages/journeys/JourneyDetailsPage';
 import IntegrationsPage from './pages/IntegrationsPage';
 import CampaignsPage from './pages/CampaignsPage';
 import AutomationsPage from './pages/AutomationsPage';
+import TaskCenter from './pages/TaskCenter';
+import UniversalStudio from './pages/UniversalStudio';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import NovaByteCopilotDrawer from './components/layout/NovaByteCopilotDrawer';
 import { AuthProvider } from './context/AuthContext';
@@ -96,6 +98,10 @@ export default function App() {
             {/* Bot Details Studio */}
             <Route path="/bots/:botId" element={<BotDetailsPage bots={bots} />} />
 
+            {/* Universal Dynamic Agent Studio */}
+            <Route path="/universal-studio" element={<UniversalStudio bots={bots} />} />
+            <Route path="/universal" element={<Navigate to="/universal-studio" replace />} />
+
             {/* Outreach & Campaigns Hub */}
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/broadcasts" element={<Navigate to="/campaigns" replace />} />
@@ -123,7 +129,9 @@ export default function App() {
             <Route path="/lists-and-segments" element={<ListsSegmentsPage />} />
             <Route path="/audience" element={<Navigate to="/contacts" replace />} />
 
-            {/* Analytics & Logs */}
+            {/* Analytics & Autonomous Task Command Center */}
+            <Route path="/tasks" element={<TaskCenter />} />
+            <Route path="/task-center" element={<Navigate to="/tasks" replace />} />
             <Route path="/analytics" element={<AnalyticsPage bots={bots} />} />
 
             {/* Tools & Deploy */}

@@ -553,3 +553,5 @@ export const db = {
     return newUser;
   }
 };
+
+export default db;

@@ -18,10 +18,13 @@ import * as journeyController from './controllers/journeyController.js';
 import * as integrationController from './controllers/integrationController.js';
 import * as oauthController from './controllers/oauthController.js';
 import * as campaignController from './controllers/campaignController.js';
+import * as universalChatController from './controllers/universalChatController.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
 import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
 import { startCampaignScheduler } from './services/campaignScheduler.js';
 import { startEmailAutomationEngine, getEmailAutomationSettings, saveEmailAutomationSettings, getEmailAutomationLogs } from './services/emailAutomationService.js';
+import { getTaskSummary, runBatchExecution, generateDailyEODReportSummary, clearAllTasks } from './services/taskEngine.js';
+import { initFollowUpCron } from './services/followUpCron.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -198,9 +201,52 @@ app.post('/api/email-automations/settings', (req, res) => {
   const updated = saveEmailAutomationSettings(req.body);
   res.json({ success: true, settings: updated });
 });
-app.get('/api/email-automations/logs', (req, res) => {
-  res.json({ success: true, logs: getEmailAutomationLogs() });
+// ----------------------------------------------------
+// Autonomous Task & EOD Reporting Engine Routes
+// ----------------------------------------------------
+app.get('/api/tasks/summary', async (req, res) => {
+  try {
+    const summary = await getTaskSummary();
+    res.json({ success: true, ...summary });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
+
+app.post('/api/tasks/run-batch', async (req, res) => {
+  try {
+    const results = await runBatchExecution();
+    res.json({ success: true, results });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/tasks/generate-eod-report', async (req, res) => {
+  try {
+    const report = await generateDailyEODReportSummary();
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.delete('/api/tasks/clear', (req, res) => {
+  try {
+    clearAllTasks();
+    res.json({ success: true, message: 'All audit task logs cleared.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Universal Dynamic Business Engine Routes
+// ----------------------------------------------------
+app.get('/api/universal/profile/:botId', universalChatController.getBusinessProfile);
+app.post('/api/universal/profile/:botId', universalChatController.updateBusinessProfile);
+app.post('/api/universal/generate-profile', universalChatController.autoGenerateProfile);
+app.post('/api/universal/chat', universalChatController.handleUniversalInboundChat);
 
 // Start Server
 app.listen(PORT, () => {
@@ -219,4 +265,7 @@ app.listen(PORT, () => {
 
   // Start Email Automation Engine
   startEmailAutomationEngine();
+
+  // Start 2-Hour Intelligent State Recovery Follow-Up Cron
+  initFollowUpCron();
 });

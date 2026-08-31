@@ -629,70 +629,67 @@ export default function CampaignsPage() {
       {/* TAB 1: WHATSAPP BULK EXCEL & MULTIMEDIA CAMPAIGNER                       */}
       {/* ========================================================================= */}
       {activeTab === 'whatsapp' && (
-        <div>
-          {!waConnected ? (
-            /* Connection Gate: WhatsApp Disconnected Screen */
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #fed7aa', padding: '48px 32px', textAlign: 'center', maxWidth: '680px', margin: '20px auto', boxShadow: '0 4px 20px rgba(234, 88, 12, 0.08)' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '20px', backgroundColor: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
-                <QrCode size={34} color="#ea580c" />
-              </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', margin: '0 0 8px 0' }}>
-                Connect WhatsApp to Unlock Broadcasting
-              </h2>
-              <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0', lineHeight: 1.6 }}>
-                Scan your WhatsApp QR code once to enable bulk WhatsApp broadcasts, image/PDF attachments, automatic lead follow-ups, and scheduled messaging.
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '28px', textAlign: 'left' }}>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>⚡ 98% Open Rates</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>Direct delivery to client WhatsApp</div>
-                </div>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>📎 Media &amp; PDF</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>Attach brochures, quotes &amp; voice</div>
-                </div>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>🕒 Auto Scheduler</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>Background date &amp; time engine</div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/channels/whatsapp')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', backgroundColor: '#ea580c', color: '#ffffff', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 10px rgba(234, 88, 12, 0.3)' }}
-              >
-                <QrCode size={18} />
-                <span>Pair WhatsApp with QR Code</span>
-              </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Header Connection Status Bar */}
+          <div style={{
+            padding: '12px 18px',
+            backgroundColor: waConnected ? '#f0fdf4' : '#fff7ed',
+            border: waConnected ? '1px solid #bbf7d0' : '1px solid #fed7aa',
+            borderRadius: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <WhatsAppIcon />
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: waConnected ? '#166534' : '#9a3412' }}>
+                {waConnected ? (
+                  <>WhatsApp Dispatcher: <strong>{waBotName}</strong></>
+                ) : (
+                  <>WhatsApp Status: <strong>Disconnected</strong></>
+                )}
+              </span>
+              <span style={{
+                backgroundColor: waConnected ? '#dcfce7' : '#fee2e2',
+                color: waConnected ? '#15803d' : '#b91c1c',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                {waConnected ? '● Connected & Ready' : '● Disconnected'}
+              </span>
             </div>
-          ) : (
-            /* Connected State: Unlocked Full Composer */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ padding: '10px 18px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <WhatsAppIcon />
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#166534' }}>
-                    Connected WhatsApp Dispatcher: <strong>{waBotName}</strong>
-                  </span>
-                  <span style={{ backgroundColor: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 800 }}>
-                    ● Connected &amp; Ready
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/channels/whatsapp')}
-                  style={{ background: 'transparent', border: 'none', color: '#16a34a', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <span>Manage Channel</span>
-                  <ExternalLink size={12} />
-                </button>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
-                {/* Left Column: Audience Selection */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/integrations')}
+              style={{
+                backgroundColor: waConnected ? 'transparent' : '#ea580c',
+                border: waConnected ? 'none' : 'none',
+                color: waConnected ? '#16a34a' : '#ffffff',
+                padding: waConnected ? '4px 8px' : '7px 14px',
+                borderRadius: '8px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: waConnected ? 'none' : '0 2px 8px rgba(234, 88, 12, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <QrCode size={14} />
+              <span>{waConnected ? 'Manage in Integrations' : 'Connect in Integrations'}</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+            {/* Left Column: Audience Selection */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     {/* Mode Selector */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1076,118 +1073,138 @@ export default function CampaignsPage() {
                   </div>
 
                   {/* Submit Button */}
-                  <button
-                    type="button"
-                    onClick={handleSubmitWhatsAppCampaign}
-                    disabled={isSubmitting || waRecipientCount === 0}
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: '10px',
-                      backgroundColor: '#22c55e',
-                      color: '#ffffff',
-                      border: 'none',
-                      fontSize: '14px',
-                      fontWeight: 800,
-                      cursor: (isSubmitting || waRecipientCount === 0) ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      boxShadow: '0 2px 8px rgba(34, 197, 94, 0.35)',
-                      opacity: (isSubmitting || waRecipientCount === 0) ? 0.6 : 1
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span>Processing Broadcast...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} />
-                        <span>
-                          {scheduleType === 'scheduled' ? 'Schedule WhatsApp Campaign' : `Launch Broadcast (${waRecipientCount} Contacts)`}
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {!waConnected ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/integrations')}
+                      style={{
+                        width: '100%',
+                        padding: '13px',
+                        borderRadius: '10px',
+                        backgroundColor: '#ea580c',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 2px 10px rgba(234, 88, 12, 0.3)'
+                      }}
+                    >
+                      <QrCode size={16} />
+                      <span>Connect WhatsApp in Integrations to Launch</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSubmitWhatsAppCampaign}
+                      disabled={isSubmitting || waRecipientCount === 0}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        backgroundColor: '#22c55e',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: (isSubmitting || waRecipientCount === 0) ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 2px 8px rgba(34, 197, 94, 0.35)',
+                        opacity: (isSubmitting || waRecipientCount === 0) ? 0.6 : 1
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Processing Broadcast...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>
+                            {scheduleType === 'scheduled' ? 'Schedule WhatsApp Campaign' : `Launch Broadcast (${waRecipientCount} Contacts)`}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
+        )}
 
       {/* ========================================================================= */}
       {/* TAB 2: EMAIL BULK EXCEL & ATTACHMENT CAMPAIGNER                           */}
       {/* ========================================================================= */}
       {activeTab === 'email' && (
-        <div>
-          {!googleConnected ? (
-            /* Connection Gate: Google Disconnected Screen */
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #c7d2fe', padding: '48px 32px', textAlign: 'center', maxWidth: '680px', margin: '20px auto', boxShadow: '0 4px 20px rgba(79, 70, 229, 0.08)' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '20px', backgroundColor: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
-                <GoogleLogo />
-              </div>
-              <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a', margin: '0 0 8px 0' }}>
-                Connect Google Account to Unlock Email Outreach
-              </h2>
-              <p style={{ fontSize: '13.5px', color: '#64748b', margin: '0 0 24px 0', lineHeight: 1.6 }}>
-                Authenticate with your official Gmail account to send high-deliverability dynamic proposals, PDF attachments, and automated multi-step nurture drip emails.
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '28px', textAlign: 'left' }}>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>✉️ Official Gmail API</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>RFC 2822 inbox delivery</div>
-                </div>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>📊 Google Sheets Sync</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>Live lead export to Docs</div>
-                </div>
-                <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: '13px', color: '#0f172a', marginBottom: '3px' }}>📎 Attach Proposals</div>
-                  <div style={{ fontSize: '11.5px', color: '#64748b' }}>Deliver PDFs &amp; project docs</div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/integrations')}
-                className="btn-primary"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '12px 28px', borderRadius: '10px', fontWeight: 800, fontSize: '14px', cursor: 'pointer' }}
-              >
-                <GoogleLogo />
-                <span>Connect Google Workspace / Gmail</span>
-              </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Header Connection Status Bar */}
+          <div style={{
+            padding: '12px 18px',
+            backgroundColor: googleConnected ? '#eef2ff' : '#fff7ed',
+            border: googleConnected ? '1px solid #c7d2fe' : '1px solid #fed7aa',
+            borderRadius: '12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <GoogleLogo />
+              <span style={{ fontSize: '13.5px', fontWeight: 700, color: googleConnected ? '#3730a3' : '#9a3412' }}>
+                {googleConnected ? (
+                  <>Connected Gmail Sender: <strong>{googleUserEmail}</strong></>
+                ) : (
+                  <>Gmail Status: <strong>Disconnected</strong></>
+                )}
+              </span>
+              <span style={{
+                backgroundColor: googleConnected ? '#dbeafe' : '#fee2e2',
+                color: googleConnected ? '#1d4ed8' : '#b91c1c',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                {googleConnected ? '● Authenticated & Ready' : '● Disconnected'}
+              </span>
             </div>
-          ) : (
-            /* Connected State: Unlocked Full Email Composer */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ padding: '10px 18px', backgroundColor: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <GoogleLogo />
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#3730a3' }}>
-                    Connected Gmail Sender: <strong>{googleUserEmail}</strong>
-                  </span>
-                  <span style={{ backgroundColor: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 800 }}>
-                    ● Authenticated
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/integrations')}
-                  style={{ background: 'transparent', border: 'none', color: '#4338ca', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
-                  <span>Manage Integration</span>
-                  <ExternalLink size={12} />
-                </button>
-              </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
-                {/* Left Column: Audience Selection */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/integrations')}
+              style={{
+                backgroundColor: googleConnected ? 'transparent' : '#4f46e5',
+                border: googleConnected ? 'none' : 'none',
+                color: googleConnected ? '#4338ca' : '#ffffff',
+                padding: googleConnected ? '4px 8px' : '7px 14px',
+                borderRadius: '8px',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: googleConnected ? 'none' : '0 2px 8px rgba(79, 70, 229, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <GoogleLogo />
+              <span>{googleConnected ? 'Manage in Integrations' : 'Connect in Integrations'}</span>
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }}>
+            {/* Left Column: Audience Selection */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     {/* Mode Selector */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1597,45 +1614,69 @@ export default function CampaignsPage() {
                   </div>
 
                   {/* Submit Button */}
-                  <button
-                    type="button"
-                    onClick={handleSubmitEmailCampaign}
-                    disabled={isSubmitting || emailRecipientCount === 0}
-                    className="btn-primary"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: '10px',
-                      fontSize: '14px',
-                      fontWeight: 800,
-                      cursor: (isSubmitting || emailRecipientCount === 0) ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      opacity: (isSubmitting || emailRecipientCount === 0) ? 0.6 : 1
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span>Processing Email Campaign...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mail size={16} />
-                        <span>
-                          {scheduleType === 'scheduled' ? 'Schedule Email Campaign' : `Launch Email Campaign (${emailRecipientCount} Contacts)`}
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {!googleConnected ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate('/integrations')}
+                      style={{
+                        width: '100%',
+                        padding: '13px',
+                        borderRadius: '10px',
+                        backgroundColor: '#4f46e5',
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 2px 10px rgba(79, 70, 229, 0.3)'
+                      }}
+                    >
+                      <GoogleLogo />
+                      <span>Connect Gmail in Integrations to Send</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSubmitEmailCampaign}
+                      disabled={isSubmitting || emailRecipientCount === 0}
+                      className="btn-primary"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '10px',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        cursor: (isSubmitting || emailRecipientCount === 0) ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        opacity: (isSubmitting || emailRecipientCount === 0) ? 0.6 : 1
+                      }}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Processing Email Campaign...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Mail size={16} />
+                          <span>
+                            {scheduleType === 'scheduled' ? 'Schedule Email Campaign' : `Launch Email Campaign (${emailRecipientCount} Contacts)`}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
+        )}
 
       {/* ========================================================================= */}
       {/* TAB 3: CAMPAIGN HISTORY & SCHEDULED QUEUE                                 */}

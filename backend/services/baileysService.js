@@ -14,6 +14,7 @@ import { db } from '../config/database.js';
 import { generateBotReply } from './geminiService.js';
 import { extractLeadDetails } from './leadParserService.js';
 import { scheduleFollowUp, cancelFollowUp, isConversationClosed } from './followUpScheduler.js';
+import { logAutonomousTask } from './taskEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -723,6 +724,15 @@ export async function processWhatsAppIncoming({
       channel: 'whatsapp',
       session_id: sessionId,
       status: 'new'
+    });
+
+    logAutonomousTask({
+      type: 'qualification',
+      title: `Lead Qualified & Captured via WhatsApp: ${followUpName}`,
+      channel: 'whatsapp',
+      recipient: followUpPhone,
+      status: 'completed',
+      metadata: { bot_id: botId, requirement: leadData?.lead_requirement }
     });
   }
 

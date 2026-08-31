@@ -19,6 +19,11 @@ export function getGoogleTokens() {
   }
 }
 
+export function isGoogleConnected() {
+  const tokens = getGoogleTokens();
+  return !!(tokens && (tokens.access_token || tokens.refresh_token));
+}
+
 export function saveGoogleTokens(tokens) {
   try {
     const existing = getGoogleTokens() || {};
