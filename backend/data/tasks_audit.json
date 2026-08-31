@@ -1,5 +1,19 @@
 [
   {
+    "id": "task-818293ad",
+    "type": "qualification",
+    "title": "Lead Qualified & Captured via WhatsApp: undefined",
+    "channel": "whatsapp",
+    "recipient": "+919999900001",
+    "status": "completed",
+    "metadata": {
+      "bot_id": "bot-ec0db899"
+    },
+    "error": null,
+    "created_at": "2026-08-31T17:17:38.546Z",
+    "timestamp": 1788196658546
+  },
+  {
     "id": "task-64f1c5f2",
     "type": "follow_up",
     "title": "WhatsApp Follow-Up: Valued Prospect (+919820646838)",

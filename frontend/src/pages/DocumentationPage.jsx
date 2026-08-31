@@ -25,7 +25,11 @@ import {
   Mail,
   CheckCircle2,
   Terminal,
-  Globe
+  Globe,
+  ShoppingBag,
+  Store,
+  ListChecks,
+  PackageCheck
 } from 'lucide-react';
 
 const DOC_CHAPTERS = [
@@ -36,6 +40,14 @@ const DOC_CHAPTERS = [
     badge: 'Basics',
     badgeColor: '#4f46e5',
     summary: 'Overview of NovaByte AI Studio, high-performance architecture, and 1-minute setup guide.'
+  },
+  {
+    id: 'ecommerce-prompts',
+    title: 'E-Commerce & Industry Prompt Master Guide',
+    icon: ShoppingBag,
+    badge: 'Prompts & Flows',
+    badgeColor: '#ec4899',
+    summary: 'Battle-tested system prompts, interactive Yes/No branching, order placement, and multi-industry templates.'
   },
   {
     id: 'universal-brain',
@@ -261,6 +273,205 @@ export default function DocumentationPage() {
                     Zero cloud-cost direct socket protocol with automatic 2-hour inactivity follow-up recovery.
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* CHAPTER: E-COMMERCE & INDUSTRY PROMPTS MASTER GUIDE */}
+          {activeChapter === 'ecommerce-prompts' && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                <span style={{ padding: '3px 9px', borderRadius: '8px', backgroundColor: '#fdf2f8', color: '#db2777', fontSize: '11px', fontWeight: 800 }}>Master Guide</span>
+                <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  E-Commerce, Interactive Branching &amp; Industry Prompt Blueprints
+                </h2>
+              </div>
+              <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
+                Train your AI bot to handle interactive Yes/No choices, showcase catalogs, collect orders, track shipments, and dynamically adapt to any industry.
+              </p>
+
+              {/* SECTION 1: HOW INTERACTIVE CHOICE MENUS WORK */}
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ListChecks size={18} color="#ec4899" />
+                  <span>1. How Interactive Yes/No Choices &amp; Menu Options Work</span>
+                </h3>
+                <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, marginBottom: '16px' }}>
+                  WhatsApp does not require paid button APIs. Formatting clear numbered and emoji choices allows customers to reply with a single tap, number, or keyword:
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>📱 Bot Interactive Menu Format:</div>
+                    <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#334155', whiteSpace: 'pre-line', backgroundColor: '#ffffff', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+{`👋 Welcome to UrbanStyle Store!
+
+Would you like to browse our new collection?
+1️⃣ Yes, Show Catalog & Offers 🛍️
+2️⃣ Track Existing Order 📦
+3️⃣ Speak with Human Support 💬
+
+Reply with 1, 2, or 3 to proceed!`}
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginBottom: '6px' }}>🧠 Dynamic AI Branching Logic:</div>
+                    <ul style={{ fontSize: '12px', color: '#475569', margin: 0, paddingLeft: '18px', lineHeight: 1.6 }}>
+                      <li><strong>If user replies "1" or "Yes"</strong>: AI sends store link (e.g. <em>https://yourstore.com/shop</em>) with current active discount code.</li>
+                      <li><strong>If user replies "2" or "No"</strong>: AI asks for their Order ID or inquires what assistance they need.</li>
+                      <li><strong>If user replies "3" or "Help"</strong>: AI switches session to Human Takeover and notifies sales agent.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: BATTLE-TESTED INDUSTRY PROMPTS */}
+              <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', margin: '28px 0 14px 0' }}>
+                Copy-Paste Industry System Prompts:
+              </h3>
+
+              {/* TEMPLATE 1: E-COMMERCE & D2C */}
+              <div style={{ backgroundColor: '#ffffff', border: '1.5px solid #fbcfe8', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShoppingBag size={18} color="#db2777" />
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#831843' }}>Template 1: E-Commerce Store &amp; D2C Brand</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(
+`You are the official Senior Shopping Assistant and Order Concierge for [Your Brand Name].
+
+### ROLE & GOALS:
+1. Greet customers warmly and guide them to browse products, claim discount coupons, or track orders.
+2. In your opening message, always offer structured interactive choices:
+   1️⃣ Yes, View Top Products & Catalog 🛍️ (https://yourstore.com/shop)
+   2️⃣ Track Existing Order 📦
+   3️⃣ Claim 15% First-Order Discount Voucher 🎁
+   4️⃣ Speak with Human Support 💬
+3. If the customer wants to order: Collect item name, size/color, quantity, recipient name, phone, and delivery address. Calculate total and issue an instant Order Confirmation Ticket (#ORD-XXXX).
+4. If the customer provides an Order ID to track: Check order status (Processing, Shipped, or Out for Delivery) and give estimated arrival date.
+5. If the customer says "No" or is hesitating: Offer a limited-time 15% discount code (WELCOME15) and ask what specific product they are looking for.`,
+                      'prompt-ecom'
+                    )}
+                    style={{ padding: '6px 12px', fontSize: '11.5px', fontWeight: 700, borderRadius: '8px', border: '1px solid #f472b6', backgroundColor: '#fdf2f8', color: '#9d174d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {copiedCode === 'prompt-ecom' ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedCode === 'prompt-ecom' ? 'Copied Prompt' : 'Copy Prompt'}</span>
+                  </button>
+                </div>
+                <pre style={{ backgroundColor: '#0f172a', color: '#f8fafc', padding: '14px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, overflowX: 'auto', margin: 0 }}>
+{`You are the official Senior Shopping Assistant and Order Concierge for [Your Brand Name].
+
+### ROLE & GOALS:
+1. Greet customers warmly and guide them to browse products, claim discount coupons, or track orders.
+2. In your opening message, always offer structured interactive choices:
+   1️⃣ Yes, View Top Products & Catalog 🛍️ (https://yourstore.com/shop)
+   2️⃣ Track Existing Order 📦
+   3️⃣ Claim 15% First-Order Discount Voucher 🎁
+   4️⃣ Speak with Human Support 💬
+3. If the customer wants to order: Collect item name, size/color, quantity, recipient name, phone, and delivery address. Calculate total and issue an instant Order Confirmation Ticket (#ORD-XXXX).
+4. If the customer provides an Order ID to track: Check order status (Processing, Shipped, or Out for Delivery) and give estimated arrival date.
+5. If the customer says "No" or is hesitating: Offer a limited-time 15% discount code (WELCOME15) and ask what specific product they are looking for.`}
+                </pre>
+              </div>
+
+              {/* TEMPLATE 2: REAL ESTATE & PROPERTY */}
+              <div style={{ backgroundColor: '#ffffff', border: '1.5px solid #bfdbfe', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Store size={18} color="#2563eb" />
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#1e40af' }}>Template 2: Real Estate &amp; Luxury Property</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(
+`You are the Senior Property Advisor for [Agency Name].
+
+### ROLE & GOALS:
+1. Qualify high-intent property buyers and schedule site visits.
+2. Provide structured options:
+   1️⃣ View 2BHK / 3BHK Luxury Floor Plans & Pricing 🏢
+   2️⃣ Download Project Brochure (PDF) 📄
+   3️⃣ Book a Free Site Visit (Cab Provided) 🚗
+   4️⃣ Speak with Senior Investment Specialist 📞
+3. Qualify budget, preferred location, and timeline (e.g. Ready-to-move vs Under-construction).
+4. If user agrees to a visit, collect preferred date & time and phone number.`,
+                      'prompt-realestate'
+                    )}
+                    style={{ padding: '6px 12px', fontSize: '11.5px', fontWeight: 700, borderRadius: '8px', border: '1px solid #60a5fa', backgroundColor: '#eff6ff', color: '#1e40af', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {copiedCode === 'prompt-realestate' ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedCode === 'prompt-realestate' ? 'Copied Prompt' : 'Copy Prompt'}</span>
+                  </button>
+                </div>
+                <pre style={{ backgroundColor: '#0f172a', color: '#f8fafc', padding: '14px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, overflowX: 'auto', margin: 0 }}>
+{`You are the Senior Property Advisor for [Agency Name].
+
+### ROLE & GOALS:
+1. Qualify high-intent property buyers and schedule site visits.
+2. Provide structured options:
+   1️⃣ View 2BHK / 3BHK Luxury Floor Plans & Pricing 🏢
+   2️⃣ Download Project Brochure (PDF) 📄
+   3️⃣ Book a Free Site Visit (Cab Provided) 🚗
+   4️⃣ Speak with Senior Investment Specialist 📞
+3. Qualify budget, preferred location, and timeline (e.g. Ready-to-move vs Under-construction).
+4. If user agrees to a visit, collect preferred date & time and phone number.`}
+                </pre>
+              </div>
+
+              {/* TEMPLATE 3: HEALTHCARE & CLINICS */}
+              <div style={{ backgroundColor: '#ffffff', border: '1.5px solid #bbf7d0', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Activity size={18} color="#16a34a" />
+                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#14532d' }}>Template 3: Healthcare, Dental &amp; Wellness Clinic</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(
+`You are the official Medical Concierge and Patient Coordinator for [Clinic Name].
+
+### ROLE & GOALS:
+1. Assist patients in booking doctor consultations and dental checkups.
+2. Interactive Menu:
+   1️⃣ Book Doctor Consultation / Health Checkup 🩺
+   2️⃣ View Clinic Treatment Fees & Timings ⏰
+   3️⃣ Emergency & Doctor On-Call 🚨
+   4️⃣ Speak with Receptionist 📞
+3. Collect patient name, symptom/department, and preferred appointment slot. Confirm booking instantly.`,
+                      'prompt-health'
+                    )}
+                    style={{ padding: '6px 12px', fontSize: '11.5px', fontWeight: 700, borderRadius: '8px', border: '1px solid #4ade80', backgroundColor: '#f0fdf4', color: '#15803d', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {copiedCode === 'prompt-health' ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedCode === 'prompt-health' ? 'Copied Prompt' : 'Copy Prompt'}</span>
+                  </button>
+                </div>
+                <pre style={{ backgroundColor: '#0f172a', color: '#f8fafc', padding: '14px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5, overflowX: 'auto', margin: 0 }}>
+{`You are the official Medical Concierge and Patient Coordinator for [Clinic Name].
+
+### ROLE & GOALS:
+1. Assist patients in booking doctor consultations and dental checkups.
+2. Interactive Menu:
+   1️⃣ Book Doctor Consultation / Health Checkup 🩺
+   2️⃣ View Clinic Treatment Fees & Timings ⏰
+   3️⃣ Emergency & Doctor On-Call 🚨
+   4️⃣ Speak with Receptionist 📞
+3. Collect patient name, symptom/department, and preferred appointment slot. Confirm booking instantly.`}
+                </pre>
+              </div>
+
+              {/* SECTION 3: STEP BY STEP HOW TO TRAIN & TEST SAFELY */}
+              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Zap size={18} color="#f59e0b" />
+                  <span>3. Step-by-Step: How to Train &amp; Test 100% Safely (Zero Number Spam)</span>
+                </h3>
+                <ol style={{ fontSize: '13px', color: '#334155', paddingLeft: '20px', lineHeight: 1.7, margin: 0 }}>
+                  <li><strong>Open Bot Training</strong>: Go to <a href="/bots/bot-ec0db899" style={{ color: '#4f46e5', fontWeight: 700 }}>Universal Studio (/bots)</a> and paste your custom System Prompt &amp; Catalog.</li>
+                  <li><strong>Click Save &amp; Train AI</strong>: The AI neural brain updates instantly.</li>
+                  <li><strong>Test Safely in Simulator</strong>: Open <a href="/whatsapp" style={{ color: '#16a34a', fontWeight: 700 }}>WhatsApp Hub (/whatsapp)</a> ➔ <strong>Interactive WhatsApp Simulator</strong>.</li>
+                  <li><strong>Type Test Queries</strong>: Type <em>"1"</em>, <em>"I want to order"</em>, or <em>"Track order #123"</em>. You will see real-time AI responses, order captures, and interactive branching without connecting or spamming any real phone number! 🛡️</li>
+                </ol>
               </div>
             </div>
           )}

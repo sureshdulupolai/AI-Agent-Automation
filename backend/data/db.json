@@ -14,7 +14,7 @@
     {
       "id": "bot-ec0db899",
       "created_at": "2026-08-30T16:02:52.879Z",
-      "updated_at": "2026-08-31T17:04:38.172Z",
+      "updated_at": "2026-08-31T17:28:20.563Z",
       "is_active": true,
       "allowed_domains": [
         "*"
@@ -79,6 +79,20 @@
     }
   ],
   "leads": [
+    {
+      "id": "lead-51cb1d42",
+      "status": "new",
+      "created_at": "2026-08-31T17:17:38.542Z",
+      "updated_at": "2026-08-31T17:17:38.542Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "WA User +919999900001",
+      "lead_phone": "+919999900001",
+      "lead_email": null,
+      "lead_requirement": "Do you have products available to order?",
+      "channel": "whatsapp",
+      "session_id": "wa-919999900001"
+    },
     {
       "id": "lead-4eb709b1",
       "status": "new",
@@ -598,6 +612,24 @@
       "created_at": "2026-08-31T16:28:42.740Z",
       "bot_id": "bot-ec0db899",
       "session_id": "wa-918454873214",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-4f60dd23",
+      "created_at": "2026-08-31T17:17:38.533Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919999900001",
+      "sender": "user",
+      "content": "Do you have products available to order?",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-0eb95a44",
+      "created_at": "2026-08-31T17:17:40.207Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919999900001",
       "sender": "bot",
       "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
       "channel": "whatsapp"

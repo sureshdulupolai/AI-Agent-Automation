@@ -18,5 +18,15 @@
     "step": 1,
     "maxSteps": null,
     "scheduledAt": 1788193722748
+  },
+  {
+    "sessionId": "wa-919999900001",
+    "botId": "bot-ec0db899",
+    "senderPhone": "+919999900001",
+    "senderName": "Customer",
+    "fireAt": 1788203860216,
+    "step": 1,
+    "maxSteps": null,
+    "scheduledAt": 1788196660216
   }
 ]
