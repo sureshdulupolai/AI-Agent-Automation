@@ -135,6 +135,7 @@ app.post('/api/webhook/whatsapp', whatsappController.metaWebhookReceive);
 // ----------------------------------------------------
 // Automation Journeys & Flow Builder Routes
 // ----------------------------------------------------
+app.get('/api/journeys/followups/active', authenticateToken, journeyController.listActiveFollowUps);
 app.get('/api/journeys', authenticateToken, journeyController.listJourneys);
 app.get('/api/journeys/:id', authenticateToken, journeyController.getJourney);
 app.post('/api/journeys', authenticateToken, journeyController.createJourney);

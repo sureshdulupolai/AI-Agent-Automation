@@ -1,318 +1,31 @@
 [
   {
-    "id": "568bf096-e0bb-4663-838e-372f6011a0c5",
-    "name": "Auto Reply/DM to Instagram Comments",
-    "template_id": "tpl-ig-comments",
-    "channel": "instagram",
-    "channel_label": "Instagram",
+    "id": "journey-wa-live-agent",
+    "name": "Use AI Agent on WhatsApp",
+    "template_id": "tpl-wa-agent",
+    "channel": "whatsapp",
+    "channel_label": "WhatsApp",
     "status": "active",
-    "version": "v2",
-    "formatted_date": "30 Aug '26 at 7:37 PM",
-    "trigger": {
-      "type": "comment",
-      "channel": "instagram",
-      "label": "User comments on your Post/Reel"
-    },
-    "nodes": [
-      {
-        "id": "node-1",
-        "type": "send_message",
-        "title": "Reply to Instagram Comments",
-        "message_text": "Thanks for your comment! Check your DMs for the exclusive link 🙌",
-        "is_configured": true
-      },
-      {
-        "id": "node-2",
-        "type": "send_message",
-        "title": "Send Message",
-        "message_text": "Hey! Here is the pricing guide & direct booking link you asked for: https://omnibot.io/pricing",
-        "is_configured": true
-      }
-    ],
-    "stats": {
-      "total_runs": 146,
-      "completed": 142,
-      "sent": 146,
-      "delivered": 144,
-      "read": 140,
-      "failed": 4,
-      "outcomes": {
-        "completed": 142,
-        "in_progress": 2,
-        "dropped_off": 2,
-        "failed": 0
-      }
-    },
-    "runs": [
-      {
-        "id": "run-1788152138809",
-        "contact_name": "Jessica Miller",
-        "contact_handle": "@jessica.miller",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "31 Aug 26 at 10:25 AM",
-        "updated_at": "31 Aug 26 at 10:25 AM",
-        "logs": [
-          {
-            "time": "10:25 AM",
-            "step": "Trigger: User comments on your Post/Reel",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Step 1: Reply to Instagram Comments (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Step 2: Send Message (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Status: Journey execution completed",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-1788152135848",
-        "contact_name": "Maya Lin",
-        "contact_handle": "@maya.lin",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "31 Aug 26 at 10:25 AM",
-        "updated_at": "31 Aug 26 at 10:25 AM",
-        "logs": [
-          {
-            "time": "10:25 AM",
-            "step": "Trigger: User comments on your Post/Reel",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Step 1: Reply to Instagram Comments (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Step 2: Send Message (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:25 AM",
-            "step": "Status: Journey execution completed",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-1788152013679",
-        "contact_name": "Chris Evans",
-        "contact_handle": "@chris.evans",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "31 Aug 26 at 10:23 AM",
-        "updated_at": "31 Aug 26 at 10:23 AM",
-        "logs": [
-          {
-            "time": "10:23 AM",
-            "step": "Trigger: User comments on your Post/Reel",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Step 1: Reply to Instagram Comments (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Step 2: Send Message (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Status: Journey execution completed",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-1788151996976",
-        "contact_name": "Maya Lin",
-        "contact_handle": "@maya.lin",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "31 Aug 26 at 10:23 AM",
-        "updated_at": "31 Aug 26 at 10:23 AM",
-        "logs": [
-          {
-            "time": "10:23 AM",
-            "step": "Trigger: User comments on your Post/Reel",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Step 1: Reply to Instagram Comments (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Step 2: Send Message (Delivered)",
-            "status": "success"
-          },
-          {
-            "time": "10:23 AM",
-            "step": "Status: Journey execution completed",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-101",
-        "contact_name": "Sophia Martinez",
-        "contact_handle": "@sophia.designs",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "30 Aug '26 at 7:35 PM",
-        "updated_at": "30 Aug '26 at 7:37 PM",
-        "logs": [
-          {
-            "time": "7:35:10 PM",
-            "step": "Trigger: User commented 'Price please!' on Reel",
-            "status": "success"
-          },
-          {
-            "time": "7:35:12 PM",
-            "step": "Action: Public Reply posted on comment",
-            "status": "success"
-          },
-          {
-            "time": "7:35:15 PM",
-            "step": "Action: Direct Message sent with pricing link",
-            "status": "success"
-          },
-          {
-            "time": "7:37:00 PM",
-            "step": "Status: Customer opened link (Completed)",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-102",
-        "contact_name": "David Warner",
-        "contact_handle": "@david_growth",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v2",
-        "created_at": "30 Aug '26 at 7:10 PM",
-        "updated_at": "30 Aug '26 at 7:12 PM",
-        "logs": [
-          {
-            "time": "7:10:00 PM",
-            "step": "Trigger: Commented 'Info' on post",
-            "status": "success"
-          },
-          {
-            "time": "7:10:02 PM",
-            "step": "Action: Public Reply posted",
-            "status": "success"
-          },
-          {
-            "time": "7:10:05 PM",
-            "step": "Action: DM sent",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-103",
-        "contact_name": "Emma Watson",
-        "contact_handle": "@emma.studio",
-        "contact_channel": "instagram",
-        "state": "in_progress",
-        "last_step": "Reply to Instagram Comments",
-        "version": "v2",
-        "created_at": "30 Aug '26 at 6:50 PM",
-        "updated_at": "30 Aug '26 at 6:55 PM",
-        "logs": [
-          {
-            "time": "6:50:00 PM",
-            "step": "Trigger: Comment received",
-            "status": "success"
-          },
-          {
-            "time": "6:50:02 PM",
-            "step": "Action: Public Reply posted",
-            "status": "success"
-          }
-        ]
-      },
-      {
-        "id": "run-104",
-        "contact_name": "Liam Johnson",
-        "contact_handle": "@liam_tech",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message",
-        "version": "v1",
-        "created_at": "30 Aug '26 at 5:20 PM",
-        "updated_at": "30 Aug '26 at 5:25 PM",
-        "logs": [
-          {
-            "time": "5:20:00 PM",
-            "step": "Trigger: Comment on Reel",
-            "status": "success"
-          },
-          {
-            "time": "5:20:03 PM",
-            "step": "Action: DM delivered",
-            "status": "success"
-          }
-        ]
-      }
-    ],
-    "updated_at": "2026-08-31T04:51:34.384Z"
-  },
-  {
-    "id": "journey-ig-agent-2",
-    "name": "Use AI Agent on Instagram DMs",
-    "template_id": "tpl-ig-dm",
-    "channel": "instagram",
-    "channel_label": "Instagram",
-    "status": "active",
-    "version": "v2",
-    "formatted_date": "30 Aug '26 at 7:36 PM",
+    "version": "v1",
+    "formatted_date": "31 Aug '26 at 1:55 PM",
     "trigger": {
       "type": "conversation",
-      "channel": "instagram",
-      "label": "Conversation"
+      "channel": "whatsapp",
+      "label": "Incoming WhatsApp Message"
     },
     "nodes": [
       {
         "id": "node-1",
         "type": "assign_agent",
-        "title": "Assign to AI Agent",
-        "bot_id": "bot-apex-agency",
-        "bot_name": "Apex AI Assistant",
+        "title": "Assign to AI Agent (Suresh Polai)",
+        "bot_id": "bot-ec0db899",
+        "bot_name": "Suresh Polai",
         "is_configured": true
       },
       {
         "id": "node-2",
         "type": "wait_delay",
-        "title": "Wait Until",
+        "title": "Wait 2 Hours If No Reply",
         "duration_value": 2,
         "duration_unit": "hours",
         "is_configured": true
@@ -320,158 +33,79 @@
       {
         "id": "node-3",
         "type": "send_message",
-        "title": "Send Message in Conversation",
-        "message_text": "Thanks for reaching out! Would you like to schedule a quick 10-minute demo call?",
+        "title": "Automated Follow-up Reminder",
+        "message_text": "Hey! 👋 Just checking in to see if you have any questions about our Web Development ($499-$999) or AI Chatbot packages?",
         "is_configured": true
       }
     ],
     "stats": {
-      "total_runs": 89,
-      "completed": 84,
-      "sent": 89,
-      "delivered": 88,
-      "read": 82,
-      "failed": 2,
+      "total_runs": 0,
+      "completed": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0,
       "outcomes": {
-        "completed": 84,
-        "in_progress": 3,
-        "dropped_off": 2,
+        "completed": 0,
+        "in_progress": 0,
+        "dropped_off": 0,
         "failed": 0
       }
     },
-    "runs": [
-      {
-        "id": "run-201",
-        "contact_name": "Alex Vance",
-        "contact_handle": "@alex_buildvora",
-        "contact_channel": "instagram",
-        "state": "completed",
-        "last_step": "Send Message in Conversation",
-        "version": "v2",
-        "created_at": "30 Aug '26 at 6:30 PM",
-        "updated_at": "30 Aug '26 at 7:36 PM",
-        "logs": [
-          {
-            "time": "6:30 PM",
-            "step": "Trigger: Incoming Direct Message received",
-            "status": "success"
-          },
-          {
-            "time": "6:30 PM",
-            "step": "Action: Handed over to Apex AI Assistant",
-            "status": "success"
-          },
-          {
-            "time": "6:31 PM",
-            "step": "AI Reply: Answered customer query in 1.2s",
-            "status": "success"
-          },
-          {
-            "time": "7:36 PM",
-            "step": "Action: Follow-up message delivered (Completed)",
-            "status": "success"
-          }
-        ]
-      }
-    ]
+    "runs": []
   },
   {
-    "id": "journey-wa-testdrive-3",
-    "name": "WhatsApp Test Drive — AI Support",
-    "template_id": "tpl-wa-agent",
+    "id": "journey-wa-nurture-leads",
+    "name": "Nurture WhatsApp Leads",
+    "template_id": "tpl-nurture-leads",
     "channel": "whatsapp",
     "channel_label": "WhatsApp",
     "status": "active",
     "version": "v1",
-    "formatted_date": "30 Aug '26 at 7:08 PM",
+    "formatted_date": "31 Aug '26 at 1:55 PM",
     "trigger": {
-      "type": "conversation",
+      "type": "tag_added",
       "channel": "whatsapp",
-      "label": "Conversation"
+      "label": "Lead Captured from Inbound Inquiry"
     },
     "nodes": [
       {
         "id": "node-1",
-        "type": "assign_agent",
-        "title": "Assign to AI Agent",
-        "bot_id": "bot-apex-agency",
-        "bot_name": "Apex AI Assistant",
+        "type": "send_message",
+        "title": "Send Welcome Quote & Scope",
+        "message_text": "Thank you for reaching out! We've received your requirements and will connect with you shortly.",
         "is_configured": true
       },
       {
         "id": "node-2",
         "type": "wait_delay",
-        "title": "Wait Until",
-        "duration_value": 6,
+        "title": "Wait 24 Hours",
+        "duration_value": 24,
         "duration_unit": "hours",
         "is_configured": true
       },
       {
         "id": "node-3",
         "type": "send_message",
-        "title": "Send Message in Conversation",
-        "message_text": "Hello! Let us know if you need any assistance.",
-        "is_configured": true
-      },
-      {
-        "id": "node-4",
-        "type": "wait_delay",
-        "title": "Wait Until",
-        "duration_value": 24,
-        "duration_unit": "hours",
-        "is_configured": true
-      },
-      {
-        "id": "node-5",
-        "type": "send_message",
-        "title": "Send Final Followup",
-        "message_text": "Hey there! Just checking if everything was resolved for you?",
+        "title": "Free Discovery Call Invitation",
+        "message_text": "Hi! Would you like to schedule a quick 10-minute discovery call with Suresh to finalize your project roadmap?",
         "is_configured": true
       }
     ],
     "stats": {
-      "total_runs": 215,
-      "completed": 204,
-      "sent": 215,
-      "delivered": 212,
-      "read": 198,
-      "failed": 3,
+      "total_runs": 0,
+      "completed": 0,
+      "sent": 0,
+      "delivered": 0,
+      "read": 0,
+      "failed": 0,
       "outcomes": {
-        "completed": 204,
-        "in_progress": 7,
-        "dropped_off": 4,
+        "completed": 0,
+        "in_progress": 0,
+        "dropped_off": 0,
         "failed": 0
       }
     },
-    "runs": [
-      {
-        "id": "run-301",
-        "contact_name": "Rajesh Sharma",
-        "contact_handle": "+91 98201 44820",
-        "contact_channel": "whatsapp",
-        "state": "completed",
-        "last_step": "Send Final Followup",
-        "version": "v1",
-        "created_at": "30 Aug '26 at 5:00 PM",
-        "updated_at": "30 Aug '26 at 7:08 PM",
-        "logs": [
-          {
-            "time": "5:00 PM",
-            "step": "Trigger: Inbound WhatsApp message received",
-            "status": "success"
-          },
-          {
-            "time": "5:00 PM",
-            "step": "Action: Handed to Apex AI Assistant",
-            "status": "success"
-          },
-          {
-            "time": "7:08 PM",
-            "step": "Action: All steps completed successfully",
-            "status": "success"
-          }
-        ]
-      }
-    ]
+    "runs": []
   }
 ]

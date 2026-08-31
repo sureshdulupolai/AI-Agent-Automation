@@ -13,6 +13,7 @@ import { fileURLToPath } from 'url';
 import { db } from '../config/database.js';
 import { generateBotReply } from './geminiService.js';
 import { extractLeadDetails } from './leadParserService.js';
+import { scheduleFollowUp, cancelFollowUp } from './followUpScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -229,6 +230,9 @@ export async function getOrCreateSocket(botId, forceReset = false) {
 
           const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
 
+          // Cancel any pending follow-up reminder since user sent a new message
+          cancelFollowUp(sessionId);
+
           // 1. Record incoming user message
           await db.addMessage({
             bot_id: botId,
@@ -275,6 +279,14 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             sender: 'bot',
             content: reply,
             channel: 'whatsapp'
+          });
+
+          // 6. Schedule automated follow-up reminder (2-hour lead nurture)
+          scheduleFollowUp({
+            botId,
+            sessionId,
+            senderPhone: finalPhone,
+            senderName: finalName
           });
 
           console.log(`🤖 [REAL WHATSAPP SENT] to ${senderPhone}: "${reply.substring(0, 80)}..."`);
@@ -519,6 +531,9 @@ export async function processWhatsAppIncoming({
     }
   }
 
+  // Cancel any existing pending follow-up reminder
+  cancelFollowUp(sessionId);
+
   // 1. Record incoming user message
   await db.addMessage({
     bot_id: botId,
@@ -561,6 +576,14 @@ export async function processWhatsAppIncoming({
     sender: 'bot',
     content: reply,
     channel: 'whatsapp'
+  });
+
+  // 5. Schedule automated follow-up reminder
+  scheduleFollowUp({
+    botId,
+    sessionId,
+    senderPhone: finalPhone,
+    senderName: finalName
   });
 
   // If live socket exists, also send to real WhatsApp

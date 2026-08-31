@@ -243,3 +243,13 @@ export const deleteJourney = (req, res) => {
   saveJourneysData(journeys);
   res.json({ success: true, message: 'Journey deleted successfully' });
 };
+
+export const listActiveFollowUps = async (req, res) => {
+  try {
+    const { getActiveFollowUps } = await import('../services/followUpScheduler.js');
+    const followUps = getActiveFollowUps();
+    res.json({ success: true, followUps });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
