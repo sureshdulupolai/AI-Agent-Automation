@@ -19,12 +19,23 @@ import * as integrationController from './controllers/integrationController.js';
 import * as oauthController from './controllers/oauthController.js';
 import * as campaignController from './controllers/campaignController.js';
 import * as universalChatController from './controllers/universalChatController.js';
+import * as dealController from './controllers/dealController.js';
+import * as teamController from './controllers/teamController.js';
+import * as appointmentController from './controllers/appointmentController.js';
+import * as copilotController from './controllers/copilotController.js';
+import * as safeCampaignController from './controllers/safeCampaignController.js';
+import * as leadRouterController from './controllers/leadRouterController.js';
+import * as dynamicChatController from './controllers/dynamicChatController.js';
+import * as whatsappBaileys from './services/whatsappBaileys.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
 import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
 import { startCampaignScheduler } from './services/campaignScheduler.js';
 import { startEmailAutomationEngine, getEmailAutomationSettings, saveEmailAutomationSettings, getEmailAutomationLogs } from './services/emailAutomationService.js';
 import { getTaskSummary, runBatchExecution, generateDailyEODReportSummary, clearAllTasks } from './services/taskEngine.js';
 import { initFollowUpCron } from './services/followUpCron.js';
+import { helmetGuard, globalRateLimiter, authRateLimiter, hppGuard, sanitizePayloads } from './middleware/security.js';
+import { tenantGuard } from './middleware/tenantGuard.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,14 +47,20 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'omnibot-super-secret-jwt-key-2026';
 
-// Middleware
+// 7-Tier Bulletproof Security Stack
+app.use(helmetGuard);
+app.use(globalRateLimiter);
+app.use(hppGuard);
+app.use(sanitizePayloads);
+
+// CORS & Body Parser
 app.use(cors({
-  origin: '*', // Allow all origins for the embed widget
+  origin: '*', // Allow cross-origin for embed widget & webhooks
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '25mb' })); // Support rich media & attachments
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Serve static assets (including widget.js and test page)
 app.use(express.static(path.join(__dirname, 'public')));
@@ -82,10 +99,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // ----------------------------------------------------
-// Auth Routes
+// Auth Routes (with Dedicated Strict Rate Limiter)
 // ----------------------------------------------------
-app.post('/api/auth/login', authController.login);
-app.post('/api/auth/register', authController.register);
+app.post('/api/auth/login', authRateLimiter, authController.login);
+app.post('/api/auth/register', authRateLimiter, authController.register);
 app.get('/api/auth/me', authenticateToken, authController.getMe);
 
 // ----------------------------------------------------
@@ -103,6 +120,7 @@ app.delete('/api/bots/:botId', authenticateToken, botController.deleteBot);
 // Chat & Widget Messaging & Verification Routes
 // ----------------------------------------------------
 app.post('/api/verify-website', verifyWebsiteController.verifyWebsiteWidget);
+app.post('/api/chat/dynamic', tenantGuard({ required: false }), dynamicChatController.handleDynamicChat);
 app.post('/api/chat/:botId', chatController.handleWidgetChat);
 app.get('/api/chat/:botId/history/:sessionId', chatController.getSessionHistory);
 app.post('/api/chat/:botId/lead', chatController.submitLeadForm);
@@ -130,6 +148,9 @@ app.delete('/api/segments/:segmentId', authenticateToken, leadController.deleteS
 // ----------------------------------------------------
 // WhatsApp Automation Routes (QR + 8-Digit Pairing Code + Meta)
 // ----------------------------------------------------
+app.get('/api/whatsapp/whitelist-settings', whatsappController.getWhitelist);
+app.post('/api/whatsapp/whitelist-settings', whatsappController.updateWhitelist);
+app.get('/api/whatsapp/groups/live', whatsappController.getLiveGroups);
 app.get('/api/whatsapp/:botId/qr', authenticateToken, whatsappController.getQR);
 app.post('/api/whatsapp/:botId/pairing-code', authenticateToken, whatsappController.getPairingCode);
 app.get('/api/whatsapp/:botId/status', authenticateToken, whatsappController.getStatus);
@@ -247,6 +268,86 @@ app.get('/api/universal/profile/:botId', universalChatController.getBusinessProf
 app.post('/api/universal/profile/:botId', universalChatController.updateBusinessProfile);
 app.post('/api/universal/generate-profile', universalChatController.autoGenerateProfile);
 app.post('/api/universal/chat', universalChatController.handleUniversalInboundChat);
+
+// ----------------------------------------------------
+// Deals & Sales Pipeline Kanban Routes
+// ----------------------------------------------------
+app.get('/api/deals', dealController.listDeals);
+app.post('/api/deals', dealController.createDeal);
+app.patch('/api/deals/:id/stage', dealController.updateStage);
+app.delete('/api/deals/:id', dealController.deleteDeal);
+
+// ----------------------------------------------------
+// Multi-Agent Team Inbox & Human Handoff Routes
+// ----------------------------------------------------
+app.get('/api/team/conversations', teamController.listTeamConversations);
+app.post('/api/team/handoff/:sessionId', teamController.toggleHumanHandoff);
+app.post('/api/team/reply', teamController.sendHumanAgentReply);
+
+// ----------------------------------------------------
+// Auto Appointment Booking & Calendar Routes
+// ----------------------------------------------------
+app.get('/api/appointments', appointmentController.listAppointments);
+app.post('/api/appointments/book', appointmentController.bookAppointment);
+app.delete('/api/appointments/:id', appointmentController.cancelAppointment);
+
+// ----------------------------------------------------
+// Multi-Number WhatsApp Session Manager Routes
+// ----------------------------------------------------
+app.get('/api/whatsapp/multi-sessions', async (req, res) => {
+  try {
+    const sessions = await whatsappBaileys.listAllActiveSessions();
+    res.json({ success: true, sessions });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.post('/api/whatsapp/multi-sessions/init', async (req, res) => {
+  try {
+    const { botId } = req.body;
+    const session = await whatsappBaileys.createNewDeviceSession(botId || 'bot-ec0db899');
+    res.json({ success: true, session });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+app.delete('/api/whatsapp/multi-sessions/:botId', async (req, res) => {
+  try {
+    const { botId } = req.params;
+    await whatsappBaileys.disconnectDeviceSession(botId);
+    res.json({ success: true, message: 'Device disconnected' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------
+// Autonomous Operations Copilot & Action Agent Routes
+// ----------------------------------------------------
+app.post('/api/copilot/chat', copilotController.handleCopilotChat);
+
+// ----------------------------------------------------
+// WhatsApp Anti-Ban & Safe Campaign Dispatch Routes
+// ----------------------------------------------------
+app.post('/api/campaigns/safe-dispatch', tenantGuard({ required: false }), safeCampaignController.dispatchSafeCampaign);
+app.get('/api/campaigns/safe-jobs', tenantGuard({ required: false }), safeCampaignController.listSafeJobs);
+app.get('/api/campaigns/safe-jobs/:jobId', tenantGuard({ required: false }), safeCampaignController.getSafeJobDetails);
+app.post('/api/campaigns/safe-jobs/:jobId/pause', tenantGuard({ required: false }), safeCampaignController.pauseSafeJob);
+app.post('/api/campaigns/safe-jobs/:jobId/resume', tenantGuard({ required: false }), safeCampaignController.resumeSafeJob);
+app.post('/api/campaigns/safe-jobs/:jobId/cancel', tenantGuard({ required: false }), safeCampaignController.cancelSafeJob);
+app.get('/api/campaigns/safety-health', safeCampaignController.getSafetyHealth);
+
+// ----------------------------------------------------
+// Autonomous Batch Lead Ingestion & Smart Handoff Routes
+// ----------------------------------------------------
+app.post('/api/leads/batch-ingest', tenantGuard({ required: false }), leadRouterController.batchIngestLeads);
+app.post('/api/leads/evaluate-route', tenantGuard({ required: false }), leadRouterController.evaluateSingleLeadRoute);
+
+// ----------------------------------------------------
+// Centralized 404 & Error Handling Middleware
+// ----------------------------------------------------
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Start Server
 app.listen(PORT, () => {

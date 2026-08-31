@@ -24,6 +24,18 @@ export function isGoogleConnected() {
   return !!(tokens && (tokens.access_token || tokens.refresh_token));
 }
 
+export function disconnectGoogle() {
+  try {
+    if (fs.existsSync(TOKEN_FILE)) {
+      fs.unlinkSync(TOKEN_FILE);
+    }
+    return true;
+  } catch (err) {
+    console.error('Error removing Google tokens on disconnect:', err);
+    return false;
+  }
+}
+
 export function saveGoogleTokens(tokens) {
   try {
     const existing = getGoogleTokens() || {};

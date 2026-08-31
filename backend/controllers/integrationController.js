@@ -45,6 +45,8 @@ function saveKeysData(data) {
 }
 
 import { db } from '../config/database.js';
+import { disconnectGoogle } from '../services/googleService.js';
+import { disconnectWhatsApp } from '../services/baileysService.js';
 
 export const listIntegrations = async (req, res) => {
   const integrations = getIntegrationsData();
@@ -70,7 +72,7 @@ export const listIntegrations = async (req, res) => {
   res.json({ success: true, integrations });
 };
 
-export const updateIntegration = (req, res) => {
+export const updateIntegration = async (req, res) => {
   const { id } = req.params;
   const { status, account, credentials, sync_target, webhook_url } = req.body;
   const integrations = getIntegrationsData();
@@ -78,6 +80,22 @@ export const updateIntegration = (req, res) => {
 
   if (index === -1) {
     return res.status(404).json({ success: false, error: 'Integration not found' });
+  }
+
+  // Graceful Disconnect Handling (Zero Data Loss)
+  if (status === 'not_configured') {
+    if (id === 'google') {
+      disconnectGoogle();
+    } else if (id === 'whatsapp') {
+      try {
+        const bots = await db.getBots();
+        for (const b of bots) {
+          await disconnectWhatsApp(b.id);
+        }
+      } catch (err) {
+        console.warn('Error disconnecting WhatsApp sessions:', err.message);
+      }
+    }
   }
 
   const now = new Date();

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "appt-ceb0c01f",
+    "client_name": "Rahul Sharma",
+    "client_phone": "+91 98206 46838",
+    "client_email": "rahul.s@techcorp.in",
+    "service_title": "SaaS Platform & AI Automation Demo",
+    "scheduled_time": "2026-09-01T09:30:00.000Z",
+    "status": "confirmed",
+    "notes": "Requested live demonstration of WhatsApp Broadcast and AI agents.",
+    "bot_id": "bot-ec0db899",
+    "created_at": "2026-08-31T13:23:14.783Z"
+  }
+]

@@ -345,12 +345,27 @@ function generateContextualFallback(bot, userMessage, history) {
     return `Hey ${detectedName}! Great to connect with you. We'd love to help you build a high-performance custom website paired with an autonomous 24/7 AI chatbot.\n\nWhat kind of business or project is this for? Our typical turnaround is 3 to 7 business days with complete responsive design, SEO optimization, and live lead capture. 🚀`;
   }
 
-  // 4. Pricing & Packages questions
+  // 4. WhatsApp Connection Intent (e.g. "can u connect my whatsapp", "how to link whatsapp", "qr code")
+  if (lower.includes('whatsapp') || lower.includes('whatapp') || lower.includes('wa') || lower.includes('qr')) {
+    return `Yes! You can link your WhatsApp number in 30 seconds:\n\n1. Open **Integrations (/integrations)** in the left sidebar.\n2. Under WhatsApp, click **"Scan QR Code"** or **"Pair via 8-Digit Code"**.\n3. Open WhatsApp on your phone ➔ **Linked Devices** ➔ **Link a Device** ➔ Scan the QR.\n\nOnce paired, I will automatically answer your incoming customer inquiries 24/7 and qualify leads without any per-message cloud fees! 📱`;
+  }
+
+  // 5. Website Widget & Embed Intent (e.g. "how do i embed this widget", "script tag", "add to website")
+  if (lower.includes('embed') || lower.includes('widget') || lower.includes('script') || lower.includes('wordpress') || lower.includes('shopify')) {
+    return `To embed this AI chatbot on any website, copy and paste this 1-line script snippet before the closing </body> tag:\n\n\`<script src="http://localhost:5000/widget.js" data-bot-id="bot-ec0db899" async></script>\`\n\nIt runs smoothly on WordPress, Next.js, Shopify, Webflow, and custom HTML with live lead capture! 💻`;
+  }
+
+  // 6. Follow-Up & Inactivity Automation Intent
+  if (lower.includes('follow up') || lower.includes('followup') || lower.includes('follow-up') || lower.includes('inactivity') || lower.includes('timer')) {
+    return `Our autonomous follow-up engine scans your conversation pipeline every 10 minutes. If a lead goes inactive for 2 hours, it automatically dispatches a consultative nudge message on WhatsApp to re-engage the customer and close the deal! ⏰`;
+  }
+
+  // 7. Pricing & Packages questions
   if (lower.includes('price') || lower.includes('pricing') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate') || lower.includes('package') || lower.includes('quote') || lower.includes('fee')) {
     return `Here is an overview of our standard packages:\n\n• *Custom High-Converting Website*: $499 - $999 (Modern React / Next.js architecture, SEO optimized, 3-7 days turnaround)\n• *Autonomous WhatsApp & Web AI Bot*: $399 - $899 (24/7 lead qualification, multi-channel support)\n• *Complete Full-Stack SaaS MVP*: $1,500 - $2,500 (End-to-end database, auth & payments)\n\nTell me a bit about your specific requirements—I can give you an exact estimate right away! 😊`;
   }
 
-  // 5. General greetings
+  // 8. General greetings
   if (/^(hi|hello|helo|hey|hola|namaste|good morning|good afternoon|good evening)\b/i.test(lower)) {
     if (detectedName) {
       return `Hello ${detectedName}! 👋 Great to connect with you. How can NovaByte AI Studio assist you with your web or AI automation project today?`;
@@ -358,16 +373,16 @@ function generateContextualFallback(bot, userMessage, history) {
     return `Hello there! 👋 Welcome to NovaByte AI Studio. How can we help you today? Feel free to ask about our custom web development packages, 24/7 WhatsApp AI chatbots, or request a live demo! 🚀`;
   }
 
-  // 6. Services & Features questions
+  // 9. Services & Features questions
   if (lower.includes('service') || lower.includes('offer') || lower.includes('feature') || lower.includes('what do you do') || lower.includes('hire') || lower.includes('help') || lower.includes('develop') || lower.includes('website') || lower.includes('chatbot')) {
     return `At NovaByte AI Studio, we specialize in:\n\n1. *Custom Full-Stack Websites & Apps*: Blazing fast, SEO-optimized, and built for maximum conversion.\n2. *24/7 Autonomous AI WhatsApp & Web Agents*: Answer client inquiries instantly, capture qualified leads, and book calls.\n3. *Growth Automation & CRM Sync*: Automated email drip sequences and Google Sheets sync.\n\nWhat are the main features you are looking to build for your project?`;
   }
 
-  // 7. Discovery call & Consultation
+  // 10. Discovery call & Consultation
   if (lower.includes('hour') || lower.includes('time') || lower.includes('consultation') || lower.includes('call') || lower.includes('meeting') || lower.includes('demo')) {
     return `We'd love to schedule a quick 10-minute discovery call to map out the technical blueprint for your project! 📞\n\nWhat day and time works best for you? You can also leave your WhatsApp number or email so we can coordinate.`;
   }
 
-  // 8. General natural consultation fallback
+  // 11. General natural consultation fallback
   return `Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀`;
 }

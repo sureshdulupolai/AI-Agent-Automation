@@ -1,5 +1,6 @@
-﻿import { db } from '../config/database.js';
+import { db } from '../config/database.js';
 import { generateFollowUpMessage } from './geminiService.js';
+import { logAutonomousTask } from './taskEngine.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -163,33 +164,59 @@ async function _executeFollowUp({ botId, sessionId, senderPhone, senderName, ste
       conversationHistory: sessionMsgs
     });
 
+    let isDelivered = false;
+    let deliveryError = null;
+
     // Send via live WhatsApp socket
     try {
       const sock = await getOrCreateSocket(botId, false);
       if (sock) {
         const remoteJid = senderPhone.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
         await sock.sendMessage(remoteJid, { text: followUpText });
+        isDelivered = true;
         console.log(`[FOLLOW-UP SENT] Step ${step} to +${senderPhone}: "${followUpText.substring(0, 60)}..."`);
+      } else {
+        deliveryError = 'WhatsApp device is not paired. Please connect your phone in Integrations.';
       }
     } catch (sendErr) {
-      console.error(`[FOLLOW-UP SEND ERROR] +${senderPhone}:`, sendErr.message);
+      deliveryError = sendErr.message || 'WhatsApp message dispatch failed.';
+      console.error(`[FOLLOW-UP SEND ERROR] +${senderPhone}:`, deliveryError);
     }
 
-    // Record in message history
-    await db.addMessage({
-      bot_id: botId,
-      session_id: sessionId,
-      sender: 'bot',
-      content: `[Automated Follow-Up Step ${step}]\n${followUpText}`,
-      channel: 'whatsapp'
+    // Log accurate status to Autonomous Task Command Center
+    logAutonomousTask({
+      type: 'follow_up',
+      title: isDelivered 
+        ? `Dispatched Inactivity Follow-up (Step ${step})`
+        : `Follow-up Queued - Channel Disconnected (Step ${step})`,
+      channel: 'whatsapp',
+      recipient: `+${senderPhone} (${senderName || 'Lead'})`,
+      status: isDelivered ? 'completed' : 'failed',
+      metadata: {
+        step,
+        message_preview: followUpText,
+        session_id: sessionId
+      },
+      error: deliveryError
     });
 
-    // Log to journey stats
-    recordJourneyRun({
-      contact_name: senderName,
-      contact_handle: `+${senderPhone}`,
-      step: `Automated Follow-Up Step ${step} Sent`
-    });
+    // Record in message history only if delivered or attempted
+    if (isDelivered) {
+      await db.addMessage({
+        bot_id: botId,
+        session_id: sessionId,
+        sender: 'bot',
+        content: `[Automated Follow-Up Step ${step}]\n${followUpText}`,
+        channel: 'whatsapp'
+      });
+
+      // Log to journey stats
+      recordJourneyRun({
+        contact_name: senderName,
+        contact_handle: `+${senderPhone}`,
+        step: `Automated Follow-Up Step ${step} Sent`
+      });
+    }
 
     activeTimers.delete(sessionId);
     removePending(sessionId);

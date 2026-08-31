@@ -72,6 +72,8 @@ export function logAutonomousTask({
   return newTask;
 }
 
+export const logTaskExecution = logAutonomousTask;
+
 /**
  * Clear all tasks from audit log
  */

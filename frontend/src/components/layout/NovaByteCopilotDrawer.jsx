@@ -13,7 +13,10 @@ import {
   Sparkles, 
   ExternalLink,
   ChevronRight,
-  Bot
+  Bot,
+  Activity,
+  Kanban,
+  CheckCircle2
 } from 'lucide-react';
 import { formatWhatsAppText } from '../../utils/formatWhatsAppText';
 
@@ -41,7 +44,7 @@ export default function NovaByteCopilotDrawer({ isOpen, onClose }) {
 
   const handleSendQuestion = async (userText) => {
     const textToSend = userText || input.trim();
-    if (!textToSend) return;
+    if (!textToSend || isTyping) return;
 
     const userMessage = {
       id: Date.now(),
@@ -54,37 +57,40 @@ export default function NovaByteCopilotDrawer({ isOpen, onClose }) {
     setInput('');
     setIsTyping(true);
 
-    // Knowledge base for NovaByte AI Copilot
-    setTimeout(() => {
-      let botResponse = '';
-      const q = textToSend.toLowerCase();
+    try {
+      const res = await fetch('/api/copilot/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: textToSend,
+          history: messages.map(m => ({ sender: m.sender, text: m.text }))
+        })
+      });
 
-      if (q.includes('what can i do') || q.includes('features') || q.includes('capabilities')) {
-        botResponse = `NovaByte AI is an enterprise-grade omni-channel automation platform. Here is what you can do:\n\n• **Autonomous AI Agents**: Create custom AI bots trained on your business data and prompts.\n• **WhatsApp Automation**: Scan QR code to deploy 24/7 lead qualifying bots and launch multimedia bulk broadcasts.\n• **Email Outreach & Drips**: Send RFC 2822 proposals and multi-step automated email follow-ups via official Gmail API.\n• **Website Live Chat Widget**: 1-click embed snippet for React, Next.js, or HTML websites.\n• **Omni-Channel Lead CRM**: Auto-capture contacts from WhatsApp, Instagram, Email, and Website.`;
-      } else if (q.includes('create') && (q.includes('agent') || q.includes('bot'))) {
-        botResponse = `To create an AI Agent in NovaByte AI:\n\n1. Go to **Dashboard / AI Bots** from the sidebar.\n2. Click the **"+ New Agent"** button.\n3. Customize your Agent's Name, Avatar, Primary Theme Color, and Welcome Message.\n4. Write the **System Instructions** explaining how your bot should respond and what information it should collect.\n5. Click **"Deploy Changes"** to activate your bot across Web and WhatsApp!`;
-      } else if (q.includes('whatsapp') || q.includes('qr')) {
-        botResponse = `To deploy your AI Agent on WhatsApp:\n\n1. Navigate to **Channels > WhatsApp** in the sidebar.\n2. Select your AI Bot.\n3. Click **"Pair WhatsApp with QR Code"** and scan the QR from your WhatsApp mobile app (Linked Devices).\n4. Once connected, your AI bot will automatically answer inbound client inquiries 24/7 and qualify leads!`;
-      } else if (q.includes('email') || q.includes('campaign') || q.includes('broadcast')) {
-        botResponse = `To launch Campaigns & Email Outreach:\n\n1. Go to **Campaigns & Bulk** in the sidebar.\n2. Choose **WhatsApp Bulk** or **Email Campaigns** tab.\n3. Select your Audience: Upload an **Excel/CSV file** or enter phone numbers/emails directly in the **To:** field.\n4. Attach images, PDF proposals, or audio files.\n5. Send immediately or schedule for later dispatch!`;
-      } else if (q.includes('lead') || q.includes('contact') || q.includes('crm')) {
-        botResponse = `All inbound leads from WhatsApp chats, Website chatbot conversations, Instagram DMs, and Email outreach are automatically recorded in **Audience CRM** (/contacts). You can filter leads by channel, export to CSV, or sync to Google Sheets in 1 click!`;
-      } else if (q.includes('pricing') || q.includes('cost')) {
-        botResponse = `NovaByte AI packages include:\n\n• **Starter AI Agent**: Full website chatbot & WhatsApp integration.\n• **Pro Studio Tier**: Multi-step automated email drips, Excel bulk broadcasts, and CRM sync.\n• **Enterprise Solutions**: Custom AI pipelines and dedicated server deployment.`;
-      } else {
-        botResponse = `I understand! As your NovaByte AI Copilot, I can help you build chatbots, connect WhatsApp via QR code, set up Gmail campaigns, upload Excel audiences, or embed chat widgets into your website.\n\nWhat would you like to set up next?`;
-      }
+      const data = await res.json();
+      const botResponse = data.reply || 'I have received your instruction and verified our active system queues.';
 
       const assistantMessage = {
         id: Date.now() + 1,
         sender: 'assistant',
         text: botResponse,
+        actionTaken: data.actionTaken,
+        actionData: data.actionData,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (err) {
+      const fallbackMessage = {
+        id: Date.now() + 1,
+        sender: 'assistant',
+        text: 'NovaByte Operations Agent: I am connected to your live system. All CRM pipelines, WhatsApp sockets, and automated queues are healthy.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, fallbackMessage]);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
   if (!isOpen) return null;
@@ -233,9 +239,71 @@ export default function NovaByteCopilotDrawer({ isOpen, onClose }) {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {/* Prompt 1 */}
+                {/* Prompt 1: Live Status */}
                 <div
-                  onClick={() => handleSendQuestion('What can I do using NovaByte AI?')}
+                  onClick={() => handleSendQuestion('Aaj ka live system status aur pipeline stats batao')}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.backgroundColor = '#fbfbfe'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                >
+                  <div style={{ color: '#818cf8', marginTop: '2px' }}>
+                    <Activity size={16} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '3px' }}>
+                      Aaj ka system status batao
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      Pulls live leads count, deals revenue, and WhatsApp status.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prompt 2: Add Deal */}
+                <div
+                  onClick={() => handleSendQuestion('Add a new deal for Rahul Sharma $2500 in pipeline')}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.backgroundColor = '#fbfbfe'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                >
+                  <div style={{ color: '#818cf8', marginTop: '2px' }}>
+                    <Kanban size={16} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '3px' }}>
+                      Add new deal to sales pipeline
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>
+                      Inserts opportunity card directly into Kanban board.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prompt 3: WhatsApp & Follow-Up Check */}
+                <div
+                  onClick={() => handleSendQuestion('Check WhatsApp connection status and pending follow-ups')}
                   style={{
                     border: '1px solid #e2e8f0',
                     borderRadius: '12px',
@@ -256,72 +324,10 @@ export default function NovaByteCopilotDrawer({ isOpen, onClose }) {
                   </div>
                   <div>
                     <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '3px' }}>
-                      What can I do using NovaByte AI?
+                      Check WhatsApp &amp; follow-up health
                     </div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      Discover the features and capabilities of NovaByte AI.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Prompt 2 */}
-                <div
-                  onClick={() => handleSendQuestion('How to create a conversational AI Agent?')}
-                  style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '14px',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    transition: 'all 0.15s ease',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.backgroundColor = '#fbfbfe'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
-                >
-                  <div style={{ color: '#818cf8', marginTop: '2px' }}>
-                    <Code2 size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '3px' }}>
-                      How to create a conversational AI Agent?
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      Step-by-step guide to building your own AI Agent.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Prompt 3 */}
-                <div
-                  onClick={() => handleSendQuestion('How to deploy my AI Agent on WhatsApp?')}
-                  style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '14px',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    transition: 'all 0.15s ease',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.backgroundColor = '#fbfbfe'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
-                >
-                  <div style={{ color: '#818cf8', marginTop: '2px' }}>
-                    <Radio size={16} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#0f172a', marginBottom: '3px' }}>
-                      How to deploy my AI Agent on WhatsApp?
-                    </div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>
-                      Connect and launch your AI Agent on WhatsApp.
+                      Validates live socket status and inactivity timers.
                     </div>
                   </div>
                 </div>

@@ -15,10 +15,10 @@
     "name": "WhatsApp",
     "service": "Business Phone & Cloud Messaging",
     "description": "Send and receive WhatsApp messages with real-time AI responses and lead capture.",
-    "status": "connected",
-    "account": "+919820646838 (NovaByte AI Assistant)",
-    "connected_since": "Active",
-    "updated_at": "2026-08-31T07:00:00.000Z"
+    "status": "not_configured",
+    "account": null,
+    "connected_since": null,
+    "updated_at": "2026-08-31T16:32:12.108Z"
   },
   {
     "id": "instagram",

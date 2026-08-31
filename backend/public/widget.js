@@ -388,6 +388,27 @@
           border-color: var(--omnibot-primary);
         }
 
+        .action-nav-btn {
+          margin-top: 8px;
+          padding: 7px 12px;
+          border-radius: 8px;
+          background: #ffffff;
+          border: 1.5px solid var(--omnibot-primary);
+          color: var(--omnibot-primary);
+          font-size: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 2px 6px rgba(79, 70, 229, 0.15);
+          transition: all 0.15s ease;
+        }
+        .action-nav-btn:hover {
+          background: var(--omnibot-primary);
+          color: #ffffff;
+        }
+
         .typing-indicator {
           display: inline-flex;
           align-items: center;
@@ -613,7 +634,12 @@
       const isBot = msg.sender === 'bot';
       html += `
         <div class="msg-row ${isBot ? 'bot' : 'user'}">
-          <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+          <div class="msg-bubble">${formatWidgetMarkdown(msg.content)}</div>
+          ${isBot && msg.action ? `
+            <button class="action-nav-btn" data-action="${escapeHtml(JSON.stringify(msg.action))}">
+              <span>⚡ ${escapeHtml(msg.action.label || 'Take me there')}</span>
+            </button>
+          ` : ''}
         </div>
       `;
     });
@@ -649,6 +675,52 @@
         sendMessage(text);
       });
     });
+
+    stream.querySelectorAll('.action-nav-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        try {
+          const actionData = JSON.parse(btn.getAttribute('data-action'));
+          executeAutonomousAction(actionData);
+        } catch (e) {}
+      });
+    });
+  }
+
+  function executeAutonomousAction(action) {
+    if (!action) return;
+
+    if (action.requireAuth) {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        // Prompt login navigation or direct routing
+        if (window.confirm('This action requires you to be logged in. Would you like to proceed to login?')) {
+          action.targetPath = '/login';
+        } else {
+          return;
+        }
+      }
+    }
+
+    if (action.targetPath) {
+      if (window.history && window.history.pushState) {
+        window.history.pushState(null, '', action.targetPath);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      } else {
+        window.location.pathname = action.targetPath;
+      }
+    }
+
+    if (action.highlightSelector) {
+      setTimeout(() => {
+        const el = document.querySelector(action.highlightSelector);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.transition = 'box-shadow 0.3s ease';
+          el.style.boxShadow = '0 0 0 4px #4f46e5';
+          setTimeout(() => { el.style.boxShadow = ''; }, 3000);
+        }
+      }, 350);
+    }
   }
 
   function escapeHtml(text) {
@@ -656,6 +728,20 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function formatWidgetMarkdown(text) {
+    if (!text) return '';
+    let escaped = escapeHtml(text);
+    // Replace **bold**
+    escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 800;">$1</strong>');
+    // Replace *bold* (WhatsApp style)
+    escaped = escaped.replace(/\*(.*?)\*/g, '<strong style="font-weight: 800;">$1</strong>');
+    // Replace _italic_
+    escaped = escaped.replace(/_(.*?)_/g, '<em style="font-style: italic;">$1</em>');
+    // Replace newlines
+    escaped = escaped.replace(/\n/g, '<br/>');
+    return escaped;
   }
 
   async function sendMessage(text) {
@@ -687,6 +773,7 @@
       messages.push({
         sender: 'bot',
         content: data.reply,
+        action: data.action,
         created_at: data.timestamp || new Date().toISOString()
       });
 

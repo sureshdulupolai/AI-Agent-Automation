@@ -15,6 +15,8 @@ import { generateBotReply } from './geminiService.js';
 import { extractLeadDetails } from './leadParserService.js';
 import { scheduleFollowUp, cancelFollowUp, isConversationClosed } from './followUpScheduler.js';
 import { logAutonomousTask } from './taskEngine.js';
+import { isHumanTakeoverActive } from './humanTakeoverService.js';
+import { isWhatsAppTargetAllowed } from './whatsappGroupWhitelistService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -295,12 +297,21 @@ export async function getOrCreateSocket(botId, forceReset = false) {
           msg.message.templateButtonReplyMessage?.selectedId ||
           (mediaPayload ? `[Attached ${mediaPayload.mimeType.startsWith('image') ? 'Image' : (mediaPayload.mimeType.startsWith('audio') ? 'Voice Note' : 'Document')}]` : '');
 
-        if (!messageText && !mediaPayload) continue;
-
         console.log(`📩 [REAL WHATSAPP INCOMING] from ${senderPhone} (${senderName}): "${messageText || '[Media Attachment]'}"`);
 
-        try {
+        // ── 🛡️ WHATSAPP GROUP & CONTACT WHITELIST SECURITY GATE ──────
+        const whitelistGate = await isWhatsAppTargetAllowed({
+          senderJid,
+          senderPhone,
+          messageText
+        });
 
+        if (!whitelistGate.allowed) {
+          console.log(`🛡️ [WHITELIST FILTER - BLOCKED]: ${whitelistGate.message}`);
+          continue;
+        }
+
+        try {
           const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
 
           // Check if there is an active ongoing conversation in progress (within last 30 mins)
@@ -373,6 +384,12 @@ export async function getOrCreateSocket(botId, forceReset = false) {
               session_id: sessionId,
               status: 'new'
             });
+          }
+
+          // Check if contact is in Human Takeover mode
+          if (isHumanTakeoverActive(senderPhone)) {
+            console.log(`👤 [HUMAN TAKEOVER] AI reply skipped for ${senderPhone}. Human specialist has manual control.`);
+            continue;
           }
 
           // 3. Generate Gemini AI Response (with Vision/Audio/Doc multimodal context)
@@ -807,6 +824,40 @@ export async function safeSendMessage(botId, jid, content) {
   } catch (err) {
     console.error(`safeSendMessage error to ${jid}:`, err.message);
     return false;
+  }
+}
+
+export async function sendWhatsAppMessage(botId, phone, text) {
+  const remoteJid = phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+  return await safeSendMessage(botId, remoteJid, { text });
+}
+
+/**
+ * Fetch real participating WhatsApp groups from active socket
+ */
+export async function fetchLiveWhatsAppGroups(botId) {
+  let targetBotId = botId;
+  if (!targetBotId) {
+    const keys = Array.from(activeSockets.keys());
+    if (keys.length > 0) targetBotId = keys[0];
+  }
+  if (!targetBotId || !activeSockets.has(targetBotId)) {
+    return [];
+  }
+  const sock = activeSockets.get(targetBotId);
+  try {
+    const groups = await sock.groupFetchAllParticipating();
+    const groupList = Object.values(groups || {}).map(g => ({
+      jid: g.id,
+      name: g.subject || 'Unnamed WhatsApp Group',
+      participants_count: (g.participants || []).length,
+      creation: g.creation ? new Date(g.creation * 1000).toISOString() : null,
+      desc: g.desc || ''
+    }));
+    return groupList;
+  } catch (err) {
+    console.warn('Could not fetch live WhatsApp groups:', err.message);
+    return [];
   }
 }
 

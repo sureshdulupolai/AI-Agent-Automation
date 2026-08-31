@@ -1,0 +1,20 @@
+{
+  "919820011223": {
+    "is_takeover": true,
+    "assigned_to": "Suresh Polai (Senior Solutions Lead)",
+    "assigned_agent_id": "agent-1",
+    "assigned_at": "2026-08-31T15:57:47.021Z",
+    "lead_score": 100,
+    "lead_category": "🔥 Hot",
+    "auto_routed": true
+  },
+  "919876500001": {
+    "is_takeover": true,
+    "assigned_to": "Vikram Mehta (Enterprise Account Exec)",
+    "assigned_agent_id": "agent-2",
+    "assigned_at": "2026-08-31T15:57:47.054Z",
+    "lead_score": 80,
+    "lead_category": "🔥 Hot",
+    "auto_routed": true
+  }
+}

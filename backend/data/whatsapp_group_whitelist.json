@@ -1,0 +1,6 @@
+{
+  "block_all_unapproved_groups": true,
+  "whitelist_only_mode": false,
+  "approved_groups": [],
+  "approved_contacts": []
+}

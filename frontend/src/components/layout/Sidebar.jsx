@@ -19,6 +19,7 @@ import {
   ChevronRight, 
   ChevronDown,
   ChevronUp,
+  BookOpen,
   Radio,
   ChevronsLeft,
   ChevronsRight,
@@ -377,6 +378,25 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
                   >
                     Lists &amp; Segments
                   </button>
+
+                  <button
+                    onClick={() => navigate('/pipeline')}
+                    style={{
+                      display: 'block',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: (location.pathname === '/pipeline' || location.pathname === '/deals') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                      color: (location.pathname === '/pipeline' || location.pathname === '/deals') ? 'var(--primary)' : 'var(--text-secondary)',
+                      fontWeight: (location.pathname === '/pipeline' || location.pathname === '/deals') ? 700 : 500,
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%'
+                    }}
+                  >
+                    Deals &amp; Pipeline
+                  </button>
                 </div>
               )}
             </div>
@@ -582,6 +602,27 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
         {/* Secondary Navigation Links */}
         {!isCollapsed && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <button
+              onClick={() => navigate('/docs')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '9px',
+                padding: '6px 8px',
+                borderRadius: '6px',
+                border: 'none',
+                backgroundColor: isItemActive('/docs') ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                color: isItemActive('/docs') ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/docs') ? 700 : 500,
+                fontSize: '12.5px',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <BookOpen size={14} color={isItemActive('/docs') ? 'var(--primary)' : 'currentColor'} />
+              <span>Documentation &amp; Guides</span>
+            </button>
+
             <button
               onClick={() => navigate('/deployment')}
               style={{

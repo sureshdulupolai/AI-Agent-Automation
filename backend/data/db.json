@@ -14,12 +14,12 @@
     {
       "id": "bot-ec0db899",
       "created_at": "2026-08-30T16:02:52.879Z",
-      "updated_at": "2026-08-31T13:04:18.340Z",
+      "updated_at": "2026-08-31T17:04:38.172Z",
       "is_active": true,
       "allowed_domains": [
         "*"
       ],
-      "whatsapp_status": "connected",
+      "whatsapp_status": "pairing",
       "whatsapp_type": "qr",
       "user_id": "usr-demo-1",
       "bot_name": "NovaByte AI Assistant",
@@ -33,7 +33,7 @@
         "Book a live demo"
       ],
       "system_instructions": "You are the official 24/7 AI Growth & Technical Assistant for NovaByte AI Studio (Full-Stack Web Architecture & Autonomous AI Automation Agency). You are consultative, professional, and helpful.\n\nYour Objectives:\n1. Clearly explain NovaByte AI Studio's core services: High-Converting Custom Websites, E-Commerce, Autonomous WhatsApp AI Chatbots, and Lead Generation Automation.\n2. Provide clear pricing tiers ($499 - $2,500) and delivery turnaround (3-7 business days).\n3. Qualify inbound client inquiries and capture their details (Name, Project Scope, Budget, Preferred Timeline) for direct proposal delivery.\n4. Maintain neat WhatsApp/Chat formatting with emojis and bullet points.",
-      "whatsapp_number": "+919820646838",
+      "whatsapp_number": null,
       "whatsapp_reply_mode": "keywords",
       "whatsapp_keywords": [
         "price",
@@ -75,10 +75,80 @@
       "whatsapp_type": "qr",
       "is_active": true,
       "created_at": "2026-08-23T15:37:06.791Z",
-      "updated_at": "2026-08-30T16:03:23.807Z"
+      "updated_at": "2026-08-31T16:32:12.105Z"
     }
   ],
   "leads": [
+    {
+      "id": "lead-4eb709b1",
+      "status": "new",
+      "created_at": "2026-08-31T16:19:26.710Z",
+      "updated_at": "2026-08-31T16:19:26.710Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "WhatsApp Customer",
+      "lead_phone": "+919154958908",
+      "lead_email": null,
+      "lead_requirement": "Thank you for updating your information. To enhance your visibility to recruiters, kindly complete your profile and job-related information: https://www.foundit.ai",
+      "channel": "whatsapp",
+      "session_id": "wa-919154958908"
+    },
+    {
+      "id": "lead-bc13355e",
+      "status": "new",
+      "created_at": "2026-08-31T15:57:47.061Z",
+      "updated_at": "2026-08-31T15:57:47.061Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "default-tenant",
+      "tenant_id": "default-tenant",
+      "lead_name": "Kunal Sen",
+      "lead_phone": "+919876500002",
+      "lead_email": null,
+      "lead_requirement": "hi",
+      "channel": "batch_import"
+    },
+    {
+      "id": "lead-7214f561",
+      "status": "new",
+      "created_at": "2026-08-31T15:57:47.048Z",
+      "updated_at": "2026-08-31T15:57:47.048Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "default-tenant",
+      "tenant_id": "default-tenant",
+      "lead_name": "Aditi Rao",
+      "lead_phone": "+919876500001",
+      "lead_email": null,
+      "lead_requirement": "Interested in purchasing enterprise CRM package  contract",
+      "channel": "batch_import"
+    },
+    {
+      "id": "lead-02d1be2d",
+      "status": "new",
+      "created_at": "2026-08-31T13:46:57.111Z",
+      "updated_at": "2026-08-31T16:27:37.244Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "SUBHANKAR",
+      "lead_phone": "+918454873214",
+      "lead_email": null,
+      "lead_requirement": "Hi! Thanks for reaching out. I’m interested in understanding how NovaByte AI Studio can help me build and implement AI automation solutions for my work/business.\n\nPlease share your key services, available solutions, pricing, and a few examples of successful AI automation projects you’ve delivered. I’d also like to discuss a solution tailored to my specific requirements.",
+      "channel": "whatsapp",
+      "session_id": "wa-918454873214"
+    },
+    {
+      "id": "lead-42208550",
+      "status": "new",
+      "created_at": "2026-08-31T13:44:42.342Z",
+      "updated_at": "2026-08-31T13:44:42.342Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "basantin637",
+      "lead_phone": "+9195881773091439015198",
+      "lead_email": null,
+      "lead_requirement": "[Attached Image]",
+      "channel": "whatsapp",
+      "session_id": "wa-9195881773091439015198"
+    },
     {
       "id": "lead-8386b535",
       "status": "new",
@@ -260,6 +330,276 @@
       "session_id": "wa-919876543210",
       "sender": "bot",
       "content": "Hey Suresh! Great to connect with you. We'd love to help you build a high-performance custom website paired with an autonomous 24/7 AI chatbot.\n\nWhat kind of business or project is this for? Our typical turnaround is 3 to 7 business days with complete responsive design, SEO optimization, and live lead capture. 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-0dac1ada",
+      "created_at": "2026-08-31T13:44:42.335Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-9195881773091439015198",
+      "sender": "user",
+      "content": "[Attached Image]",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-ce5e2cc7",
+      "created_at": "2026-08-31T13:44:47.692Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-9195881773091439015198",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-f1615b32",
+      "created_at": "2026-08-31T13:46:57.106Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "user",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-b44c92ba",
+      "created_at": "2026-08-31T13:46:59.170Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "bot",
+      "content": "At NovaByte AI Studio, we specialize in:\n\n1. *Custom Full-Stack Websites & Apps*: Blazing fast, SEO-optimized, and built for maximum conversion.\n2. *24/7 Autonomous AI WhatsApp & Web Agents*: Answer client inquiries instantly, capture qualified leads, and book calls.\n3. *Growth Automation & CRM Sync*: Automated email drip sequences and Google Sheets sync.\n\nWhat are the main features you are looking to build for your project?",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-a85e7285",
+      "created_at": "2026-08-31T13:57:49.097Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-656eb229-2",
+      "sender": "user",
+      "content": "can u connect my whatapp",
+      "channel": "website"
+    },
+    {
+      "id": "msg-77b6ac59",
+      "created_at": "2026-08-31T13:57:50.818Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-656eb229-2",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-3e474553",
+      "created_at": "2026-08-31T13:58:49.448Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-bdbf8efc-3",
+      "sender": "user",
+      "content": "hi",
+      "channel": "website"
+    },
+    {
+      "id": "msg-92f3f552",
+      "created_at": "2026-08-31T13:58:49.462Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-f753674b-d",
+      "sender": "user",
+      "content": "can u connect my whatapp",
+      "channel": "website"
+    },
+    {
+      "id": "msg-cdbefea5",
+      "created_at": "2026-08-31T13:58:50.990Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-f753674b-d",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-e6fdc5b4",
+      "created_at": "2026-08-31T13:58:51.035Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-bdbf8efc-3",
+      "sender": "bot",
+      "content": "Hello there! 👋 Welcome to NovaByte AI Studio. How can we help you today? Feel free to ask about our custom web development packages, 24/7 WhatsApp AI chatbots, or request a live demo! 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-19632116",
+      "created_at": "2026-08-31T15:48:30.070Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-7c35b7f9-a",
+      "sender": "user",
+      "content": "hi",
+      "channel": "website"
+    },
+    {
+      "id": "msg-b93b8b9d",
+      "created_at": "2026-08-31T15:48:30.092Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-0db38dc0-f",
+      "sender": "user",
+      "content": "can u connect my whatapp",
+      "channel": "website"
+    },
+    {
+      "id": "msg-b8636445",
+      "created_at": "2026-08-31T15:49:48.449Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-0bac26fb-1",
+      "sender": "user",
+      "content": "can u connect my whatapp",
+      "channel": "website"
+    },
+    {
+      "id": "msg-18586864",
+      "created_at": "2026-08-31T15:49:50.165Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-0bac26fb-1",
+      "sender": "bot",
+      "content": "Yes! You can link your WhatsApp number in 30 seconds:\n\n1. Open **Integrations (/integrations)** in the left sidebar.\n2. Under WhatsApp, click **\"Scan QR Code\"** or **\"Pair via 8-Digit Code\"**.\n3. Open WhatsApp on your phone ➔ **Linked Devices** ➔ **Link a Device** ➔ Scan the QR.\n\nOnce paired, I will automatically answer your incoming customer inquiries 24/7 and qualify leads without any per-message cloud fees! 📱",
+      "channel": "website"
+    },
+    {
+      "id": "msg-6345f207",
+      "created_at": "2026-08-31T15:50:08.456Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-403cd24b-4",
+      "sender": "user",
+      "content": "hi",
+      "channel": "website"
+    },
+    {
+      "id": "msg-b8f77d84",
+      "created_at": "2026-08-31T15:50:09.934Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-403cd24b-4",
+      "sender": "bot",
+      "content": "Hello there! 👋 Welcome to NovaByte AI Studio. How can we help you today? Feel free to ask about our custom web development packages, 24/7 WhatsApp AI chatbots, or request a live demo! 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-087c3273",
+      "created_at": "2026-08-31T15:50:17.305Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-4cc515f9-5",
+      "sender": "user",
+      "content": "what is the pricing?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-f2c298a1",
+      "created_at": "2026-08-31T15:50:19.151Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-4cc515f9-5",
+      "sender": "bot",
+      "content": "Here is an overview of our standard packages:\n\n• *Custom High-Converting Website*: $499 - $999 (Modern React / Next.js architecture, SEO optimized, 3-7 days turnaround)\n• *Autonomous WhatsApp & Web AI Bot*: $399 - $899 (24/7 lead qualification, multi-channel support)\n• *Complete Full-Stack SaaS MVP*: $1,500 - $2,500 (End-to-end database, auth & payments)\n\nTell me a bit about your specific requirements—I can give you an exact estimate right away! 😊",
+      "channel": "website"
+    },
+    {
+      "id": "msg-56bb8506",
+      "created_at": "2026-08-31T15:50:26.692Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "widget_sess_iq9u5v3",
+      "sender": "user",
+      "content": "hi",
+      "channel": "website"
+    },
+    {
+      "id": "msg-b678cf98",
+      "created_at": "2026-08-31T15:50:28.688Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "widget_sess_iq9u5v3",
+      "sender": "bot",
+      "content": "Hello there! 👋 Welcome to NovaByte AI Studio. How can we help you today? Feel free to ask about our custom web development packages, 24/7 WhatsApp AI chatbots, or request a live demo! 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-27fab059",
+      "created_at": "2026-08-31T15:50:53.783Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "widget_sess_iq9u5v3",
+      "sender": "user",
+      "content": "check weather my whatapp is connected or not now ?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-5a89f971",
+      "created_at": "2026-08-31T15:50:55.792Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "widget_sess_iq9u5v3",
+      "sender": "bot",
+      "content": "I'm specifically focused on helping you with custom website development and AI automation solutions for your business! 🙏\n\nHow can we help elevate your project or brand online?",
+      "channel": "website"
+    },
+    {
+      "id": "msg-b95e1c8d",
+      "created_at": "2026-08-31T15:57:54.465Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-b9ea3848-3",
+      "sender": "user",
+      "content": "show me my sales pipeline deals",
+      "channel": "website"
+    },
+    {
+      "id": "msg-580197cd",
+      "created_at": "2026-08-31T15:57:56.897Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "sess-b9ea3848-3",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "website"
+    },
+    {
+      "id": "msg-d9e6544c",
+      "created_at": "2026-08-31T16:19:26.700Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919154958908",
+      "sender": "user",
+      "content": "Thank you for updating your information. To enhance your visibility to recruiters, kindly complete your profile and job-related information: https://www.foundit.ai",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-9f609e74",
+      "created_at": "2026-08-31T16:19:29.783Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919154958908",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-b8bf501a",
+      "created_at": "2026-08-31T16:27:37.194Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "user",
+      "content": "Hi! Thanks for reaching out. I’m interested in understanding how NovaByte AI Studio can help me build and implement AI automation solutions for my work/business.\n\nPlease share your key services, available solutions, pricing, and a few examples of successful AI automation projects you’ve delivered. I’d also like to discuss a solution tailored to my specific requirements.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-abb4f0da",
+      "created_at": "2026-08-31T16:27:39.847Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "bot",
+      "content": "Here is an overview of our standard packages:\n\n• *Custom High-Converting Website*: $499 - $999 (Modern React / Next.js architecture, SEO optimized, 3-7 days turnaround)\n• *Autonomous WhatsApp & Web AI Bot*: $399 - $899 (24/7 lead qualification, multi-channel support)\n• *Complete Full-Stack SaaS MVP*: $1,500 - $2,500 (End-to-end database, auth & payments)\n\nTell me a bit about your specific requirements—I can give you an exact estimate right away! 😊",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-88425145",
+      "created_at": "2026-08-31T16:28:40.990Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "user",
+      "content": "Yeh bro",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-5b003d3b",
+      "created_at": "2026-08-31T16:28:42.740Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-918454873214",
+      "sender": "bot",
+      "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
       "channel": "whatsapp"
     }
   ],

@@ -4,8 +4,10 @@ import {
   getWhatsAppStatus,
   confirmWhatsAppPairing,
   disconnectWhatsApp,
-  processWhatsAppIncoming
+  processWhatsAppIncoming,
+  fetchLiveWhatsAppGroups
 } from '../services/baileysService.js';
+import { getWhitelistSettings, saveWhitelistSettings } from '../services/whatsappGroupWhitelistService.js';
 import { db } from '../config/database.js';
 
 /**
@@ -166,5 +168,42 @@ export async function metaWebhookReceive(req, res) {
   } catch (err) {
     console.error('Meta webhook error:', err);
     return res.status(500).send('Internal Error');
+  }
+}
+
+/**
+ * GET /api/whatsapp/whitelist-settings
+ */
+export async function getWhitelist(req, res) {
+  try {
+    const settings = await getWhitelistSettings();
+    return res.json({ success: true, settings });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * POST /api/whatsapp/whitelist-settings
+ */
+export function updateWhitelist(req, res) {
+  try {
+    const success = saveWhitelistSettings(req.body);
+    return res.json({ success, settings: req.body });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * GET /api/whatsapp/groups/live
+ */
+export async function getLiveGroups(req, res) {
+  try {
+    const botId = req.query.botId || 'bot-ec0db899';
+    const groups = await fetchLiveWhatsAppGroups(botId);
+    return res.json({ success: true, groups });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
   }
 }

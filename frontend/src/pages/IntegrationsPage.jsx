@@ -494,13 +494,23 @@ export default function IntegrationsPage() {
     if (item.id === 'ai_gateway') setSetupModal('ai_gateway_modal');
   };
 
-  // Remove / Disconnect Integration
+  // Remove / Disconnect Integration (Zero Data Loss)
   const handleRemoveIntegration = async (id) => {
-    if (id === 'whatsapp' && selectedBotId) {
-      return handleDisconnectWhatsApp();
-    }
-    if (!window.confirm('Are you sure you want to disconnect this integration?')) return;
+    if (!window.confirm(`Are you sure you want to disconnect ${id.toUpperCase()}? Your saved leads and chat data will remain safe, but automated actions for this channel will be paused.`)) return;
+
     try {
+      if (id === 'whatsapp') {
+        const targetBot = selectedBotId || (bots && bots[0]?.id);
+        if (targetBot) {
+          try {
+            await fetch(`/api/whatsapp/${targetBot}/disconnect`, { method: 'POST' });
+          } catch (e) {}
+        }
+        setWaBotStatus({ status: 'disconnected', phoneNumber: null });
+        setWaQrCode(null);
+        setWaPairingCode(null);
+      }
+
       const res = await fetch(`/api/integrations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -508,10 +518,12 @@ export default function IntegrationsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setIntegrations(integrations.map(i => i.id === id ? data.integration : i));
+        setIntegrations(prev => prev.map(i => i.id === id ? { ...i, status: 'not_configured', account: null, connected_since: null } : i));
       }
+      await fetchIntegrations();
+      await fetchBots();
     } catch (err) {
-      alert('Failed to remove integration');
+      alert('Failed to disconnect integration: ' + err.message);
     }
   };
 
@@ -734,88 +746,7 @@ export default function IntegrationsPage() {
                     </div>
                   )}
 
-                  {/* Google Live Actions */}
-                  {item.id === 'google' && isConnected && (
-                    <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={handleSyncGoogleSheets}
-                          disabled={syncingGoogleSheets}
-                          style={{
-                            flex: 1,
-                            minWidth: '150px',
-                            padding: '7px 12px',
-                            borderRadius: '8px',
-                            backgroundColor: '#f0fdf4',
-                            color: '#166534',
-                            border: '1px solid #bbf7d0',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            cursor: syncingGoogleSheets ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          {syncingGoogleSheets ? (
-                            <>
-                              <RefreshCw size={12} className="animate-spin" />
-                              <span>Syncing...</span>
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle2 size={13} color="#22c55e" />
-                              <span>Sync Leads to Sheet</span>
-                            </>
-                          )}
-                        </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setShowEmailModal(true)}
-                          style={{
-                            padding: '7px 12px',
-                            borderRadius: '8px',
-                            backgroundColor: '#eef2ff',
-                            color: '#4338ca',
-                            border: '1px solid #c7d2fe',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px'
-                          }}
-                          title="Send direct email via connected Google"
-                        >
-                          <MessageSquare size={12} />
-                          <span>Send Email</span>
-                        </button>
-                      </div>
-
-                      {googleSheetResult?.spreadsheet_url && (
-                        <a
-                          href={googleSheetResult.spreadsheet_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            fontSize: '11.5px',
-                            color: 'var(--primary)',
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <span>Open Google Sheet ({googleSheetResult.synced_count} Leads)</span>
-                          <ExternalLink size={11} />
-                        </a>
-                      )}
-                    </div>
-                  )}
 
                   {/* Bottom Actions */}
                   <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1115,7 +1046,7 @@ export default function IntegrationsPage() {
           zIndex: 99999,
           padding: '16px'
         }}>
-          <div className="animate-fade-in" style={{
+          <div className="animate-fade-in custom-modal-scroll" style={{
             width: '620px',
             maxWidth: '100%',
             backgroundColor: '#ffffff',
@@ -1123,8 +1054,7 @@ export default function IntegrationsPage() {
             boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
             padding: '28px',
             border: '1px solid #e4e4e7',
-            maxHeight: '90vh',
-            overflowY: 'auto'
+            maxHeight: '88vh'
           }}>
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>

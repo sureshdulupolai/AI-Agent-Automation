@@ -69,8 +69,65 @@ export async function handleWidgetChat(req, res) {
       channel: 'website'
     });
 
+    // 6. Detect Autonomous Action Metadata (DOM Navigation & Execution)
+    let action = null;
+    const lowerMsg = message.toLowerCase();
+    const lowerReply = (reply || '').toLowerCase();
+
+    if (lowerMsg.includes('pipeline') || lowerMsg.includes('deal') || lowerReply.includes('/pipeline')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/pipeline',
+        label: 'Open Deals Pipeline',
+        requireAuth: true,
+        highlightSelector: '#pipeline-board'
+      };
+    } else if (lowerMsg.includes('whatsapp') || lowerMsg.includes('qr') || lowerMsg.includes('integrat') || lowerReply.includes('/integrations')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/integrations',
+        label: 'Connect WhatsApp in Integrations',
+        requireAuth: true,
+        highlightSelector: '#whatsapp-integration-card'
+      };
+    } else if (lowerMsg.includes('billing') || lowerMsg.includes('pricing') || lowerMsg.includes('upgrade') || lowerMsg.includes('plan')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/deployment',
+        label: 'View Billing & Packages',
+        requireAuth: false,
+        highlightSelector: '#billing-plans'
+      };
+    } else if (lowerMsg.includes('campaign') || lowerMsg.includes('broadcast') || lowerMsg.includes('email drip')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/campaigns',
+        label: 'Launch Safe Campaign',
+        requireAuth: true,
+        highlightSelector: '#campaigns-header'
+      };
+    } else if (lowerMsg.includes('doc') || lowerMsg.includes('guide') || lowerMsg.includes('tutorial')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/docs',
+        label: 'Open Documentation',
+        requireAuth: false,
+        highlightSelector: '#docs-content'
+      };
+    } else if (lowerMsg.includes('task') || lowerMsg.includes('eod') || lowerMsg.includes('audit')) {
+      action = {
+        type: 'NAVIGATE_TO',
+        targetPath: '/tasks',
+        label: 'View Task Center',
+        requireAuth: true,
+        highlightSelector: '#tasks-header'
+      };
+    }
+
     return res.json({
+      success: true,
       reply,
+      action,
       sessionId,
       messageId: savedBotMsg.id,
       timestamp: savedBotMsg.created_at,
@@ -81,6 +138,7 @@ export async function handleWidgetChat(req, res) {
   } catch (err) {
     console.error('Chat error:', err);
     return res.status(500).json({
+      success: false,
       error: 'Failed to process chat message',
       details: err.message
     });

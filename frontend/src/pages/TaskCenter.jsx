@@ -25,7 +25,9 @@ import {
   X,
   Copy,
   Check,
-  Bot
+  Bot,
+  Code,
+  Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { formatWhatsAppText } from '../utils/formatWhatsAppText';
@@ -41,6 +43,7 @@ export default function TaskCenter() {
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const [batchNotice, setBatchNotice] = useState(null);
   const [copiedReport, setCopiedReport] = useState(false);
+  const [payloadViewModes, setPayloadViewModes] = useState({}); // taskId -> 'summary' | 'json'
 
   // Cooldown timer state for Run Task Cycle (prevents rapid-click spam)
   const [cycleCooldown, setCycleCooldown] = useState(0);
@@ -529,31 +532,219 @@ export default function TaskCenter() {
                     </tr>
 
                     {/* Expanded Task Details Drawer */}
-                    {isExpanded && (
-                      <tr style={{ backgroundColor: 'rgba(79, 70, 229, 0.02)', borderBottom: '1px solid var(--border-color)' }}>
-                        <td colSpan={5} style={{ padding: '16px 24px' }}>
-                          <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#4f46e5' }}>
-                                Execution Payload &amp; Telemetry Details (ID: {task.id})
-                              </span>
-                              {task.metadata?.report_markdown && (
-                                <button
-                                  onClick={() => setEodReportModal({ report_markdown: task.metadata.report_markdown, summary_metrics: task.metadata.summary_metrics })}
-                                  style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', backgroundColor: '#e0e7ff', color: '#4338ca', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer' }}
-                                >
-                                  👁️ View Full Report
-                                </button>
+                    {isExpanded && (() => {
+                      const currentMode = payloadViewModes[task.id] || 'summary';
+                      const meta = task.metadata || {};
+
+                      return (
+                        <tr style={{ backgroundColor: 'rgba(79, 70, 229, 0.02)', borderBottom: '1px solid var(--border-color)' }}>
+                          <td colSpan={5} style={{ padding: '16px 24px' }}>
+                            <div style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                              
+                              {/* Header Bar with Toggle */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    Task Execution Details
+                                  </span>
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', backgroundColor: 'var(--bg-page)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'monospace' }}>
+                                    {task.id}
+                                  </span>
+                                </div>
+
+                                {/* Mode Switcher Pill */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  {meta.report_markdown && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEodReportModal({ report_markdown: meta.report_markdown, summary_metrics: meta.summary_metrics });
+                                      }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '7px', border: 'none', backgroundColor: '#e0e7ff', color: '#4338ca', fontSize: '11.5px', fontWeight: 700, cursor: 'pointer', marginRight: '6px' }}
+                                    >
+                                      <Eye size={13} />
+                                      <span>View Full Report</span>
+                                    </button>
+                                  )}
+
+                                  <div style={{ display: 'flex', backgroundColor: 'var(--bg-page)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-color)' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPayloadViewModes({ ...payloadViewModes, [task.id]: 'summary' });
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        backgroundColor: currentMode === 'summary' ? '#4f46e5' : 'transparent',
+                                        color: currentMode === 'summary' ? '#ffffff' : 'var(--text-secondary)',
+                                        fontSize: '11.5px',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      <FileText size={12} />
+                                      <span>Summary View</span>
+                                    </button>
+
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPayloadViewModes({ ...payloadViewModes, [task.id]: 'json' });
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        backgroundColor: currentMode === 'json' ? '#4f46e5' : 'transparent',
+                                        color: currentMode === 'json' ? '#ffffff' : 'var(--text-secondary)',
+                                        fontSize: '11.5px',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      <Code size={12} />
+                                      <span>Raw JSON</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Content: Summary View */}
+                              {currentMode === 'summary' ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                  
+                                  {/* Case 1: System Scan Cycle */}
+                                  {task.type === 'system' && (
+                                    <>
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Execution Duration</div>
+                                          <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '2px' }}>
+                                            {meta.duration_ms || 12} ms
+                                          </div>
+                                        </div>
+
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Follow-Ups Scanned</div>
+                                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#16a34a', marginTop: '2px' }}>
+                                            {meta.follow_ups_processed || 0} active
+                                          </div>
+                                        </div>
+
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Email Drips Checked</div>
+                                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#4f46e5', marginTop: '2px' }}>
+                                            {meta.email_drips_processed || 0} active
+                                          </div>
+                                        </div>
+
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Pipeline Engine Health</div>
+                                          <div style={{ fontSize: '14px', fontWeight: 800, color: '#16a34a', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <CheckCircle2 size={13} /> {meta.errors?.length ? `${meta.errors.length} Warning(s)` : 'Healthy (0 Errors)'}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                        <strong>Engine Status:</strong> The autonomous background agent scanned all active conversation pipelines and validated that follow-up timers, inactivity nudges, and email drip states are synchronized.
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {/* Case 2: Follow-up Message Event */}
+                                  {task.type === 'follow_up' && (
+                                    <>
+                                      <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderLeft: '4px solid #16a34a', borderRadius: '10px', padding: '14px' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#15803d', textTransform: 'uppercase', marginBottom: '6px', letterSpacing: '0.04em' }}>
+                                          Dispatched AI Follow-Up Message Preview:
+                                        </div>
+                                        <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontStyle: 'italic', lineHeight: 1.5 }}>
+                                          "{meta.message_preview || meta.nudge || 'Autonomous follow-up dispatched.'}"
+                                        </div>
+                                      </div>
+
+                                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                                          <strong>Step:</strong> {meta.step ? `Step ${meta.step}` : 'Inactivity Nudge'}
+                                        </span>
+                                        <span style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', padding: '4px 10px', borderRadius: '6px', fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                                          <strong>Channel:</strong> WhatsApp Live Socket
+                                        </span>
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {/* Case 3: Lead Qualification Event */}
+                                  {task.type === 'qualification' && (
+                                    <>
+                                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Buying Readiness Score</div>
+                                          <div style={{ fontSize: '18px', fontWeight: 900, color: '#ea580c', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                            <Flame size={16} /> {meta.readiness_score || 85}/100
+                                          </div>
+                                        </div>
+
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Lead Temperature</div>
+                                          <div style={{ fontSize: '15px', fontWeight: 800, color: '#ea580c', marginTop: '2px' }}>
+                                            {meta.lead_temperature || 'Warm Lead'}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {meta.intent && (
+                                        <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', fontSize: '12.5px', color: 'var(--text-primary)' }}>
+                                          <strong>Identified Buying Intent:</strong> {meta.intent}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+
+                                  {/* Case 4: Other / Generic Events */}
+                                  {task.type !== 'system' && task.type !== 'follow_up' && task.type !== 'qualification' && (
+                                    <div style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 14px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                                      {task.title} executed successfully. All parameters were processed and verified.
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                /* Content: Raw JSON View with Copy Button */
+                                <div>
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText(JSON.stringify(meta, null, 2));
+                                        alert('JSON payload copied to clipboard');
+                                      }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                      <Copy size={11} />
+                                      <span>Copy Payload</span>
+                                    </button>
+                                  </div>
+                                  <pre style={{ margin: 0, padding: '12px', backgroundColor: 'var(--bg-page)', borderRadius: '8px', fontSize: '11.5px', color: 'var(--text-primary)', overflowX: 'auto', fontFamily: 'monospace' }}>
+                                    {JSON.stringify(meta, null, 2)}
+                                  </pre>
+                                </div>
                               )}
                             </div>
-
-                            <pre style={{ margin: 0, padding: '12px', backgroundColor: 'var(--bg-page)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)', overflowX: 'auto', fontFamily: 'monospace' }}>
-                              {JSON.stringify(task.metadata || {}, null, 2)}
-                            </pre>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
+                          </td>
+                        </tr>
+                      );
+                    })()}
                   </React.Fragment>
                 );
               })

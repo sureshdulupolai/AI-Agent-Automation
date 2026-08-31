@@ -29,7 +29,13 @@ import {
   Tag,
   Paperclip,
   Image as ImageIcon,
-  FileText
+  FileText,
+  Users,
+  Shield,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { formatWhatsAppText } from '../utils/formatWhatsAppText';
@@ -265,6 +271,160 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
     }
   };
 
+  // WhatsApp Target Groups & Client Whitelist State
+  const [whitelistSettings, setWhitelistSettings] = useState({
+    block_all_unapproved_groups: true,
+    whitelist_only_mode: false,
+    approved_groups: [],
+    approved_contacts: []
+  });
+  const [liveGroups, setLiveGroups] = useState([]);
+  const [fetchingLiveGroups, setFetchingLiveGroups] = useState(false);
+  const [savingWhitelist, setSavingWhitelist] = useState(false);
+  const [newGroupForm, setNewGroupForm] = useState({ name: '', client_name: '', jid: '', notes: '' });
+  const [newContactForm, setNewContactForm] = useState({ phone: '', client_name: '', company: '' });
+  const [showAddGroupModal, setShowAddGroupModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+
+  const fetchWhitelist = async () => {
+    try {
+      const res = await fetch('/api/whatsapp/whitelist-settings');
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setWhitelistSettings(data.settings);
+      }
+    } catch (e) {
+      console.error('Failed to load whitelist settings:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhitelist();
+  }, []);
+
+  const saveWhitelist = async (newSettings) => {
+    setSavingWhitelist(true);
+    try {
+      const res = await fetch('/api/whatsapp/whitelist-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setWhitelistSettings(newSettings);
+      }
+    } catch (e) {
+      alert('Failed to save whitelist settings: ' + e.message);
+    } finally {
+      setSavingWhitelist(false);
+    }
+  };
+
+  const handleFetchLiveGroups = async () => {
+    setFetchingLiveGroups(true);
+    try {
+      const res = await fetch(`/api/whatsapp/groups/live?botId=${selectedBotId}`);
+      const data = await res.json();
+      if (data.success && data.groups) {
+        setLiveGroups(data.groups);
+      }
+    } catch (e) {
+      alert('Error fetching live groups: ' + e.message);
+    } finally {
+      setFetchingLiveGroups(false);
+    }
+  };
+
+  const handleToggleBlockGroups = () => {
+    const updated = {
+      ...whitelistSettings,
+      block_all_unapproved_groups: !whitelistSettings.block_all_unapproved_groups
+    };
+    saveWhitelist(updated);
+  };
+
+  const handleToggleStrictWhitelist = () => {
+    const updated = {
+      ...whitelistSettings,
+      whitelist_only_mode: !whitelistSettings.whitelist_only_mode
+    };
+    saveWhitelist(updated);
+  };
+
+  const handleToggleGroupItem = (groupId) => {
+    const updatedGroups = (whitelistSettings.approved_groups || []).map(g =>
+      g.id === groupId ? { ...g, enabled: !g.enabled } : g
+    );
+    saveWhitelist({ ...whitelistSettings, approved_groups: updatedGroups });
+  };
+
+  const handleDeleteGroupItem = (groupId) => {
+    const updatedGroups = (whitelistSettings.approved_groups || []).filter(g => g.id !== groupId);
+    saveWhitelist({ ...whitelistSettings, approved_groups: updatedGroups });
+  };
+
+  const handleAddGroupSubmit = (e) => {
+    e.preventDefault();
+    if (!newGroupForm.name || !newGroupForm.jid) {
+      alert('Group Name and JID (or Group identifier) are required');
+      return;
+    }
+    const cleanJid = newGroupForm.jid.includes('@') ? newGroupForm.jid : `${newGroupForm.jid}@g.us`;
+    const newEntry = {
+      id: `grp-${Date.now().toString(36)}`,
+      jid: cleanJid,
+      name: newGroupForm.name.trim(),
+      client_name: newGroupForm.client_name.trim() || 'Direct Client Group',
+      notes: newGroupForm.notes.trim() || '',
+      enabled: true,
+      added_at: new Date().toISOString()
+    };
+    const updated = {
+      ...whitelistSettings,
+      approved_groups: [newEntry, ...(whitelistSettings.approved_groups || [])]
+    };
+    saveWhitelist(updated);
+    setNewGroupForm({ name: '', client_name: '', jid: '', notes: '' });
+    setShowAddGroupModal(false);
+  };
+
+  const handleToggleContactItem = (contactId) => {
+    const updatedContacts = (whitelistSettings.approved_contacts || []).map(c =>
+      c.id === contactId ? { ...c, enabled: !c.enabled } : c
+    );
+    saveWhitelist({ ...whitelistSettings, approved_contacts: updatedContacts });
+  };
+
+  const handleDeleteContactItem = (contactId) => {
+    const updatedContacts = (whitelistSettings.approved_contacts || []).filter(c => c.id !== contactId);
+    saveWhitelist({ ...whitelistSettings, approved_contacts: updatedContacts });
+  };
+
+  const handleAddContactSubmit = (e) => {
+    e.preventDefault();
+    if (!newContactForm.phone) {
+      alert('Phone number is required');
+      return;
+    }
+    const cleanPhone = newContactForm.phone.startsWith('+') ? newContactForm.phone : `+${newContactForm.phone.replace(/[^0-9]/g, '')}`;
+    const newEntry = {
+      id: `cnt-${Date.now().toString(36)}`,
+      phone: cleanPhone,
+      client_name: newContactForm.client_name.trim() || 'Valued Client',
+      company: newContactForm.company.trim() || '',
+      enabled: true,
+      added_at: new Date().toISOString()
+    };
+    const updated = {
+      ...whitelistSettings,
+      approved_contacts: [newEntry, ...(whitelistSettings.approved_contacts || [])]
+    };
+    saveWhitelist(updated);
+    setNewContactForm({ phone: '', client_name: '', company: '' });
+    setShowAddContactModal(false);
+  };
+
   // Send Simulated Customer Message (Real backend Gemini AI Multimodal Vision/Audio/Doc)
   const handleSendSimulatedMessage = async (overrideText) => {
     const textToSend = (overrideText || simInputMessage).trim();
@@ -470,6 +630,33 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
           {isConnected && (
             <span style={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', fontWeight: 800 }}>
               Live
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('whitelist')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '8px',
+            backgroundColor: activeTab === 'whitelist' ? '#ffffff' : 'transparent',
+            color: activeTab === 'whitelist' ? '#09090b' : '#71717a',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'whitelist' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.15s'
+          }}
+        >
+          <Shield size={15} color="#dc2626" />
+          <span>Target Groups &amp; Whitelist Guard</span>
+          {whitelistSettings.block_all_unapproved_groups && (
+            <span style={{ backgroundColor: '#fee2e2', color: '#991b1b', fontSize: '10px', padding: '1px 6px', borderRadius: '9999px', fontWeight: 800 }}>
+              Shield ON
             </span>
           )}
         </button>
@@ -1293,6 +1480,599 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: TARGET GROUPS & CLIENT WHITELIST GUARD */}
+      {/* ========================================================================= */}
+      {activeTab === 'whitelist' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Top Master Switches */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+            {/* Card 1: Block All Unapproved Groups */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '14px',
+              border: whitelistSettings.block_all_unapproved_groups ? '1.5px solid #ef4444' : '1px solid #e2e8f0',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <Shield size={18} color={whitelistSettings.block_all_unapproved_groups ? '#dc2626' : '#64748b'} />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Block Unapproved WhatsApp Groups (@g.us)
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, maxWidth: '380px' }}>
+                  Prevents the AI bot from randomly responding or auto-scheduling follow-ups inside public or casual WhatsApp group chats.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleBlockGroups}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                {whitelistSettings.block_all_unapproved_groups ? (
+                  <ToggleRight size={38} color="#dc2626" />
+                ) : (
+                  <ToggleLeft size={38} color="#94a3b8" />
+                )}
+              </button>
+            </div>
+
+            {/* Card 2: Strict Client Whitelist Only */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '14px',
+              border: whitelistSettings.whitelist_only_mode ? '1.5px solid #4f46e5' : '1px solid #e2e8f0',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <Users size={18} color={whitelistSettings.whitelist_only_mode ? '#4f46e5' : '#64748b'} />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Strict Client Whitelist-Only Mode
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, maxWidth: '380px' }}>
+                  When turned ON, the AI bot only interacts with registered client contacts and approved groups.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleStrictWhitelist}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                {whitelistSettings.whitelist_only_mode ? (
+                  <ToggleRight size={38} color="#4f46e5" />
+                ) : (
+                  <ToggleLeft size={38} color="#94a3b8" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Section 1: Approved WhatsApp Groups */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={18} color="#0284c7" />
+                  <span>Approved WhatsApp Groups (Target Clients)</span>
+                  <span style={{ fontSize: '11px', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800 }}>
+                    {(whitelistSettings.approved_groups || []).length} Groups
+                  </span>
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                  Only groups registered here will be serviced by AI automation if group blocking is enabled.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleFetchLiveGroups}
+                  disabled={fetchingLiveGroups}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#f8fafc',
+                    color: '#334155',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RefreshCw size={13} className={fetchingLiveGroups ? 'animate-spin' : ''} />
+                  <span>{fetchingLiveGroups ? 'Scanning Groups...' : 'Fetch Live Groups from Device'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddGroupModal(true)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#4f46e5',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>Add Approved Group</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Groups Detected from Device (if any) */}
+            {liveGroups.length > 0 && (
+              <div style={{ marginBottom: '16px', padding: '14px', backgroundColor: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: '#166534', marginBottom: '8px' }}>
+                  📱 Detected {liveGroups.length} Participating Groups from WhatsApp Device:
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {liveGroups.map((g, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #86efac',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, color: '#14532d' }}>{g.name}</span>
+                      <span style={{ fontSize: '11px', color: '#65a30d' }}>({g.participants_count} members)</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewGroupForm({
+                            name: g.name,
+                            client_name: '',
+                            jid: g.jid,
+                            notes: `Imported from device (${g.participants_count} members)`
+                          });
+                          setShowAddGroupModal(true);
+                        }}
+                        style={{
+                          border: 'none',
+                          backgroundColor: '#16a34a',
+                          color: '#ffffff',
+                          borderRadius: '4px',
+                          padding: '2px 6px',
+                          fontSize: '10.5px',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        + Add to Whitelist
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Groups Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1.5px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Group Name</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Client Name Tag</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Group JID / Identifier</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Notes</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Status</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(whitelistSettings.approved_groups || []).map((grp) => (
+                    <tr key={grp.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '12px', fontWeight: 800, color: '#0f172a' }}>
+                        {grp.name}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ backgroundColor: '#eef2ff', color: '#4338ca', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, fontSize: '11.5px' }}>
+                          👤 {grp.client_name || 'Client Group'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '11px', color: '#64748b' }}>
+                        {grp.jid}
+                      </td>
+                      <td style={{ padding: '12px', color: '#64748b', fontSize: '12px' }}>
+                        {grp.notes || '—'}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleGroupItem(grp.id)}
+                          style={{
+                            border: 'none',
+                            backgroundColor: grp.enabled ? '#dcfce7' : '#fee2e2',
+                            color: grp.enabled ? '#15803d' : '#b91c1c',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {grp.enabled ? '● Allowed' : '○ Disabled'}
+                        </button>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGroupItem(grp.id)}
+                          style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                          title="Delete Group"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {(whitelistSettings.approved_groups || []).length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                        No approved WhatsApp groups registered yet. Click <strong>"Add Approved Group"</strong> or <strong>"Fetch Live Groups"</strong> above.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section 2: Approved Direct Client Contacts */}
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={18} color="#10b981" />
+                  <span>Approved Direct Client Contacts</span>
+                  <span style={{ fontSize: '11px', backgroundColor: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '9999px', fontWeight: 800 }}>
+                    {(whitelistSettings.approved_contacts || []).length} Contacts
+                  </span>
+                </h3>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0 }}>
+                  VIP contacts permitted to interact when Strict Whitelist-Only Mode is active.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddContactModal(true)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)'
+                }}
+              >
+                <Plus size={14} />
+                <span>Add Approved Contact</span>
+              </button>
+            </div>
+
+            {/* Contacts Table */}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1.5px solid #e2e8f0', textAlign: 'left', color: '#64748b' }}>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Client Name</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Phone Number</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Company / Tag</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700 }}>Status</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(whitelistSettings.approved_contacts || []).map((cnt) => (
+                    <tr key={cnt.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '12px', fontWeight: 800, color: '#0f172a' }}>
+                        👤 {cnt.client_name}
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: 700, color: '#4f46e5' }}>
+                        {cnt.phone}
+                      </td>
+                      <td style={{ padding: '12px', color: '#64748b' }}>
+                        {cnt.company || '—'}
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleContactItem(cnt.id)}
+                          style={{
+                            border: 'none',
+                            backgroundColor: cnt.enabled ? '#dcfce7' : '#fee2e2',
+                            color: cnt.enabled ? '#15803d' : '#b91c1c',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontWeight: 800,
+                            fontSize: '11px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {cnt.enabled ? '● Active' : '○ Disabled'}
+                        </button>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteContactItem(cnt.id)}
+                          style={{ border: 'none', background: 'transparent', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                          title="Delete Contact"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {(whitelistSettings.approved_contacts || []).length === 0 && (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                        No approved client contacts registered yet. Click <strong>"Add Approved Contact"</strong> above.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Modal: Add Group */}
+          {showAddGroupModal && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '14px',
+                padding: '24px',
+                width: '100%',
+                maxWidth: '460px',
+                boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Add Approved WhatsApp Group
+                  </h3>
+                  <button onClick={() => setShowAddGroupModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddGroupSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Group Name: *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. VIP Clients - NovaByte"
+                      value={newGroupForm.name}
+                      onChange={e => setNewGroupForm({ ...newGroupForm, name: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Client / Tag Name: *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Dr. Ramesh Agarwal"
+                      value={newGroupForm.client_name}
+                      onChange={e => setNewGroupForm({ ...newGroupForm, client_name: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Group JID / WhatsApp ID: *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 120363024859185258@g.us"
+                      value={newGroupForm.jid}
+                      onChange={e => setNewGroupForm({ ...newGroupForm, jid: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Notes (Optional):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Enterprise Client Escalations Group"
+                      value={newGroupForm.notes}
+                      onChange={e => setNewGroupForm({ ...newGroupForm, notes: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddGroupModal(false)}
+                      style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#4f46e5', color: '#ffffff', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    >
+                      Save Group to Whitelist
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Modal: Add Contact */}
+          {showAddContactModal && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999
+            }}>
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '14px',
+                padding: '24px',
+                width: '100%',
+                maxWidth: '440px',
+                boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Add Approved Client Contact
+                  </h3>
+                  <button onClick={() => setShowAddContactModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Client Name: *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. SUBHANKAR"
+                      value={newContactForm.client_name}
+                      onChange={e => setNewContactForm({ ...newContactForm, client_name: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Phone Number (with Country Code): *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. +918454873214"
+                      value={newContactForm.phone}
+                      onChange={e => setNewContactForm({ ...newContactForm, phone: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontWeight: 700 }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Company / Note:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Apex Digital Enterprise"
+                      value={newContactForm.company}
+                      onChange={e => setNewContactForm({ ...newContactForm, company: e.target.value })}
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddContactModal(false)}
+                      style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#10b981', color: '#ffffff', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}
+                    >
+                      Save Client Contact
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
         </div>

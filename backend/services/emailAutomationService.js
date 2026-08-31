@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { sendEmailViaGoogle, getGoogleTokens } from './googleService.js';
-import * as db from '../config/database.js';
+import db from '../config/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -91,8 +91,8 @@ export async function runEmailAutomationCycle() {
     const settings = getEmailAutomationSettings();
     if (!settings.enabled) return;
 
-    const leads = await db.getAllLeads();
-    const leadsWithEmail = leads.filter(l => l.lead_email && l.lead_email.includes('@'));
+    const leads = await db.getLeads();
+    const leadsWithEmail = (leads || []).filter(l => l.lead_email && l.lead_email.includes('@'));
     const logs = getEmailAutomationLogs();
     const now = Date.now();
 

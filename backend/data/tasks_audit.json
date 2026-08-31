@@ -1,38 +1,203 @@
 [
   {
-    "id": "task-9de68e61",
+    "id": "task-64f1c5f2",
     "type": "follow_up",
-    "title": "Dispatched 2-Hour Inactivity WhatsApp Follow-up (Step 1)",
+    "title": "WhatsApp Follow-Up: Valued Prospect (+919820646838)",
     "channel": "whatsapp",
-    "recipient": "+91 74002 75987",
-    "status": "completed",
+    "recipient": "Valued Prospect (+919820646838)",
+    "status": "pending",
     "metadata": {
-      "message_preview": "Hey! Just following up on our previous chat regarding your automation setup. Let me know if you would like a quick demo!",
-      "trigger_type": "2_hour_inactivity"
+      "task_id": "task-wa-mthhg1ek",
+      "phone": "+919820646838",
+      "contact_name": "Valued Prospect",
+      "message_preview": "Hello Valued Prospect! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "pairing",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:58:44.636Z"
     },
     "error": null,
-    "created_at": "2026-08-31T13:05:32.278Z",
-    "timestamp": 1788181532278
+    "created_at": "2026-08-31T16:58:44.637Z",
+    "timestamp": 1788195524637
   },
   {
-    "id": "task-b5058459",
-    "type": "qualification",
-    "title": "Autonomous Lead Scored: Rahul Sharma (🔥 Hot Lead - 92/100)",
+    "id": "task-e6f36a4d",
+    "type": "follow_up",
+    "title": "WhatsApp Follow-Up: Valued Prospect (+918591852581)",
     "channel": "whatsapp",
-    "recipient": "+91 98765 43210 (Rahul Sharma)",
-    "status": "completed",
+    "recipient": "Valued Prospect (+918591852581)",
+    "status": "pending",
     "metadata": {
-      "intent": "Inquire Custom Website & AI Bot Pricing",
-      "readiness_score": 92,
-      "lead_temperature": "🔥 Hot",
-      "extracted_parameters": {
-        "name": "Rahul Sharma",
-        "budget": "",
-        "timeline": "Within 7 Days"
-      }
+      "task_id": "task-wa-mthhc44m",
+      "phone": "+918591852581",
+      "contact_name": "Valued Prospect",
+      "message_preview": "Hello Valued Prospect! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "pairing",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:55:41.542Z"
     },
     "error": null,
-    "created_at": "2026-08-31T13:05:32.275Z",
-    "timestamp": 1788181532275
+    "created_at": "2026-08-31T16:55:41.543Z",
+    "timestamp": 1788195341543
+  },
+  {
+    "id": "task-dfcf2016",
+    "type": "follow_up",
+    "title": "WhatsApp Follow-Up: Valued Prospect (+918591852581)",
+    "channel": "whatsapp",
+    "recipient": "Valued Prospect (+918591852581)",
+    "status": "pending",
+    "metadata": {
+      "task_id": "task-wa-mthh0hks",
+      "phone": "+918591852581",
+      "contact_name": "Valued Prospect",
+      "message_preview": "Hello Valued Prospect! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "pairing",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:46:39.100Z"
+    },
+    "error": null,
+    "created_at": "2026-08-31T16:46:39.101Z",
+    "timestamp": 1788194799101
+  },
+  {
+    "id": "task-f7e79767",
+    "type": "follow_up",
+    "title": "WhatsApp Follow-Up: Valued Prospect (+918591852581)",
+    "channel": "whatsapp",
+    "recipient": "Valued Prospect (+918591852581)",
+    "status": "in_progress",
+    "metadata": {
+      "task_id": "task-wa-mthgb47y",
+      "phone": "+918591852581",
+      "contact_name": "Valued Prospect",
+      "message_preview": "Hello Valued Prospect! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "connected",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:26:55.390Z"
+    },
+    "error": null,
+    "created_at": "2026-08-31T16:26:55.391Z",
+    "timestamp": 1788193615391
+  },
+  {
+    "id": "task-ca78f129",
+    "type": "follow_up",
+    "title": "WhatsApp Follow-Up: SUBHANKAR (+918454873214)",
+    "channel": "whatsapp",
+    "recipient": "SUBHANKAR (+918454873214)",
+    "status": "in_progress",
+    "metadata": {
+      "task_id": "task-wa-mthg8reu",
+      "phone": "+918454873214",
+      "contact_name": "SUBHANKAR",
+      "message_preview": "Hello SUBHANKAR! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "connected",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:25:05.478Z"
+    },
+    "error": null,
+    "created_at": "2026-08-31T16:25:05.480Z",
+    "timestamp": 1788193505480
+  },
+  {
+    "id": "task-54f77986",
+    "type": "follow_up",
+    "title": "WhatsApp Follow-Up: SUBHANKAR (+918454873214)",
+    "channel": "whatsapp",
+    "recipient": "SUBHANKAR (+918454873214)",
+    "status": "in_progress",
+    "metadata": {
+      "task_id": "task-wa-mthg8rdo",
+      "phone": "+918454873214",
+      "contact_name": "SUBHANKAR",
+      "message_preview": "Hello SUBHANKAR! Following up on your inquiry with NovaByte AI Studio. How can we assist you with our AI automation solutions today?",
+      "anti_ban_delay_sec": 18,
+      "device_status": "connected",
+      "bot_id": "bot-ec0db899",
+      "queued_at": "2026-08-31T16:25:05.436Z"
+    },
+    "error": null,
+    "created_at": "2026-08-31T16:25:05.438Z",
+    "timestamp": 1788193505438
+  },
+  {
+    "id": "task-d66e28c7",
+    "type": "qualification",
+    "title": "Smart Handoff: Aditi Rao ➔ Vikram Mehta (Enterprise Account Exec)",
+    "channel": "system",
+    "recipient": "System Auto-Engine",
+    "status": "completed",
+    "metadata": {},
+    "error": null,
+    "created_at": "2026-08-31T15:57:47.060Z",
+    "timestamp": 1788191867060
+  },
+  {
+    "id": "task-38c70aa2",
+    "type": "qualification",
+    "title": "Smart Handoff: Dr. Ramesh Agarwal ➔ Suresh Polai (Senior Solutions Lead)",
+    "channel": "system",
+    "recipient": "System Auto-Engine",
+    "status": "completed",
+    "metadata": {},
+    "error": null,
+    "created_at": "2026-08-31T15:57:47.026Z",
+    "timestamp": 1788191867026
+  },
+  {
+    "id": "task-2b52363f",
+    "type": "follow_up",
+    "title": "Follow-up Queued - Channel Disconnected (Step 1)",
+    "channel": "whatsapp",
+    "recipient": "+918454873214 (SUBHANKAR)",
+    "status": "failed",
+    "metadata": {
+      "step": 1,
+      "message_preview": "Hey! Just checking in regarding your website & AI automation project 🚀 Let me know if you have any questions or if you'd like to see a live demo!",
+      "session_id": "wa-918454873214"
+    },
+    "error": "Cannot read properties of undefined (reading 'id')",
+    "created_at": "2026-08-31T15:47:00.255Z",
+    "timestamp": 1788191220255
+  },
+  {
+    "id": "task-880c8b3c",
+    "type": "follow_up",
+    "title": "Follow-up Queued - Channel Disconnected (Step 1)",
+    "channel": "whatsapp",
+    "recipient": "+9195881773091439015198 (basantin637)",
+    "status": "failed",
+    "metadata": {
+      "step": 1,
+      "message_preview": "Hey! 👋 Just wanted to check in and see how everything is going. Feel free to reach out anytime if you need help with your project!",
+      "session_id": "wa-9195881773091439015198"
+    },
+    "error": "Cannot read properties of undefined (reading 'id')",
+    "created_at": "2026-08-31T15:44:49.495Z",
+    "timestamp": 1788191089495
+  },
+  {
+    "id": "task-a5c98adc",
+    "type": "system",
+    "title": "Autonomous Lead Queue & Drip Scan Cycle",
+    "channel": "system",
+    "recipient": "Active Lead Pipelines",
+    "status": "completed",
+    "metadata": {
+      "duration_ms": 12,
+      "timestamp": "2026-08-31T13:31:48.503Z",
+      "email_drips_processed": 0,
+      "follow_ups_processed": 0,
+      "errors": [],
+      "message": "Autonomous cycle executed successfully."
+    },
+    "error": null,
+    "created_at": "2026-08-31T13:31:48.516Z",
+    "timestamp": 1788183108516
   }
 ]

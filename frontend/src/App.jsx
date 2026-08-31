@@ -20,8 +20,12 @@ import CampaignsPage from './pages/CampaignsPage';
 import AutomationsPage from './pages/AutomationsPage';
 import TaskCenter from './pages/TaskCenter';
 import UniversalStudio from './pages/UniversalStudio';
+import Pipeline from './pages/Pipeline';
+import DocumentationPage from './pages/DocumentationPage';
+import NotFound from './pages/NotFound';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import NovaByteCopilotDrawer from './components/layout/NovaByteCopilotDrawer';
+import NovaByteFloatingBot from './components/widgets/NovaByteFloatingBot';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
@@ -123,23 +127,27 @@ export default function App() {
             <Route path="/inbox" element={<InboxPage />} />
             <Route path="/conversations" element={<Navigate to="/inbox" replace />} />
 
-            {/* Audience CRM (Chatzy Identical) */}
+            {/* Audience CRM & Sales Pipeline */}
             <Route path="/contacts" element={<LeadsPage bots={bots} />} />
             <Route path="/leads" element={<Navigate to="/contacts" replace />} />
             <Route path="/lists-and-segments" element={<ListsSegmentsPage />} />
             <Route path="/audience" element={<Navigate to="/contacts" replace />} />
+            <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/deals" element={<Navigate to="/pipeline" replace />} />
 
             {/* Analytics & Autonomous Task Command Center */}
             <Route path="/tasks" element={<TaskCenter />} />
             <Route path="/task-center" element={<Navigate to="/tasks" replace />} />
             <Route path="/analytics" element={<AnalyticsPage bots={bots} />} />
 
-            {/* Tools & Deploy */}
+            {/* Tools & Deploy & Documentation */}
+            <Route path="/docs" element={<DocumentationPage />} />
+            <Route path="/documentation" element={<Navigate to="/docs" replace />} />
             <Route path="/demo" element={<DemoSitePage bots={bots} />} />
             <Route path="/deployment" element={<DeploymentGuidePage />} />
 
-            {/* 404 Catch-All Redirect */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* 404 Catch-All Route */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
@@ -156,6 +164,9 @@ export default function App() {
             onClose={() => setEmbedModalBot(null)}
           />
         )}
+
+        {/* Global Floating AI Chat Widget Bubble (Bottom-Right) */}
+        <NovaByteFloatingBot botId={bots[0]?.id || 'bot-ec0db899'} />
       </div>
     </AuthProvider>
   );
