@@ -327,7 +327,10 @@ export const db = {
       status: leadData.status || 'new',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      ...leadData
+      ...leadData,
+      // Always guarantee a name — never store undefined
+      lead_name: leadData.lead_name ||
+        (leadData.lead_phone ? `WA User ${leadData.lead_phone}` : 'Anonymous Visitor')
     };
 
     if (supabase) {
@@ -345,6 +348,10 @@ export const db = {
 
     if (existing) {
       existing.lead_requirement = newLead.lead_requirement || existing.lead_requirement;
+      // Backfill name if previously missing
+      if (!existing.lead_name && newLead.lead_name) {
+        existing.lead_name = newLead.lead_name;
+      }
       existing.updated_at = new Date().toISOString();
       writeDb(local);
       return existing;
@@ -353,6 +360,23 @@ export const db = {
     local.leads.unshift(newLead);
     writeDb(local);
     return newLead;
+  },
+
+  async updateLead(leadId, updates) {
+    const updatedFields = { ...updates, updated_at: new Date().toISOString() };
+    if (supabase) {
+      const { data, error } = await supabase.from('leads').update(updatedFields).eq('id', leadId).select().single();
+      if (!error && data) return data;
+    }
+
+    const local = readDb();
+    const index = local.leads.findIndex(l => l.id === leadId);
+    if (index !== -1) {
+      local.leads[index] = { ...local.leads[index], ...updatedFields };
+      writeDb(local);
+      return local.leads[index];
+    }
+    return null;
   },
 
   async updateLeadStatus(leadId, status) {

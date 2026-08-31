@@ -71,7 +71,7 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed
   const activeWhatsAppCount = bots.filter(b => b.whatsapp_status === 'connected').length;
 
   return (
-    <div style={{ padding: '28px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '28px 36px', width: '100%', boxSizing: 'border-box' }}>
       {/* Top Banner */}
       <div style={{
         display: 'flex',

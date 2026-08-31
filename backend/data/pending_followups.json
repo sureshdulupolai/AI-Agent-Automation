@@ -1,0 +1,22 @@
+[
+  {
+    "sessionId": "wa-917008124564",
+    "botId": "bot-ec0db899",
+    "senderPhone": "+917008124564",
+    "senderName": "Sanatani Ashish",
+    "fireAt": 1788174781597,
+    "step": 1,
+    "maxSteps": null,
+    "scheduledAt": 1788167581597
+  },
+  {
+    "sessionId": "wa-917400275987",
+    "botId": "bot-ec0db899",
+    "senderPhone": "+917400275987",
+    "senderName": "Sanatani Ashish",
+    "fireAt": 1788177864721,
+    "step": 1,
+    "maxSteps": null,
+    "scheduledAt": 1788170664721
+  }
+]

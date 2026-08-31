@@ -35,16 +35,26 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [sendingReply, setSendingReply] = useState(false);
   const messagesEndRef = useRef(null);
+  const selectedSessionIdRef = useRef(selectedSessionId);
+
+  useEffect(() => {
+    selectedSessionIdRef.current = selectedSessionId;
+  }, [selectedSessionId]);
 
   const fetchConversations = async () => {
     try {
       const res = await fetch(`/api/inbox/conversations?search=${encodeURIComponent(searchQuery)}`);
       if (res.ok) {
         const data = await res.json();
-        setConversations(data.conversations || []);
-        if (!selectedSessionId && data.conversations && data.conversations.length > 0) {
-          setSelectedSessionId(data.conversations[0].sessionId);
-        }
+        const convs = data.conversations || [];
+        setConversations(convs);
+        setSelectedSessionId(prev => {
+          // Keep user's active selection if it still exists in the conversation list
+          if (prev && convs.some(c => c.sessionId === prev)) {
+            return prev;
+          }
+          return convs.length > 0 ? convs[0].sessionId : null;
+        });
       }
     } catch (err) {
       console.error('Error loading conversations:', err);
@@ -59,7 +69,9 @@ export default function InboxPage() {
       const res = await fetch(`/api/inbox/conversations/${sessionId}`);
       if (res.ok) {
         const data = await res.json();
-        setSessionDetails(data);
+        if (selectedSessionIdRef.current === sessionId) {
+          setSessionDetails(data);
+        }
       }
     } catch (err) {
       console.error('Error fetching session details:', err);
@@ -75,6 +87,12 @@ export default function InboxPage() {
   useEffect(() => {
     if (selectedSessionId) {
       fetchSessionDetails(selectedSessionId);
+      const detailInterval = setInterval(() => {
+        if (selectedSessionIdRef.current) {
+          fetchSessionDetails(selectedSessionIdRef.current);
+        }
+      }, 3000);
+      return () => clearInterval(detailInterval);
     }
   }, [selectedSessionId]);
 
@@ -127,9 +145,9 @@ export default function InboxPage() {
   const activeConv = conversations.find(c => c.sessionId === selectedSessionId);
 
   return (
-    <div style={{ padding: '18px 24px', maxWidth: '1400px', margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
+    <div style={{ padding: '16px 24px', maxWidth: '1440px', width: '100%', margin: '0 auto', height: '100vh', maxHeight: '100vh', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexShrink: 0 }}>
         <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
           Conversations
         </h1>
@@ -149,6 +167,8 @@ export default function InboxPage() {
       {/* Main Chatzy Split Layout Container */}
       <div className="glass-panel" style={{
         flex: 1,
+        minHeight: 0,
+        height: '100%',
         display: 'grid',
         gridTemplateColumns: '360px 1fr',
         overflow: 'hidden',
@@ -161,10 +181,13 @@ export default function InboxPage() {
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
+          height: '100%',
+          minHeight: 0,
+          overflow: 'hidden',
           backgroundColor: '#ffffff'
         }}>
           {/* Search & Filter Header */}
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
               Search (by name, email, or phone number)
             </span>
@@ -334,7 +357,7 @@ export default function InboxPage() {
         </div>
 
         {/* Right Column: Chat Transcript & Action Panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', backgroundColor: '#fcfdfd' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, overflow: 'hidden', backgroundColor: '#fcfdfd' }}>
           {activeConv ? (
             <>
               {/* Header Info matching Chatzy Image 1 */}
@@ -344,7 +367,8 @@ export default function InboxPage() {
                 backgroundColor: '#ffffff',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                flexShrink: 0
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{
@@ -421,6 +445,7 @@ export default function InboxPage() {
               {/* Message Transcript Stream */}
               <div style={{
                 flex: 1,
+                minHeight: 0,
                 padding: '20px 24px',
                 overflowY: 'auto',
                 display: 'flex',
@@ -438,7 +463,6 @@ export default function InboxPage() {
                   sessionDetails.messages.map((msg, i) => {
                     const isUser = msg.sender === 'user';
                     const isAgent = msg.sender === 'agent';
-                    const isWa = activeConv.channel === 'whatsapp';
 
                     return (
                       <div
@@ -448,50 +472,55 @@ export default function InboxPage() {
                           flexDirection: 'column',
                           alignItems: isUser ? 'flex-end' : 'flex-start',
                           maxWidth: '78%',
-                          alignSelf: isUser ? 'flex-end' : 'flex-start'
+                          alignSelf: isUser ? 'flex-end' : 'flex-start',
+                          gap: '4px'
                         }}
                       >
-                        {/* Sender Label */}
-                        <div style={{
+                        {/* Author Tag */}
+                        <span style={{
                           fontSize: '11px',
                           fontWeight: 700,
-                          color: '#64748b',
-                          marginBottom: '3px',
+                          color: isUser ? 'var(--text-secondary)' : 'var(--primary)',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px'
                         }}>
                           {isUser ? (
-                            <span>{activeConv.senderName}</span>
-                          ) : isAgent ? (
-                            <span style={{ color: '#0891b2', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              <User size={11} /> Support Agent
-                            </span>
+                            activeConv.senderName
                           ) : (
-                            <span style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                              <Bot size={11} /> {sessionDetails.bot?.bot_name || 'AI Assistant'}
-                            </span>
+                            <>
+                              {isAgent ? <User size={11} /> : <Bot size={11} />}
+                              <span>{isAgent ? 'Human Support Agent' : (activeConv.botName || 'AI Assistant')}</span>
+                            </>
                           )}
-                        </div>
+                        </span>
 
+                        {/* Bubble */}
                         <div style={{
-                          padding: '12px 16px',
-                          borderRadius: isUser ? '16px 16px 3px 16px' : '16px 16px 16px 3px',
-                          fontSize: '13.5px',
-                          lineHeight: 1.5,
-                          backgroundColor: isUser 
-                            ? (isWa ? '#dcf8c6' : '#eef2ff')
-                            : (isAgent ? '#0891b2' : '#ffffff'),
-                          color: isAgent ? '#ffffff' : '#0f172a',
-                          border: isAgent ? 'none' : '1px solid #e2e8f0',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                          padding: '10px 14px',
+                          borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                          backgroundColor: isUser ? 'var(--wa-incoming-bg)' : '#f8fafc',
+                          color: isUser ? 'var(--wa-incoming-text)' : 'var(--text-primary)',
+                          border: isUser ? '1px solid var(--wa-incoming-border)' : '1px solid var(--border-subtle)',
+                          fontSize: '13px',
+                          lineHeight: '1.5',
+                          wordBreak: 'break-word',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
                         }}>
                           {formatWhatsAppText(msg.content)}
                         </div>
 
-                        {/* Timestamp & Double Checkmarks */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {/* Timestamp & Status Icon */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          fontSize: '10.5px',
+                          color: 'var(--text-muted)'
+                        }}>
+                          <span>
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                           <CheckCheck size={13} color={isUser ? '#059669' : '#94a3b8'} />
                         </div>
                       </div>
@@ -510,7 +539,8 @@ export default function InboxPage() {
                   backgroundColor: '#ffffff',
                   display: 'flex',
                   gap: '10px',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  flexShrink: 0
                 }}
               >
                 <button

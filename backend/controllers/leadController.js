@@ -69,6 +69,34 @@ export async function deleteLead(req, res) {
   }
 }
 
+export async function updateLead(req, res) {
+  try {
+    const { leadId } = req.params;
+    const { lead_name, lead_phone, lead_email, lead_requirement, status } = req.body;
+
+    const updates = {};
+    if (lead_name !== undefined) updates.lead_name = lead_name;
+    if (lead_phone !== undefined) {
+      let cleanPhone = lead_phone ? lead_phone.trim() : null;
+      if (cleanPhone && !cleanPhone.startsWith('+')) {
+        cleanPhone = '+' + cleanPhone.replace(/[^0-9]/g, '');
+      }
+      updates.lead_phone = cleanPhone;
+    }
+    if (lead_email !== undefined) updates.lead_email = lead_email ? lead_email.trim() : null;
+    if (lead_requirement !== undefined) updates.lead_requirement = lead_requirement;
+    if (status !== undefined) updates.status = status;
+
+    const updated = await db.updateLead(leadId, updates);
+    if (!updated) return res.status(404).json({ error: 'Contact not found' });
+
+    return res.json({ success: true, lead: updated });
+  } catch (err) {
+    console.error('Update lead error:', err);
+    return res.status(500).json({ error: 'Failed to update contact' });
+  }
+}
+
 export async function updateLeadStatus(req, res) {
   try {
     const { leadId } = req.params;

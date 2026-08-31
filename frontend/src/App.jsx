@@ -72,7 +72,7 @@ export default function App() {
         <main style={{
           flex: 1,
           height: '100vh',
-          overflowY: 'auto',
+          overflowY: location.pathname.startsWith('/inbox') ? 'hidden' : 'auto',
           overflowX: 'hidden',
           backgroundColor: 'var(--bg-page)',
           position: 'relative'

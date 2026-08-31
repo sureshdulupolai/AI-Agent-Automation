@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import { db } from '../config/database.js';
 import { generateBotReply } from './geminiService.js';
 import { extractLeadDetails } from './leadParserService.js';
-import { scheduleFollowUp, cancelFollowUp } from './followUpScheduler.js';
+import { scheduleFollowUp, cancelFollowUp, isConversationClosed } from './followUpScheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +28,88 @@ const activeSockets = new Map();
 const activeQR = new Map();
 const activePairingCodes = new Map();
 const connectingLocks = new Map();
+
+/**
+ * Resolves the real international phone number from a WhatsApp message / JID.
+ * Handles:
+ * 1. Standard phone JID (e.g. 919820646838@s.whatsapp.net or 919820646838:0@s.whatsapp.net)
+ * 2. WhatsApp Linked Device Identifier (@lid, e.g. 56152503144564@lid) mapped via Baileys Signal Repository
+ * 3. Alternate PN addressing properties on msg/key
+ * 4. In-chat message parsing fallback
+ */
+export async function resolveSenderPhone(sock, msg, senderJid, botPhone = null) {
+  const ownPhoneDigits = (botPhone || sock?.user?.id || '').replace(/[^0-9]/g, '');
+
+  const isCandidateValid = (num) => {
+    if (!num) return false;
+    const digits = num.replace(/[^0-9]/g, '');
+    if (digits.length < 7 || digits.length > 15) return false;
+    if (ownPhoneDigits && digits === ownPhoneDigits) return false; // Strictly protect against returning bot owner's own number!
+    return true;
+  };
+
+  // 1. Direct phone number from JID (@s.whatsapp.net)
+  if (senderJid && senderJid.endsWith('@s.whatsapp.net')) {
+    const rawNumber = senderJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+    if (isCandidateValid(rawNumber)) {
+      return '+' + rawNumber;
+    }
+  }
+
+  // 2. Check participant / remoteJidPn / participantPn properties on message
+  const candidateJids = [
+    msg?.key?.participantPn,
+    msg?.participantPn,
+    msg?.key?.remoteJidPn,
+    msg?.remoteJidPn,
+    msg?.key?.participant,
+    msg?.participant,
+    msg?.key?.senderPn,
+    msg?.senderPn
+  ].filter(Boolean);
+
+  for (const jid of candidateJids) {
+    if (typeof jid === 'string' && jid.endsWith('@s.whatsapp.net')) {
+      const rawNumber = jid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+      if (isCandidateValid(rawNumber)) {
+        return '+' + rawNumber;
+      }
+    }
+  }
+
+  // 3. Query Baileys Signal Repository LID reverse mapping
+  if (senderJid && (senderJid.endsWith('@lid') || !senderJid.endsWith('@s.whatsapp.net'))) {
+    try {
+      if (sock?.signalRepository?.lidMapping?.getPNForLID) {
+        const pnJid = await sock.signalRepository.lidMapping.getPNForLID(senderJid);
+        if (pnJid) {
+          const rawNumber = pnJid.split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+          if (isCandidateValid(rawNumber)) {
+            return '+' + rawNumber;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('LID reverse mapping lookup error:', e.message);
+    }
+  }
+
+  // 4. Check if message text has an explicit phone number provided by client
+  const messageText = msg?.message?.conversation ||
+    msg?.message?.extendedTextMessage?.text ||
+    msg?.message?.imageMessage?.caption || '';
+  if (messageText) {
+    const parsed = extractLeadDetails(messageText, []);
+    if (parsed?.lead_phone && isCandidateValid(parsed.lead_phone)) {
+      const p = parsed.lead_phone.replace(/[^0-9]/g, '');
+      return '+' + p;
+    }
+  }
+
+  // 5. Fallback: extract digits from senderJid
+  const rawDigits = (senderJid || '').split('@')[0].split(':')[0].replace(/[^0-9]/g, '');
+  return rawDigits ? '+' + rawDigits : '+0000000000';
+}
 
 /**
  * Initialize or get a persistent, stable WhatsApp WebSocket session for a bot.
@@ -95,7 +177,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
           });
           activeQR.set(botId, qrDataUrl);
           await db.updateBot(botId, { whatsapp_status: 'pairing', whatsapp_type: 'qr' });
-          console.log(`📱 [WHATSAPP QR CODE GENERATED] for Bot ${botId}`);
+          console.log(`ðŸ“± [WHATSAPP QR CODE GENERATED] for Bot ${botId}`);
         } catch (err) {
           console.error('QR generation error:', err);
         }
@@ -115,7 +197,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
           whatsapp_type: 'qr'
         });
 
-        console.log(`✅ [WHATSAPP LIVE CONNECTED] Bot ${botId} is linked to phone: ${formattedPhone}`);
+        console.log(`âœ… [WHATSAPP LIVE CONNECTED] Bot ${botId} is linked to phone: ${formattedPhone}`);
       }
 
       if (connection === 'close') {
@@ -123,7 +205,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
         const currentBot = await db.getBotById(botId);
         const isExplicitLogout = statusCode === DisconnectReason.loggedOut;
 
-        console.log(`ℹ️ [WHATSAPP CLOSED] Bot ${botId} (code: ${statusCode}, loggedOut: ${isExplicitLogout})`);
+        console.log(`â„¹ï¸ [WHATSAPP CLOSED] Bot ${botId} (code: ${statusCode}, loggedOut: ${isExplicitLogout})`);
 
         activeSockets.delete(botId);
         connectingLocks.delete(botId);
@@ -160,7 +242,12 @@ export async function getOrCreateSocket(botId, forceReset = false) {
         if (!senderJid) continue;
         if (senderJid.includes('@broadcast') || senderJid.includes('@newsletter')) continue;
 
-        const senderPhone = '+' + senderJid.split('@')[0].split(':')[0];
+        const currentBot = await db.getBotById(botId);
+        if (!currentBot) continue;
+
+        // Dynamic phone resolution: Handles both standard JID and WhatsApp LID identifiers (@lid)
+        // Strictly extracts the client's / sender's number, never the bot owner's own number!
+        const senderPhone = await resolveSenderPhone(sock, msg, senderJid, currentBot.whatsapp_number);
         const senderName = msg.pushName || 'WhatsApp Customer';
 
         let mediaPayload = null;
@@ -212,23 +299,41 @@ export async function getOrCreateSocket(botId, forceReset = false) {
         console.log(`📩 [REAL WHATSAPP INCOMING] from ${senderPhone} (${senderName}): "${messageText || '[Media Attachment]'}"`);
 
         try {
-          const currentBot = await db.getBotById(botId);
-          if (!currentBot) continue;
 
-          // Check Auto-Reply Mode & Trigger Keywords Filter (Media attachments always trigger)
+          const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
+
+          // Check if there is an active ongoing conversation in progress (within last 30 mins)
+          const sessionHistory = await db.getMessages(botId, sessionId);
+          const lastMsg = sessionHistory[sessionHistory.length - 1];
+          const isOngoingSession = lastMsg && (Date.now() - new Date(lastMsg.created_at).getTime() < 30 * 60 * 1000);
+
+          // Determine if this is the user's very first message (no history at all)
+          const isFirstMessage = sessionHistory.length === 0;
+
+          // ── SMART KEYWORD-BASED SOURCE DETECTION ──────────────────────
+          // Keyword filter is ONLY evaluated on the first message to detect the
+          // traffic source (website widget vs. direct personal contact).
           const replyMode = currentBot.whatsapp_reply_mode || 'all';
           const keywords = Array.isArray(currentBot.whatsapp_keywords) ? currentBot.whatsapp_keywords : [];
 
           if (replyMode === 'keywords' && keywords.length > 0 && !mediaPayload) {
-            const lowerMsg = (messageText || '').toLowerCase();
-            const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
-            if (!hasKeywordMatch) {
-              console.log(`⏭️ [SKIPPED AUTO-REPLY] Message from ${senderPhone} ("${messageText}") did not match any trigger keywords. Owner can reply manually.`);
-              continue;
+            if (isOngoingSession) {
+              // Ongoing conversation — always continue, no keyword gate
+            } else {
+              // New conversation (first message or session expired > 30 min)
+              const lowerMsg = (messageText || '').toLowerCase();
+              const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
+
+              if (hasKeywordMatch) {
+                // ✅ Website source confirmed — proceed normally
+                console.log(`🌐 [WEBSITE SOURCE] Keyword matched for ${senderPhone} ("${messageText}"). Proceeding with reply + lead capture.`);
+              } else {
+                // ❌ Direct personal contact — skip entirely (no reply, no lead)
+                console.log(`🚫 [DIRECT CONTACT - SKIPPED] No keyword match for ${senderPhone} ("${messageText}"). Owner can reply manually.`);
+                continue;
+              }
             }
           }
-
-          const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
 
           // Cancel any pending follow-up reminder since user sent a new message
           cancelFollowUp(sessionId);
@@ -242,24 +347,32 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             channel: 'whatsapp'
           });
 
-          // 2. Extract potential lead
+          // 2. Extract & save lead ONLY for website-sourced first messages
+          //    (isOngoingSession means lead was already captured previously)
           const history = await db.getMessages(botId, sessionId);
-          const leadData = extractLeadDetails(messageText || 'Inquiry with attachment', history);
 
-          const finalPhone = leadData?.lead_phone || senderPhone;
-          const finalName = leadData?.lead_name !== 'Website Visitor' ? leadData?.lead_name : senderName;
+          if (!isOngoingSession) {
+            // First qualifying message from website — capture the lead
+            const leadData = extractLeadDetails(messageText || 'Inquiry with attachment', history);
+            const finalPhone = (leadData?.lead_phone && !leadData.lead_phone.includes('561525031'))
+              ? (leadData.lead_phone.startsWith('+') ? leadData.lead_phone : '+' + leadData.lead_phone.replace(/[^0-9]/g, ''))
+              : senderPhone;
+            const finalName = (leadData?.lead_name && leadData.lead_name !== 'Website Visitor')
+              ? leadData.lead_name
+              : (senderName || 'WhatsApp Customer');
 
-          await db.createLead({
-            bot_id: botId,
-            user_id: currentBot.user_id,
-            lead_name: finalName,
-            lead_phone: finalPhone,
-            lead_email: leadData?.lead_email || null,
-            lead_requirement: leadData?.lead_requirement || messageText || 'Sent media attachment',
-            channel: 'whatsapp',
-            session_id: sessionId,
-            status: 'new'
-          });
+            await db.createLead({
+              bot_id: botId,
+              user_id: currentBot.user_id,
+              lead_name: finalName,
+              lead_phone: finalPhone,
+              lead_email: leadData?.lead_email || null,
+              lead_requirement: leadData?.lead_requirement || messageText || 'Sent media attachment',
+              channel: 'whatsapp',
+              session_id: sessionId,
+              status: 'new'
+            });
+          }
 
           // 3. Generate Gemini AI Response (with Vision/Audio/Doc multimodal context)
           const { reply } = await generateBotReply({
@@ -281,15 +394,32 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             channel: 'whatsapp'
           });
 
-          // 6. Schedule automated follow-up reminder (2-hour lead nurture)
-          scheduleFollowUp({
-            botId,
-            sessionId,
-            senderPhone: finalPhone,
-            senderName: finalName
-          });
+          // 6. Smart Follow-Up Scheduling
+          // If user closed the conversation (bye/not interested/done) â†’ cancel any pending follow-up
+          // Otherwise â†’ schedule contextual AI follow-up
+          if (isConversationClosed(messageText)) {
+            cancelFollowUp(sessionId);
+            console.log(`ðŸ›‘ [FOLLOW-UP SKIPPED] User closed conversation: "${messageText}". No follow-up will be sent.`);
+          } else {
+            // Get phone/name from lead (isOngoingSession = no new lead), fallback to sender
+            const followUpPhone = isOngoingSession ? senderPhone : (
+              history.find(m => m.sender === 'user')
+                ? senderPhone
+                : senderPhone
+            );
+            const followUpName = isOngoingSession ? senderName : (
+              history.length > 0 ? senderName : senderName
+            );
+            scheduleFollowUp({
+              botId,
+              sessionId,
+              senderPhone: followUpPhone,
+              senderName: followUpName,
+              conversationHistory: history
+            });
+          }
 
-          console.log(`🤖 [REAL WHATSAPP SENT] to ${senderPhone}: "${reply.substring(0, 80)}..."`);
+          console.log(`ðŸ¤– [REAL WHATSAPP SENT] to ${senderPhone}: "${reply.substring(0, 80)}..."`);
         } catch (err) {
           console.error('Error handling incoming WhatsApp message:', err);
         }
@@ -323,7 +453,7 @@ export async function initAllWhatsAppSessions() {
     for (const botId of dirs) {
       const credsFile = path.join(SESSIONS_DIR, botId, 'creds.json');
       if (fs.existsSync(credsFile)) {
-        console.log(`🔄 Restoring active WhatsApp session for bot: ${botId}...`);
+        console.log(`ðŸ”„ Restoring active WhatsApp session for bot: ${botId}...`);
         try {
           await getOrCreateSocket(botId, false);
         } catch (e) {
@@ -419,7 +549,7 @@ export async function requestPairingCode(botId, rawPhoneNumber) {
     activePairingCodes.set(botId, formattedCode);
     await db.updateBot(botId, { whatsapp_status: 'pairing', whatsapp_type: 'qr' });
 
-    console.log(`🔑 8-Digit Pairing Code generated for ${cleanPhone}: ${formattedCode}`);
+    console.log(`ðŸ”‘ 8-Digit Pairing Code generated for ${cleanPhone}: ${formattedCode}`);
 
     return {
       botId,
@@ -504,6 +634,9 @@ export async function disconnectWhatsApp(botId) {
 /**
  * Process incoming WhatsApp message (from simulator or external webhook)
  */
+/**
+ * Process incoming WhatsApp message (from simulator or external webhook)
+ */
 export async function processWhatsAppIncoming({
   botId,
   senderPhone,
@@ -518,16 +651,39 @@ export async function processWhatsAppIncoming({
   const replyMode = bot.whatsapp_reply_mode || 'all';
   const keywords = Array.isArray(bot.whatsapp_keywords) ? bot.whatsapp_keywords : [];
 
+  // Check if session is already active (last message within 30 mins)
+  const sessionHistory = await db.getMessages(botId, sessionId);
+  const lastMsg = sessionHistory[sessionHistory.length - 1];
+  const isOngoingSession = lastMsg && (Date.now() - new Date(lastMsg.created_at).getTime() < 30 * 60 * 1000);
+
+  // Determine if this is the user's very first message (no history at all)
+  const isFirstMessage = sessionHistory.length === 0;
+
+  // SMART KEYWORD-BASED SOURCE DETECTION
+  // Keyword is ONLY checked on the first message to identify traffic source.
+  // CASE A: replyMode = 'all'  -> always reply + save lead
+  // CASE B: replyMode = 'keywords':
+  //   First/new msg + keyword MATCH   -> website source -> reply + save lead
+  //   First/new msg + keyword NO MATCH -> direct personal contact -> completely skip
+  //   Ongoing session                  -> always continue conversation
   if (replyMode === 'keywords' && keywords.length > 0) {
-    const lowerMsg = messageText.toLowerCase();
-    const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
-    if (!hasKeywordMatch) {
-      return {
-        reply: `⏭️ *(Auto-Reply Skipped by Smart Filter)*: This message did not match any of your active trigger keywords (${keywords.slice(0, 4).join(', ')}...). The bot left this message for your manual response.`,
-        senderPhone,
-        sessionId,
-        filtered: true
-      };
+    if (isOngoingSession) {
+      // Ongoing conversation - always continue, no keyword gate
+    } else {
+      // New conversation - check keyword to determine source
+      const lowerMsg = messageText.toLowerCase();
+      const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
+      if (!hasKeywordMatch) {
+        // Direct personal contact - skip entirely
+        return {
+          reply: `No keyword match. Direct contact skipped. Owner can reply manually.`,
+          senderPhone,
+          sessionId,
+          filtered: true,
+          source: 'direct_contact'
+        };
+      }
+      // Website source confirmed - proceed with reply + lead capture
     }
   }
 
@@ -543,24 +699,32 @@ export async function processWhatsAppIncoming({
     channel: 'whatsapp'
   });
 
-  // 2. Extract potential lead
+  // 2. Extract & save lead ONLY for website-sourced first messages
+  //    (isOngoingSession means lead was already captured previously)
   const history = await db.getMessages(botId, sessionId);
-  const leadData = extractLeadDetails(messageText, history);
 
-  const finalPhone = leadData?.lead_phone || senderPhone;
-  const finalName = leadData?.lead_name !== 'Website Visitor' ? leadData?.lead_name : senderName;
+  // Determine phone/name for follow-up (extracted from lead or fallback to sender)
+  let followUpPhone = senderPhone;
+  let followUpName = senderName;
 
-  await db.createLead({
-    bot_id: botId,
-    user_id: bot.user_id,
-    lead_name: finalName,
-    lead_phone: finalPhone,
-    lead_email: leadData?.lead_email || null,
-    lead_requirement: leadData?.lead_requirement || messageText,
-    channel: 'whatsapp',
-    session_id: sessionId,
-    status: 'new'
-  });
+  if (!isOngoingSession) {
+    // First qualifying message from website - capture the lead
+    const leadData = extractLeadDetails(messageText, history);
+    followUpPhone = leadData?.lead_phone || senderPhone;
+    followUpName = leadData?.lead_name !== 'Website Visitor' ? leadData?.lead_name : senderName;
+
+    await db.createLead({
+      bot_id: botId,
+      user_id: bot.user_id,
+      lead_name: followUpName,
+      lead_phone: followUpPhone,
+      lead_email: leadData?.lead_email || null,
+      lead_requirement: leadData?.lead_requirement || messageText,
+      channel: 'whatsapp',
+      session_id: sessionId,
+      status: 'new'
+    });
+  }
 
   // 3. Generate Gemini AI Response
   const { reply } = await generateBotReply({
@@ -578,13 +742,21 @@ export async function processWhatsAppIncoming({
     channel: 'whatsapp'
   });
 
-  // 5. Schedule automated follow-up reminder
-  scheduleFollowUp({
-    botId,
-    sessionId,
-    senderPhone: finalPhone,
-    senderName: finalName
-  });
+  // 5. Smart Follow-Up Scheduling
+  // If user closed the conversation (bye/not interested/done) -> cancel any pending follow-up
+  // Otherwise -> schedule contextual AI follow-up with conversation history
+  if (isConversationClosed(messageText)) {
+    cancelFollowUp(sessionId);
+    console.log(`[FOLLOW-UP SKIPPED] Simulator: User closed conversation. No follow-up scheduled.`);
+  } else {
+    scheduleFollowUp({
+      botId,
+      sessionId,
+      senderPhone: followUpPhone,
+      senderName: followUpName,
+      conversationHistory: history
+    });
+  }
 
   // If live socket exists, also send to real WhatsApp
   const sock = activeSockets.get(botId);

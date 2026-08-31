@@ -35,11 +35,21 @@ export async function listConversations(req, res) {
       const firstMsg = msgList[0];
       const bot = botMap.get(lastMsg.bot_id) || { id: lastMsg.bot_id, bot_name: 'Chatbot' };
 
-      // Find matching lead if any
-      const matchingLead = leads.find(l => l.session_id === sessionId || (l.lead_phone && sessionId.includes(l.lead_phone.replace(/\D/g, ''))));
+      // Find matching lead if any (match by session_id first, then by phone digits)
+      const matchingLead = leads.find(l =>
+        l.session_id === sessionId ||
+        (l.lead_phone && sessionId.includes(l.lead_phone.replace(/\D/g, '')))
+      );
 
       const channelType = lastMsg.channel || (sessionId.startsWith('wa-') ? 'whatsapp' : 'website');
-      const senderName = matchingLead?.lead_name || (channelType === 'whatsapp' ? `WhatsApp User (${sessionId.replace('wa-', '+')})` : 'Website Visitor');
+
+      // For WhatsApp sessions without a lead yet, extract the phone from sessionId
+      const sessionPhone = channelType === 'whatsapp'
+        ? ('+' + sessionId.replace(/^wa-/, ''))
+        : null;
+
+      const senderName = matchingLead?.lead_name
+        || (channelType === 'whatsapp' ? `WA ${sessionPhone}` : 'Website Visitor');
 
       const conv = {
         sessionId,
@@ -48,7 +58,7 @@ export async function listConversations(req, res) {
         botAvatar: bot.bot_avatar_url,
         channel: channelType,
         senderName,
-        leadPhone: matchingLead?.lead_phone || null,
+        leadPhone: matchingLead?.lead_phone || sessionPhone,
         leadEmail: matchingLead?.lead_email || null,
         leadStatus: matchingLead?.status || 'new',
         lastMessage: lastMsg.content,

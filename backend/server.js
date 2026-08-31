@@ -18,6 +18,7 @@ import * as journeyController from './controllers/journeyController.js';
 import * as integrationController from './controllers/integrationController.js';
 import * as oauthController from './controllers/oauthController.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
+import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
 
 dotenv.config();
 
@@ -111,6 +112,7 @@ app.post('/api/inbox/reply', authenticateToken, inboxController.sendAgentReply);
 // ----------------------------------------------------
 app.get('/api/leads', authenticateToken, leadController.listLeads);
 app.post('/api/leads', authenticateToken, leadController.createLead);
+app.put('/api/leads/:leadId', authenticateToken, leadController.updateLead);
 app.delete('/api/leads/:leadId', authenticateToken, leadController.deleteLead);
 app.patch('/api/leads/:leadId/status', authenticateToken, leadController.updateLeadStatus);
 app.get('/api/leads/export/csv', authenticateToken, leadController.exportLeadsCsv);
@@ -180,4 +182,7 @@ app.listen(PORT, () => {
   
   // Restore any persistent WhatsApp sessions
   initAllWhatsAppSessions().catch(err => console.error('WhatsApp startup session init error:', err));
+
+  // Restore any pending follow-up timers from disk (survive server restarts)
+  restoreFollowUpsOnStartup().catch(err => console.error('Follow-up restore error:', err));
 });

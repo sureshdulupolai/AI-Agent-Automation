@@ -49,6 +49,14 @@ export default function LeadsPage({ bots = [] }) {
   // Selected contact for Slide-Over drawer
   const [selectedContact, setSelectedContact] = useState(null);
   
+  // Edit mode state inside drawer
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editReq, setEditReq] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
   // Contact Creation Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createName, setCreateName] = useState('');
@@ -60,6 +68,16 @@ export default function LeadsPage({ bots = [] }) {
 
   // Selected row checkboxes
   const [selectedRows, setSelectedRows] = useState([]);
+
+  useEffect(() => {
+    if (selectedContact) {
+      setEditName(selectedContact.lead_name || '');
+      setEditPhone(selectedContact.lead_phone || '');
+      setEditEmail(selectedContact.lead_email || '');
+      setEditReq(selectedContact.lead_requirement || '');
+      setIsEditing(false);
+    }
+  }, [selectedContact]);
 
   const fetchLeads = async () => {
     try {
@@ -126,6 +144,43 @@ export default function LeadsPage({ bots = [] }) {
       console.error('Error creating contact:', err);
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleSaveContactEdit = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedContact) return;
+
+    try {
+      setSavingEdit(true);
+      const res = await fetch(`/api/leads/${selectedContact.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_name: editName.trim(),
+          lead_phone: editPhone.trim(),
+          lead_email: editEmail.trim() || null,
+          lead_requirement: editReq.trim()
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const updated = data.lead || {
+          ...selectedContact,
+          lead_name: editName.trim(),
+          lead_phone: editPhone.trim(),
+          lead_email: editEmail.trim() || null,
+          lead_requirement: editReq.trim()
+        };
+        setSelectedContact(updated);
+        setLeads(leads.map(l => l.id === updated.id ? updated : l));
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error('Error saving contact edit:', err);
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -554,19 +609,20 @@ export default function LeadsPage({ bots = [] }) {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button
+                onClick={() => setIsEditing(!isEditing)}
                 style={{
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  backgroundColor: isEditing ? 'var(--primary)' : '#f8fafc',
+                  border: isEditing ? 'none' : '1px solid #e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  color: '#64748b'
+                  color: isEditing ? '#ffffff' : '#64748b'
                 }}
-                title="Edit Details"
+                title={isEditing ? 'Cancel Edit' : 'Edit Details'}
               >
                 <Edit2 size={14} />
               </button>
@@ -646,49 +702,129 @@ export default function LeadsPage({ bots = [] }) {
 
             <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />
 
-            {/* Basic Information Section */}
-            <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', margin: '4px 0 8px 0' }}>
-              Basic Information
-            </h4>
+            {isEditing ? (
+              <form onSubmit={handleSaveContactEdit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', margin: '4px 0' }}>
+                  Edit Contact Information
+                </h4>
 
-            {(() => {
-              const nameParts = getSplitName(selectedContact.lead_name);
-              return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>First Name</span>
-                    <span style={{ color: '#0f172a', fontWeight: 600 }}>{nameParts.first}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>Last Name</span>
-                    <span style={{ color: '#0f172a', fontWeight: 600 }}>{nameParts.last}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>Email</span>
-                    <span style={{ color: '#0f172a', wordBreak: 'break-all' }}>{selectedContact.lead_email || '-'}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>Phone Number</span>
-                    <span style={{ color: '#0f172a', fontWeight: 600 }}>{selectedContact.lead_phone || '-'}</span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>Channel Identifier</span>
-                    <span style={{ color: '#059669', fontWeight: 600, wordBreak: 'break-all', fontSize: '12px' }}>
-                      {selectedContact.lead_phone || selectedContact.session_id || 'Direct Inbound'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
-                    <span style={{ fontWeight: 600, color: '#64748b' }}>Project Scope</span>
-                    <span style={{ color: '#334155', lineHeight: 1.45 }}>{selectedContact.lead_requirement || '-'}</span>
-                  </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
                 </div>
-              );
-            })()}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Phone Number (e.g. +91 98206 46838)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="+91..."
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Project Scope / Requirement
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editReq}
+                    onChange={(e) => setEditReq(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="btn-secondary"
+                    style={{ flex: 1, padding: '8px', fontSize: '12.5px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="btn-primary"
+                    style={{ flex: 1, padding: '8px', fontSize: '12.5px', fontWeight: 700 }}
+                  >
+                    {savingEdit ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                {/* Basic Information Section */}
+                <h4 style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', margin: '4px 0 8px 0' }}>
+                  Basic Information
+                </h4>
+
+                {(() => {
+                  const nameParts = getSplitName(selectedContact.lead_name);
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>First Name</span>
+                        <span style={{ color: '#0f172a', fontWeight: 600 }}>{nameParts.first}</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Last Name</span>
+                        <span style={{ color: '#0f172a', fontWeight: 600 }}>{nameParts.last}</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Email</span>
+                        <span style={{ color: '#0f172a', wordBreak: 'break-all' }}>{selectedContact.lead_email || '-'}</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Phone Number</span>
+                        <span style={{ color: '#0f172a', fontWeight: 600 }}>{selectedContact.lead_phone || '-'}</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Channel Identifier</span>
+                        <span style={{ color: '#059669', fontWeight: 600, wordBreak: 'break-all', fontSize: '12px' }}>
+                          {selectedContact.lead_phone || selectedContact.session_id || 'Direct Inbound'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '8px' }}>
+                        <span style={{ fontWeight: 600, color: '#64748b' }}>Project Scope</span>
+                        <span style={{ color: '#334155', lineHeight: 1.45 }}>{selectedContact.lead_requirement || '-'}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>
+            )}
 
             <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '12px 0' }} />
 

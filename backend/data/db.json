@@ -14,7 +14,7 @@
     {
       "id": "bot-ec0db899",
       "created_at": "2026-08-30T16:02:52.879Z",
-      "updated_at": "2026-08-31T08:05:09.576Z",
+      "updated_at": "2026-08-31T10:12:40.762Z",
       "is_active": true,
       "allowed_domains": [
         "*"
@@ -102,7 +102,106 @@
       "created_at": "2026-08-27T15:37:06.791Z"
     }
   ],
-  "leads": [],
-  "messages": [],
-  "whatsapp_sessions": []
+  "leads": [
+    {
+      "id": "lead-8b0d44f4",
+      "status": "new",
+      "created_at": "2026-08-31T10:04:22.681Z",
+      "updated_at": "2026-08-31T10:04:22.681Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "Sanatani Ashish",
+      "lead_phone": "+917400275987",
+      "lead_email": null,
+      "lead_requirement": "Hi, I want to hire you for AI automation services.",
+      "channel": "whatsapp",
+      "session_id": "wa-917400275987"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg-b72aa312",
+      "created_at": "2026-08-31T08:34:57.481Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "user",
+      "content": "Hi, I want to hire you for AI automation services.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-2b0135af",
+      "created_at": "2026-08-31T08:35:00.078Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "bot",
+      "content": "Hello! We provide full-service AI and business solutions tailored to your business needs. What specific project or goal are you working on today?",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-a93f2c0f",
+      "created_at": "2026-08-31T09:12:39.718Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "user",
+      "content": "Hi, I want to hire you for AI automation services.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-bbb9bf52",
+      "created_at": "2026-08-31T09:12:42.067Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "bot",
+      "content": "Hello! 👋 How can I assist you today? If you're looking for details on our **Web Development** packages ($499 - $999) or **AI Chatbot Automation**, feel free to share a bit about your project! 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-cbb7c113",
+      "created_at": "2026-08-31T09:12:59.563Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "user",
+      "content": "i need to discuss that i need some thing information of the world whats happening wright now ? in odisha ? search on internet and say it to me what is tha weather time",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-b8ad3539",
+      "created_at": "2026-08-31T09:13:01.588Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "bot",
+      "content": "I'm specifically here to assist with *Suresh Polai's* services and your project requirements. 🙏\n\nFor general questions, please use a search engine. Is there anything I can help you with regarding our services, pricing, or your project? 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-6bec619e",
+      "created_at": "2026-08-31T10:04:22.674Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917400275987",
+      "sender": "user",
+      "content": "Hi, I want to hire you for AI automation services.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-20278a51",
+      "created_at": "2026-08-31T10:04:24.714Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917400275987",
+      "sender": "bot",
+      "content": "Hello! 👋 How can I assist you today? If you're looking for details on our **Web Development** packages ($499 - $999) or **AI Chatbot Automation**, feel free to share a bit about your project! 🚀",
+      "channel": "whatsapp"
+    }
+  ],
+  "whatsapp_sessions": [],
+  "segments": [
+    {
+      "id": "seg-0bc54d57",
+      "name": "WhatsApp Inbound Leads",
+      "type": "list",
+      "description": "All incoming leads captured from WhatsApp live bot testing",
+      "members_count": 0,
+      "created_at": "2026-08-31T08:34:32.022Z",
+      "updated_at": "2026-08-31T08:34:32.022Z"
+    }
+  ]
 }
