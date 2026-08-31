@@ -17,8 +17,11 @@ import * as verifyWebsiteController from './controllers/verifyWebsiteController.
 import * as journeyController from './controllers/journeyController.js';
 import * as integrationController from './controllers/integrationController.js';
 import * as oauthController from './controllers/oauthController.js';
+import * as campaignController from './controllers/campaignController.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
 import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
+import { startCampaignScheduler } from './services/campaignScheduler.js';
+import { startEmailAutomationEngine, getEmailAutomationSettings, saveEmailAutomationSettings, getEmailAutomationLogs } from './services/emailAutomationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -177,6 +180,28 @@ app.post('/api/integrations/google/send-email', oauthController.sendGoogleEmail)
 app.get('/api/auth/instagram/url', oauthController.getInstagramAuthUrl);
 app.get('/api/auth/instagram/callback', oauthController.instagramCallback);
 
+// ----------------------------------------------------
+// Bulk Campaign & Scheduled Dispatch Routes
+// ----------------------------------------------------
+app.get('/api/campaigns', campaignController.getCampaigns);
+app.post('/api/campaigns/create', campaignController.createCampaign);
+app.post('/api/campaigns/:id/cancel', campaignController.cancelCampaign);
+app.delete('/api/campaigns/:id', campaignController.deleteCampaign);
+
+// ----------------------------------------------------
+// Email Automation & Drip Sequence Routes
+// ----------------------------------------------------
+app.get('/api/email-automations/settings', (req, res) => {
+  res.json({ success: true, settings: getEmailAutomationSettings() });
+});
+app.post('/api/email-automations/settings', (req, res) => {
+  const updated = saveEmailAutomationSettings(req.body);
+  res.json({ success: true, settings: updated });
+});
+app.get('/api/email-automations/logs', (req, res) => {
+  res.json({ success: true, logs: getEmailAutomationLogs() });
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 OmniBot SaaS Backend Server running on http://localhost:${PORT}`);
@@ -188,4 +213,10 @@ app.listen(PORT, () => {
 
   // Restore any pending follow-up timers from disk (survive server restarts)
   restoreFollowUpsOnStartup().catch(err => console.error('Follow-up restore error:', err));
+
+  // Start Campaign Background Scheduler
+  startCampaignScheduler();
+
+  // Start Email Automation Engine
+  startEmailAutomationEngine();
 });

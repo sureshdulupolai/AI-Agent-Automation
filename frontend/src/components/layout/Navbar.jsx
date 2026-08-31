@@ -27,21 +27,20 @@ export default function Navbar({ onNavigate, currentPage }) {
         onClick={() => onNavigate('dashboard')}
         style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
       >
-        <div style={{
-          width: '28px',
-          height: '28px',
-          borderRadius: '7px',
-          background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 2px 5px rgba(79, 70, 229, 0.2)'
-        }}>
-          <Bot size={16} color="#ffffff" />
-        </div>
+        <img 
+          src="/novabyte_logo.jpg" 
+          alt="NovaByte AI" 
+          style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '7px',
+            objectFit: 'cover',
+            boxShadow: '0 2px 5px rgba(79, 70, 229, 0.25)'
+          }}
+        />
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '15px', fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', color: '#0f172a' }}>
-            OmniBot
+            NovaByte
           </span>
           <span style={{
             fontSize: '9.5px',
@@ -52,7 +51,7 @@ export default function Navbar({ onNavigate, currentPage }) {
             padding: '1px 5px',
             borderRadius: '4px'
           }}>
-            PRO
+            AI
           </span>
         </div>
       </div>

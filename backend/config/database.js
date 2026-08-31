@@ -305,7 +305,7 @@ export const db = {
   },
 
   // LEADS
-  async getLeads(userId, botId = null) {
+  async getLeads(userId = null, botId = null) {
     if (supabase) {
       let query = supabase.from('leads').select('*').order('created_at', { ascending: false });
       if (userId) query = query.eq('user_id', userId);
@@ -315,10 +315,14 @@ export const db = {
     }
 
     const local = readDb();
-    let result = local.leads;
+    let result = local.leads || [];
     if (userId) result = result.filter(l => l.user_id === userId);
     if (botId) result = result.filter(l => l.bot_id === botId);
     return result;
+  },
+
+  async getAllLeads() {
+    return this.getLeads(null, null);
   },
 
   async createLead(leadData) {

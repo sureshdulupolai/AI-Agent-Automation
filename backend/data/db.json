@@ -14,7 +14,7 @@
     {
       "id": "bot-ec0db899",
       "created_at": "2026-08-30T16:02:52.879Z",
-      "updated_at": "2026-08-31T10:41:07.701Z",
+      "updated_at": "2026-08-31T12:20:29.602Z",
       "is_active": true,
       "allowed_domains": [
         "*"
@@ -22,17 +22,17 @@
       "whatsapp_status": "connected",
       "whatsapp_type": "qr",
       "user_id": "usr-demo-1",
-      "bot_name": "Suresh Polai",
-      "bot_avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-      "primary_color": "#7c3aed",
-      "welcome_message": "Hi there! 👋 How can I help you today?",
-      "placeholder_text": "Type your question here...",
+      "bot_name": "NovaByte AI Assistant",
+      "bot_avatar_url": "/novabyte_logo.jpg",
+      "primary_color": "#4f46e5",
+      "welcome_message": "Hello there! 👋 Welcome to NovaByte AI Studio. How can we assist you with your web & AI automation project today?",
+      "placeholder_text": "Type your message here...",
       "quick_prompts": [
         "What are your services?",
-        "Pricing information",
-        "Contact support"
+        "Pricing packages",
+        "Book a live demo"
       ],
-      "system_instructions": "You are the official AI Assistant for Suresh Polai (Full-Stack Developer & AI Automation Specialist). You are polite, knowledgeable, consultative, and concise on WhatsApp.\n\nYour Objectives:\n1. Clearly explain our Website Development, AI Chatbots, SaaS platforms, and WhatsApp Automation services.\n2. Provide specific pricing packages ($499 - $2,500) and delivery timelines (3-7 days) when asked.\n3. Understand the client's project requirements and capture their contact information (Name, Project Scope, Budget, Preferred Callback Time) so Suresh can connect directly.\n4. Keep WhatsApp messages formatting neat with bullet points and emojis.",
+      "system_instructions": "You are the official 24/7 AI Growth & Technical Assistant for NovaByte AI Studio (Full-Stack Web Architecture & Autonomous AI Automation Agency). You are consultative, professional, and helpful.\n\nYour Objectives:\n1. Clearly explain NovaByte AI Studio's core services: High-Converting Custom Websites, E-Commerce, Autonomous WhatsApp AI Chatbots, and Lead Generation Automation.\n2. Provide clear pricing tiers ($499 - $2,500) and delivery turnaround (3-7 business days).\n3. Qualify inbound client inquiries and capture their details (Name, Project Scope, Budget, Preferred Timeline) for direct proposal delivery.\n4. Maintain neat WhatsApp/Chat formatting with emojis and bullet points.",
       "whatsapp_number": "+919820646838",
       "whatsapp_reply_mode": "keywords",
       "whatsapp_keywords": [
@@ -76,33 +76,23 @@
       "is_active": true,
       "created_at": "2026-08-23T15:37:06.791Z",
       "updated_at": "2026-08-30T16:03:23.807Z"
-    },
-    {
-      "id": "bot-glowcare-dental",
-      "user_id": "usr-demo-1",
-      "bot_name": "GlowCare Dental Concierge",
-      "bot_avatar_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80",
-      "primary_color": "#0891b2",
-      "welcome_message": "Welcome to GlowCare Dental Studio! 🦷 Need help booking an appointment, checking treatments, or understanding pricing?",
-      "placeholder_text": "Ask about teeth whitening, implants, or booking...",
-      "quick_prompts": [
-        "Teeth Whitening options & pricing",
-        "Do you accept insurance?",
-        "Book an appointment"
-      ],
-      "system_instructions": "You are the gentle, reassuring AI assistant for GlowCare Dental Clinic. Guide patients through treatments, emergency hours, and capture their contact number for booking confirmations.",
-      "business_knowledge": "CLINIC: GlowCare Dental & Implant Studio\nHOURS: Mon-Sat: 9:00 AM - 7:00 PM | Sun: Emergency by appointment only.\nPOPULAR TREATMENTS:\n- Laser Teeth Whitening: $299 (Takes 45 mins, 8 shades brighter)\n- Invisible Clear Aligners: Starting from $1,800 or $99/month\n- Root Canal Therapy (Painless): $450\n- Dental Implants (Titanium + Zirconia Crown): $1,400\nINSURANCE: We accept major PPO insurance plans and offer 0% interest financing.\nLOCATION: 450 Medical Plaza, Suite 300. Phone: +1 (555) 749-0122",
-      "allowed_domains": [
-        "*"
-      ],
-      "whatsapp_number": null,
-      "whatsapp_status": "disconnected",
-      "whatsapp_type": "qr",
-      "is_active": true,
-      "created_at": "2026-08-27T15:37:06.791Z"
     }
   ],
   "leads": [
+    {
+      "id": "lead-8386b535",
+      "status": "new",
+      "created_at": "2026-08-31T11:54:54.766Z",
+      "updated_at": "2026-08-31T11:54:54.766Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "usr-demo-1",
+      "lead_name": "WA User +91 98765 43210",
+      "lead_phone": "+91 98765 43210",
+      "lead_email": null,
+      "lead_requirement": "Hi, I am Suresh. I want custom website development with AI chatbot.",
+      "channel": "whatsapp",
+      "session_id": "wa-919876543210"
+    },
     {
       "id": "lead-8b0d44f4",
       "status": "new",
@@ -189,6 +179,87 @@
       "session_id": "wa-917400275987",
       "sender": "bot",
       "content": "Hello! 👋 How can I assist you today? If you're looking for details on our **Web Development** packages ($499 - $999) or **AI Chatbot Automation**, feel free to share a bit about your project! 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-b3c41d2d",
+      "created_at": "2026-08-31T11:13:04.349Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917008124564",
+      "sender": "bot",
+      "content": "[Automated Follow-Up Step 1]\nWanted to check in on the project you mentioned! 🚀 Are you ready to take the next step, or do you have any questions I can help with?",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-a037014b",
+      "created_at": "2026-08-31T11:54:54.758Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "Hi, I am Suresh. I want custom website development with AI chatbot.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-924bbc14",
+      "created_at": "2026-08-31T11:56:33.516Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "Hi, I am Suresh. I want custom website development with AI chatbot.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-4b0a7ed2",
+      "created_at": "2026-08-31T11:56:34.932Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "bot",
+      "content": "Hello! 👋 How can I assist you today? If you're looking for details on our **Web Development** packages ($499 - $999) or **AI Chatbot Automation**, feel free to share a bit about your project! 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-f8b7c924",
+      "created_at": "2026-08-31T12:09:27.838Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-917400275987",
+      "sender": "bot",
+      "content": "[Automated Follow-Up Step 1]\nFollowing up on our services discussion! 😊 Let me know if you have any questions or need more details to make a decision.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-c4bc6977",
+      "created_at": "2026-08-31T12:15:28.314Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "hi",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-2878244d",
+      "created_at": "2026-08-31T12:15:29.962Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "bot",
+      "content": "Hello! 👋 How can I assist you today? If you're looking for details on our **Web Development** packages ($499 - $999) or **AI Chatbot Automation**, feel free to share a bit about your project! 🚀",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-31b02792",
+      "created_at": "2026-08-31T12:20:36.015Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "Hi, I am Suresh. I want custom website development with AI chatbot.",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-379ca153",
+      "created_at": "2026-08-31T12:20:37.957Z",
+      "bot_id": "bot-ec0db899",
+      "session_id": "wa-919876543210",
+      "sender": "bot",
+      "content": "Hey Suresh! Great to connect with you. We'd love to help you build a high-performance custom website paired with an autonomous 24/7 AI chatbot.\n\nWhat kind of business or project is this for? Our typical turnaround is 3 to 7 business days with complete responsive design, SEO optimization, and live lead capture. 🚀",
       "channel": "whatsapp"
     }
   ],

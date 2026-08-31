@@ -32,9 +32,10 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
-const LinkedInIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 382 382" fill="#0077B5">
-    <path d="M347.4 0H34.6C15.5 0 0 15.5 0 34.6v312.9C0 366.5 15.5 382 34.6 382h312.9c19.1 0 34.5-15.5 34.5-34.5V34.6C382 15.5 366.5 0 347.4 0zM118.2 329.8c0 5.6-4.5 10.1-10.1 10.1H65.3c-5.6 0-10.1-4.5-10.1-10.1V150.4c0-5.6 4.5-10.1 10.1-10.1h42.8c5.6 0 10.1 4.5 10.1 10.1v179.4zm-31.5-206.4c-22.5 0-40.7-18.2-40.7-40.7S64.3 42.1 86.7 42.1s40.7 18.2 40.7 40.7-18.2 40.6-40.7 40.6zm255.2 207.3c0 5.1-4.1 9.2-9.2 9.2h-45.9c-5.1 0-9.2-4.1-9.2-9.2v-84.2c0-12.6 3.7-55-32.8-55-28.3 0-34.1 29.1-35.2 42.1v97.1c0 5.1-4.1 9.2-9.2 9.2h-44.4c-5.1 0-9.2-4.1-9.2-9.2V149.6c0-5.1 4.1-9.2 9.2-9.2h44.4c5.1 0 9.2 4.1 9.2 9.2v15.7c10.5-15.8 26.1-27.9 59.3-27.9 73.6 0 73.1 68.7 73.1 106.5v97.6z"/>
+const InstagramIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="6" fill="#E1306C"/>
+    <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0 8a3 3 0 110-6 3 3 0 010 6zm5.25-8.875a1.125 1.125 0 11-2.25 0 1.125 1.125 0 012.25 0z" fill="#fff"/>
   </svg>
 );
 
@@ -44,6 +45,7 @@ export default function LeadsPage({ bots = [] }) {
   const [segments, setSegments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedChannel, setSelectedChannel] = useState('all');
   const [selectedList, setSelectedList] = useState('all');
   const [selectedTag, setSelectedTag] = useState('all');
   
@@ -473,22 +475,64 @@ export default function LeadsPage({ bots = [] }) {
                 fontWeight: 700,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                cursor: 'pointer'
               }}
             >
-              <Plus size={16} />
-              <span>Create</span>
+              <Plus size={15} />
+              <span>Add Contact</span>
             </button>
           </div>
         </div>
 
+        {/* Multi-Channel Filter Tabs */}
+        <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
+          {[
+            { id: 'all', label: 'All Channels', icon: '🌐' },
+            { id: 'whatsapp', label: 'WhatsApp', icon: '📱' },
+            { id: 'instagram', label: 'Instagram Direct', icon: '📸' },
+            { id: 'email', label: 'Email Outreach', icon: '✉️' },
+            { id: 'website', label: 'Website Chatbot', icon: '💻' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setSelectedChannel(tab.id)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '20px',
+                border: 'none',
+                backgroundColor: selectedChannel === tab.id ? 'var(--primary)' : '#f1f5f9',
+                color: selectedChannel === tab.id ? '#ffffff' : '#64748b',
+                fontWeight: 700,
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              <span style={{ 
+                backgroundColor: selectedChannel === tab.id ? 'rgba(255,255,255,0.25)' : '#e2e8f0', 
+                color: selectedChannel === tab.id ? '#ffffff' : '#475569',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                fontSize: '11px'
+              }}>
+                {tab.id === 'all' ? leads.length : leads.filter(l => (l.channel || 'website') === tab.id).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Contacts Data Table matching Chatzy Image 2 & HTML */}
         <div style={{
+          overflowX: 'auto',
           backgroundColor: '#ffffff',
           borderRadius: '12px',
           border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-          overflow: 'hidden'
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
             <thead>
@@ -496,12 +540,12 @@ export default function LeadsPage({ bots = [] }) {
                 <th style={{ padding: '12px 14px', width: '40px' }}>
                   <input
                     type="checkbox"
-                    checked={selectedRows.length === leads.length && leads.length > 0}
+                    checked={leads.length > 0 && selectedRows.length === leads.length}
                     onChange={handleSelectAll}
                   />
                 </th>
                 <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Contact
+                  Contact Name &amp; Origin
                 </th>
                 <th style={{ padding: '12px 16px', fontWeight: 700, color: '#475569', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Email
@@ -531,20 +575,23 @@ export default function LeadsPage({ bots = [] }) {
                     Loading contacts...
                   </td>
                 </tr>
-              ) : leads.length === 0 ? (
+              ) : leads.filter(l => selectedChannel === 'all' || (l.channel || 'website') === selectedChannel).length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ padding: '50px', textAlign: 'center', color: '#64748b' }}>
                     <Users size={36} style={{ margin: '0 auto 10px auto', opacity: 0.3 }} />
-                    <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 4px 0' }}>No contacts found</p>
-                    <p style={{ fontSize: '12px', margin: 0 }}>Incoming WhatsApp and Website leads will automatically populate here.</p>
+                    <p style={{ fontWeight: 700, fontSize: '14px', margin: '0 0 4px 0' }}>No contacts found for selected channel</p>
+                    <p style={{ fontSize: '12px', margin: 0 }}>Incoming leads from WhatsApp, Instagram, Email and Website will automatically populate here.</p>
                   </td>
                 </tr>
               ) : (
-                leads.map((l) => {
+                leads.filter(l => selectedChannel === 'all' || (l.channel || 'website') === selectedChannel).map((l) => {
                   const isChecked = selectedRows.includes(l.id);
                   const isSelected = selectedContact?.id === l.id;
-                  const isWa = l.channel === 'whatsapp';
-                  const isLinkedIn = l.channel === 'linkedin';
+                  const channelKey = l.channel || 'website';
+                  const isWa = channelKey === 'whatsapp';
+                  const isIg = channelKey === 'instagram';
+                  const isEmail = channelKey === 'email';
+                  const isLinkedIn = channelKey === 'linkedin';
 
                   return (
                     <tr
@@ -573,22 +620,23 @@ export default function LeadsPage({ bots = [] }) {
                             width: '36px',
                             height: '36px',
                             borderRadius: '10px',
-                            backgroundColor: isWa ? '#dcf8c6' : (isLinkedIn ? '#e0f2fe' : '#eef2ff'),
+                            backgroundColor: isWa ? '#dcf8c6' : (isIg ? '#fce7f3' : (isEmail ? '#e0e7ff' : '#eef2ff')),
                             border: '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             flexShrink: 0
                           }}>
-                            {isWa ? <WhatsAppIcon /> : isLinkedIn ? <LinkedInIcon /> : <Globe size={18} color="var(--primary)" />}
+                            {isWa ? <WhatsAppIcon /> : isIg ? <InstagramIcon /> : isEmail ? <Mail size={17} color="#4f46e5" /> : <Globe size={18} color="var(--primary)" />}
                           </div>
 
                           <div>
                             <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '13.5px' }}>
                               {l.lead_name || 'Anonymous Visitor'}
                             </div>
-                            <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'capitalize' }}>
-                              {l.channel || 'website'}
+                            <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{channelKey}</span>
+                              {l.source_url && <span>• {l.source_url}</span>}
                             </div>
                           </div>
                         </div>

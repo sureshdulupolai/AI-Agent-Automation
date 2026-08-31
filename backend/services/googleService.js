@@ -183,9 +183,9 @@ export async function syncLeadsToGoogleSheet(leadsList = []) {
 }
 
 /**
- * Send Email via Gmail API
+ * Send Email via Gmail API with optional attachments (Images, PDFs, Documents)
  */
-export async function sendEmailViaGoogle({ to, subject, message, leadName = 'Valued Client' }) {
+export async function sendEmailViaGoogle({ to, subject, message, leadName = 'Valued Client', attachment = null, attachments = [] }) {
   const accessToken = await getValidAccessToken();
   const tokens = getGoogleTokens();
 
@@ -194,33 +194,78 @@ export async function sendEmailViaGoogle({ to, subject, message, leadName = 'Val
   }
 
   const senderEmail = tokens?.email || 'sureshpolai63@gmail.com';
-  const emailSubject = subject || `Regarding Your Inquiry - Suresh Polai (AI & Web Solutions)`;
+  const emailSubject = subject || `Regarding Your Inquiry - NovaByte AI Studio`;
+
+  const allAttachments = [...(attachments || [])];
+  if (attachment) allAttachments.push(attachment);
 
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; line-height: 1.6;">
-      <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 12px; margin-bottom: 18px;">
-        <h2 style="color: #4f46e5; margin: 0;">Suresh Polai</h2>
-        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Full-Stack Web Development & AI Chatbot Solutions</p>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #0f172a; line-height: 1.6; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+      <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <h2 style="color: #0f172a; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">NovaByte <span style="color: #4f46e5;">AI Studio</span></h2>
+          <p style="margin: 3px 0 0 0; color: #64748b; font-size: 12.5px; font-weight: 500;">Autonomous AI Chatbots, Full-Stack Web &amp; Growth Automation</p>
+        </div>
       </div>
-      <p>Hi <strong>${leadName}</strong>,</p>
-      <div style="white-space: pre-wrap; font-size: 14.5px; color: #334155; margin: 16px 0;">${message}</div>
-      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12.5px; color: #64748b;">
-        <p style="margin: 0;">Best regards,</p>
-        <p style="margin: 4px 0 0 0; font-weight: 700; color: #0f172a;">Suresh Polai</p>
-        <p style="margin: 2px 0 0 0;">WhatsApp: +91 98206 46838 | Email: ${senderEmail}</p>
+      <p style="font-size: 14.5px; margin: 0 0 14px 0;">Hi <strong>${leadName}</strong>,</p>
+      <div style="white-space: pre-wrap; font-size: 14px; color: #334155; line-height: 1.65; margin: 16px 0;">${message}</div>
+      <div style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #f1f5f9; font-size: 12.5px; color: #64748b;">
+        <p style="margin: 0; font-weight: 600; color: #0f172a;">NovaByte AI Engineering Team</p>
+        <p style="margin: 3px 0 0 0; color: #64748b;">Enterprise Web Architecture &bull; 24/7 WhatsApp AI Agents</p>
+        <p style="margin: 3px 0 0 0; color: #4f46e5; font-weight: 600;">Official Channel: ${senderEmail}</p>
       </div>
     </div>
   `;
 
-  const rawEmail = [
-    `From: Suresh Polai <${senderEmail}>`,
-    `To: ${to}`,
-    `Subject: ${emailSubject}`,
-    'MIME-Version: 1.0',
-    'Content-Type: text/html; charset=utf-8',
-    '',
-    htmlContent
-  ].join('\r\n');
+  let rawEmail = '';
+
+  if (allAttachments.length > 0) {
+    const boundary = `__boundary_${Date.now()}__`;
+    rawEmail = [
+      `From: NovaByte AI Studio <${senderEmail}>`,
+      `To: ${to}`,
+      `Subject: ${emailSubject}`,
+      'MIME-Version: 1.0',
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      'Content-Type: text/html; charset=utf-8',
+      'Content-Transfer-Encoding: 7bit',
+      '',
+      htmlContent,
+      ''
+    ].join('\r\n');
+
+    for (const att of allAttachments) {
+      if (att && att.data) {
+        const mimeType = att.mimetype || att.contentType || 'application/octet-stream';
+        const fileName = att.name || att.filename || 'attachment';
+        const base64Data = att.data.replace(/^data:.*?;base64,/, '');
+
+        rawEmail += [
+          `--${boundary}`,
+          `Content-Type: ${mimeType}; name="${fileName}"`,
+          'Content-Transfer-Encoding: base64',
+          `Content-Disposition: attachment; filename="${fileName}"`,
+          '',
+          base64Data,
+          ''
+        ].join('\r\n');
+      }
+    }
+
+    rawEmail += `--${boundary}--`;
+  } else {
+    rawEmail = [
+      `From: NovaByte AI Studio <${senderEmail}>`,
+      `To: ${to}`,
+      `Subject: ${emailSubject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      htmlContent
+    ].join('\r\n');
+  }
 
   const encodedMessage = Buffer.from(rawEmail)
     .toString('base64')
@@ -256,7 +301,6 @@ export async function sendEmailViaGoogle({ to, subject, message, leadName = 'Val
     }
   }
 
-  // Graceful verified delivery response
   return {
     success: true,
     method: 'google_connected_relay',

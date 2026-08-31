@@ -39,20 +39,77 @@
       }
     ],
     "stats": {
-      "total_runs": 0,
-      "completed": 0,
-      "sent": 0,
-      "delivered": 0,
+      "total_runs": 2,
+      "completed": 2,
+      "sent": 2,
+      "delivered": 2,
       "read": 0,
       "failed": 0,
       "outcomes": {
-        "completed": 0,
+        "completed": 2,
         "in_progress": 0,
         "dropped_off": 0,
         "failed": 0
       }
     },
-    "runs": []
+    "runs": [
+      {
+        "id": "run-1788178167874",
+        "contact_name": "Sanatani Ashish",
+        "contact_handle": "+917400275987",
+        "contact_channel": "whatsapp",
+        "state": "completed",
+        "last_step": "Automated Follow-Up Step 1 Sent",
+        "version": "v1",
+        "created_at": "8/31/2026, 5:39:27 PM",
+        "updated_at": "8/31/2026, 5:39:28 PM",
+        "logs": [
+          {
+            "time": "05:39 PM",
+            "step": "Trigger: Incoming WhatsApp Message",
+            "status": "success"
+          },
+          {
+            "time": "05:39 PM",
+            "step": "Execution: Automated Follow-Up Step 1 Sent",
+            "status": "success"
+          },
+          {
+            "time": "05:39 PM",
+            "step": "Status: Completed",
+            "status": "success"
+          }
+        ]
+      },
+      {
+        "id": "run-1788174784354",
+        "contact_name": "Sanatani Ashish",
+        "contact_handle": "+917008124564",
+        "contact_channel": "whatsapp",
+        "state": "completed",
+        "last_step": "Automated Follow-Up Step 1 Sent",
+        "version": "v1",
+        "created_at": "8/31/2026, 4:43:04 PM",
+        "updated_at": "8/31/2026, 4:43:04 PM",
+        "logs": [
+          {
+            "time": "04:43 PM",
+            "step": "Trigger: Incoming WhatsApp Message",
+            "status": "success"
+          },
+          {
+            "time": "04:43 PM",
+            "step": "Execution: Automated Follow-Up Step 1 Sent",
+            "status": "success"
+          },
+          {
+            "time": "04:43 PM",
+            "step": "Status: Completed",
+            "status": "success"
+          }
+        ]
+      }
+    ]
   },
   {
     "id": "journey-wa-nurture-leads",

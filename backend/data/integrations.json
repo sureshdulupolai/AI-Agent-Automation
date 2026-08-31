@@ -4,11 +4,11 @@
     "name": "Google",
     "service": "Google Sheets & Drive Automation",
     "description": "Use Google Sheets and other Google services directly inside OmniBot.",
-    "status": "not_configured",
-    "account": null,
-    "connected_since": null,
+    "status": "connected",
+    "account": "sureshpolai63@gmail.com",
+    "connected_since": "Aug 31, 2026",
     "sync_target": "OmniBot Leads CRM",
-    "updated_at": "2026-08-31T10:33:53.022Z"
+    "updated_at": "2026-08-31T12:14:28.749Z"
   },
   {
     "id": "whatsapp",
@@ -16,7 +16,7 @@
     "service": "Business Phone & Cloud Messaging",
     "description": "Send and receive WhatsApp messages with real-time AI responses and lead capture.",
     "status": "connected",
-    "account": "+919820646838 (Suresh Polai)",
+    "account": "+919820646838 (NovaByte AI Assistant)",
     "connected_since": "Active",
     "updated_at": "2026-08-31T07:00:00.000Z"
   },

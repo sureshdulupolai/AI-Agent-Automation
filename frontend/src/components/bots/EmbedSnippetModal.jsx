@@ -11,7 +11,7 @@ export default function EmbedSnippetModal({ bot, onClose }) {
   const origin = window.location.origin;
   const scriptUrl = `${origin}/widget.js`;
 
-  const htmlCode = `<!-- OmniBot AI Chatbot & Lead Capture Widget -->
+  const htmlCode = `<!-- NovaByte AI Chatbot & Lead Capture Widget -->
 <script 
   src="${scriptUrl}" 
   data-bot-id="${bot.id}"
@@ -20,7 +20,7 @@ export default function EmbedSnippetModal({ bot, onClose }) {
 
   const reactCode = `import { useEffect } from 'react';
 
-export default function OmniBotWidget() {
+export default function NovaByteWidget() {
   useEffect(() => {
     const script = document.createElement('script');
     script.src = "${scriptUrl}";

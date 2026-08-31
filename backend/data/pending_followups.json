@@ -1,22 +1,12 @@
 [
   {
-    "sessionId": "wa-917008124564",
+    "sessionId": "wa-919876543210",
     "botId": "bot-ec0db899",
-    "senderPhone": "+917008124564",
-    "senderName": "Sanatani Ashish",
-    "fireAt": 1788174781597,
+    "senderPhone": "+91 98765 43210",
+    "senderName": "Rahul Sharma",
+    "fireAt": 1788186037969,
     "step": 1,
     "maxSteps": null,
-    "scheduledAt": 1788167581597
-  },
-  {
-    "sessionId": "wa-917400275987",
-    "botId": "bot-ec0db899",
-    "senderPhone": "+917400275987",
-    "senderName": "Sanatani Ashish",
-    "fireAt": 1788177864721,
-    "step": 1,
-    "maxSteps": null,
-    "scheduledAt": 1788170664721
+    "scheduledAt": 1788178837969
   }
 ]

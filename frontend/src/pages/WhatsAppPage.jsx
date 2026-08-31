@@ -268,7 +268,8 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
   // Send Simulated Customer Message (Real backend Gemini AI Multimodal Vision/Audio/Doc)
   const handleSendSimulatedMessage = async (overrideText) => {
     const textToSend = (overrideText || simInputMessage).trim();
-    if ((!textToSend && !attachedMedia) || simulating || !selectedBotId) return;
+    const botIdToUse = selectedBotId || bots[0]?.id || 'bot-ec0db899';
+    if ((!textToSend && !attachedMedia) || simulating) return;
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const mediaToSend = attachedMedia;
@@ -288,7 +289,7 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
 
     try {
       // 2. Call real backend WhatsApp multimodal pipeline
-      const res = await fetch(`/api/whatsapp/${selectedBotId}/simulate`, {
+      const res = await fetch(`/api/whatsapp/${botIdToUse}/simulate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -303,7 +304,15 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
         })
       });
 
-      const data = await res.json();
+      const responseText = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        console.warn('Simulator JSON parse error:', parseErr);
+        data = { reply: responseText || 'Hello! Thank you for contacting NovaByte AI Studio. How can we assist you today?' };
+      }
+
       setSimulating(false);
 
       if (data.reply) {
@@ -318,6 +327,8 @@ export default function WhatsAppPage({ bots = [], initialBotId = null }) {
         if (!data.filtered) {
           confetti({ particleCount: 20, spread: 35, origin: { y: 0.7 } });
         }
+      } else if (data.error) {
+        throw new Error(data.error);
       }
     } catch (err) {
       setSimulating(false);

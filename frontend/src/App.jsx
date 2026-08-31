@@ -16,7 +16,10 @@ import MyJourneysPage from './pages/journeys/MyJourneysPage';
 import JourneyStudioPage from './pages/journeys/JourneyStudioPage';
 import JourneyDetailsPage from './pages/journeys/JourneyDetailsPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import CampaignsPage from './pages/CampaignsPage';
+import AutomationsPage from './pages/AutomationsPage';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
+import NovaByteCopilotDrawer from './components/layout/NovaByteCopilotDrawer';
 import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
@@ -24,6 +27,12 @@ export default function App() {
   const [bots, setBots] = useState([]);
   const [embedModalBot, setEmbedModalBot] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+
+  const handleOpenCopilot = () => {
+    setIsSidebarCollapsed(true);
+    setIsCopilotOpen(true);
+  };
 
   // Set pristine light theme as permanent standard
   useEffect(() => {
@@ -65,6 +74,7 @@ export default function App() {
           <Sidebar
             isCollapsed={isSidebarCollapsed}
             onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            onOpenCopilot={handleOpenCopilot}
           />
         )}
 
@@ -85,6 +95,11 @@ export default function App() {
             
             {/* Bot Details Studio */}
             <Route path="/bots/:botId" element={<BotDetailsPage bots={bots} />} />
+
+            {/* Outreach & Campaigns Hub */}
+            <Route path="/campaigns" element={<CampaignsPage />} />
+            <Route path="/broadcasts" element={<Navigate to="/campaigns" replace />} />
+            <Route path="/automations" element={<AutomationsPage />} />
 
             {/* Journeys Automation (Chatzy Identical) */}
             <Route path="/journeys/templates" element={<JourneyTemplatesPage />} />
@@ -119,6 +134,12 @@ export default function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
+
+        {/* Right-Side NovaByte AI Copilot Drawer matching Chatzy Image 1 & 2 */}
+        <NovaByteCopilotDrawer
+          isOpen={isCopilotOpen}
+          onClose={() => setIsCopilotOpen(false)}
+        />
 
         {/* 1-Click Embed Snippet Modal */}
         {embedModalBot && (

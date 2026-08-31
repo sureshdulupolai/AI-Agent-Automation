@@ -24,12 +24,13 @@ import {
   ChevronsRight,
   GitBranch,
   Search,
-  Plug
+  Plug,
+  Send
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
 
-export default function Sidebar({ isCollapsed, onToggleCollapse }) {
+export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,25 +98,24 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
                 onClick={() => navigate('/dashboard')}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
               >
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
-                  background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)'
-                }}>
-                  <Bot size={16} color="#ffffff" />
-                </div>
+                <img 
+                  src="/novabyte_logo.jpg" 
+                  alt="NovaByte AI" 
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    objectFit: 'cover',
+                    boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)'
+                  }}
+                />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 900, fontFamily: 'var(--font-heading)', color: '#0f172a', letterSpacing: '-0.02em' }}>
-                    OmniBot
+                  <span style={{ fontSize: '15.5px', fontWeight: 900, fontFamily: 'var(--font-heading)', color: '#0f172a', letterSpacing: '-0.02em' }}>
+                    NovaByte
                   </span>
                   <span style={{
                     fontSize: '9.5px',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     backgroundColor: 'rgba(79, 70, 229, 0.1)',
                     color: 'var(--primary)',
                     padding: '1px 5px',
@@ -156,16 +156,17 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
                 width: '34px',
                 height: '34px',
                 borderRadius: '8px',
-                background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                overflow: 'hidden',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.2)'
+                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)'
               }}
-              title="OmniBot AI"
+              title="NovaByte AI Studio"
             >
-              <Bot size={18} color="#ffffff" />
+              <img 
+                src="/novabyte_logo.jpg" 
+                alt="NovaByte AI" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
             </div>
           )}
         </div>
@@ -198,9 +199,15 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
         )}
 
         {/* Navigation List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
-          {/* Core Platform Links */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto' }}>
+          {/* 1. Core Platform Hub */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {!isCollapsed && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 8px 4px 8px' }}>
+                Core
+              </div>
+            )}
+
             {/* AI Bots Studio */}
             <button
               onClick={() => navigate('/dashboard')}
@@ -251,101 +258,194 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
               {!isCollapsed && <span>Conversations</span>}
             </button>
 
-          {/* AUDIENCE SECTION matching Chatzy */}
-          <div>
-            {!isCollapsed ? (
-              <div
-                onClick={() => setIsAudienceOpen(!isAudienceOpen)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-primary)',
-                  fontWeight: 700,
-                  fontSize: '13px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Users size={16} />
-                  <span>Audience</span>
+            {/* Audience CRM */}
+            <div>
+              {!isCollapsed ? (
+                <div
+                  onClick={() => setIsAudienceOpen(!isAudienceOpen)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
+                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                    fontWeight: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 700 : 500,
+                    fontSize: '13px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Users size={16} />
+                    <span>Audience CRM</span>
+                  </div>
+                  {isAudienceOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </div>
-                {isAudienceOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </div>
-            ) : (
-              <button
-                onClick={() => navigate('/contacts')}
-                title="Audience"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '10px 0',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  width: '100%'
-                }}
-              >
-                <Users size={16} />
-              </button>
-            )}
-
-            {/* Audience Sub-items */}
-            {!isCollapsed && isAudienceOpen && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-                paddingLeft: '14px',
-                marginTop: '3px',
-                borderLeft: '1.5px solid var(--border-subtle)',
-                marginLeft: '16px'
-              }}>
+              ) : (
                 <button
                   onClick={() => navigate('/contacts')}
+                  title="Audience CRM"
                   style={{
-                    display: 'block',
-                    padding: '6px 10px',
-                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '10px 0',
+                    borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: (location.pathname === '/contacts' || location.pathname === '/leads') ? 700 : 500,
-                    fontSize: '12.5px',
+                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
                     cursor: 'pointer',
-                    textAlign: 'left',
                     width: '100%'
                   }}
                 >
-                  Contacts
+                  <Users size={16} />
                 </button>
+              )}
 
-                <button
-                  onClick={() => navigate('/lists-and-segments')}
-                  style={{
-                    display: 'block',
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: location.pathname === '/lists-and-segments' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: location.pathname === '/lists-and-segments' ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: location.pathname === '/lists-and-segments' ? 700 : 500,
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%'
-                  }}
-                >
-                  Lists &amp; Segments
-                </button>
+              {!isCollapsed && isAudienceOpen && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  paddingLeft: '14px',
+                  marginTop: '3px',
+                  borderLeft: '1.5px solid var(--border-subtle)',
+                  marginLeft: '16px'
+                }}>
+                  <button
+                    onClick={() => navigate('/contacts')}
+                    style={{
+                      display: 'block',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                      color: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'var(--primary)' : 'var(--text-secondary)',
+                      fontWeight: (location.pathname === '/contacts' || location.pathname === '/leads') ? 700 : 500,
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%'
+                    }}
+                  >
+                    Contacts
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/lists-and-segments')}
+                    style={{
+                      display: 'block',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      backgroundColor: location.pathname === '/lists-and-segments' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                      color: location.pathname === '/lists-and-segments' ? 'var(--primary)' : 'var(--text-secondary)',
+                      fontWeight: location.pathname === '/lists-and-segments' ? 700 : 500,
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%'
+                    }}
+                  >
+                    Lists &amp; Segments
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 2. Outreach & Campaigns Hub */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {!isCollapsed && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 8px 4px 8px' }}>
+                Outreach &amp; Growth
               </div>
             )}
+
+            {/* Broadcasts & Campaigns */}
+            <button
+              onClick={() => navigate('/campaigns')}
+              title={isCollapsed ? 'Broadcasts & Campaigns' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                gap: '10px',
+                padding: isCollapsed ? '10px 0' : '8px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: isItemActive('/campaigns') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/campaigns') ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/campaigns') ? 700 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <Send size={16} color={isItemActive('/campaigns') ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && <span>Campaigns &amp; Bulk</span>}
+            </button>
+
+            {/* Automations & Sequences */}
+            <button
+              onClick={() => navigate('/automations')}
+              title={isCollapsed ? 'Automations' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                gap: '10px',
+                padding: isCollapsed ? '10px 0' : '8px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: isItemActive('/automations', ['/automations', '/journeys']) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/automations', ['/automations', '/journeys']) ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/automations', ['/automations', '/journeys']) ? 700 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <GitBranch size={16} color={isItemActive('/automations', ['/automations', '/journeys']) ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && <span>Automations</span>}
+            </button>
           </div>
+
+          {/* 3. Channels & Reports Hub */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {!isCollapsed && (
+              <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '2px 8px 4px 8px' }}>
+                Channels &amp; Data
+              </div>
+            )}
+
+            {/* Integrations & Channels */}
+            <button
+              onClick={() => navigate('/integrations')}
+              title={isCollapsed ? 'Integrations' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'flex-start',
+                gap: '10px',
+                padding: isCollapsed ? '10px 0' : '8px 10px',
+                borderRadius: '8px',
+                border: 'none',
+                backgroundColor: isItemActive('/integrations') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/integrations') ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/integrations') ? 700 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                textAlign: 'left',
+                width: '100%'
+              }}
+            >
+              <Plug size={16} color={isItemActive('/integrations') ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && <span>Integrations</span>}
+            </button>
 
             {/* Analytics & Logs */}
             <button
@@ -359,280 +459,28 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
                 padding: isCollapsed ? '10px 0' : '8px 10px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: isItemActive('/analytics', ['/analytics']) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                color: isItemActive('/analytics', ['/analytics']) ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: isItemActive('/analytics', ['/analytics']) ? 700 : 500,
+                backgroundColor: isItemActive('/analytics') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: isItemActive('/analytics') ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: isItemActive('/analytics') ? 700 : 500,
                 fontSize: '13px',
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%'
               }}
             >
-              <BarChart3 size={16} color={isItemActive('/analytics', ['/analytics']) ? 'var(--primary)' : 'currentColor'} />
-              {!isCollapsed && <span>Analytics &amp; Logs</span>}
+              <BarChart3 size={16} color={isItemActive('/analytics') ? 'var(--primary)' : 'currentColor'} />
+              {!isCollapsed && <span>Analytics</span>}
             </button>
-          </div>
-
-          {/* JOURNEYS SECTION matching Chatzy Image 1 */}
-          <div>
-            {!isCollapsed ? (
-              <div
-                onClick={() => setIsJourneysOpen(!isJourneysOpen)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  color: location.pathname.startsWith('/journeys') ? 'var(--primary)' : 'var(--text-primary)',
-                  fontWeight: 700,
-                  fontSize: '13px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <GitBranch size={16} />
-                  <span>Journeys</span>
-                </div>
-                {isJourneysOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              </div>
-            ) : (
-              <button
-                onClick={() => navigate('/journeys/templates')}
-                title="Journeys"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '10px 0',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: location.pathname.startsWith('/journeys') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: location.pathname.startsWith('/journeys') ? 'var(--primary)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  width: '100%'
-                }}
-              >
-                <GitBranch size={16} />
-              </button>
-            )}
-
-            {/* Journeys Sub-items */}
-            {!isCollapsed && isJourneysOpen && (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px',
-                paddingLeft: '28px',
-                marginTop: '4px',
-                borderLeft: '1.5px solid var(--border-subtle)',
-                marginLeft: '18px'
-              }}>
-                <button
-                  onClick={() => navigate('/journeys/templates')}
-                  style={{
-                    display: 'block',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: isItemActive('/journeys/templates', ['/journeys/templates', '/journeys/create']) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: isItemActive('/journeys/templates', ['/journeys/templates', '/journeys/create']) ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: isItemActive('/journeys/templates', ['/journeys/templates', '/journeys/create']) ? 700 : 500,
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%'
-                  }}
-                >
-                  Create Journey
-                </button>
-
-                <button
-                  onClick={() => navigate('/journeys')}
-                  style={{
-                    display: 'block',
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    backgroundColor: location.pathname === '/journeys' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: location.pathname === '/journeys' ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: location.pathname === '/journeys' ? 700 : 500,
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%'
-                  }}
-                >
-                  My Journeys
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* CHANNELS SECTION */}
-          <div>
-            {!isCollapsed && (
-              <div style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                padding: '4px 8px 6px 8px'
-              }}>
-                Channels
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <button
-                onClick={() => navigate('/channels/website')}
-                title={isCollapsed ? 'Website Widget' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  gap: '10px',
-                  padding: isCollapsed ? '10px 0' : '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: isItemActive('/channels/website') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: isItemActive('/channels/website') ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isItemActive('/channels/website') ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%'
-                }}
-              >
-                <Globe size={16} color={isItemActive('/channels/website') ? 'var(--primary)' : 'currentColor'} />
-                {!isCollapsed && <span>Website Widget</span>}
-              </button>
-
-              <button
-                onClick={() => navigate('/channels/whatsapp')}
-                title={isCollapsed ? 'WhatsApp Testing' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  gap: '10px',
-                  padding: isCollapsed ? '10px 0' : '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: isItemActive('/channels/whatsapp') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: isItemActive('/channels/whatsapp') ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isItemActive('/channels/whatsapp') ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%'
-                }}
-              >
-                <MessageSquare size={16} color={isItemActive('/channels/whatsapp') ? 'var(--primary)' : 'currentColor'} />
-                {!isCollapsed && <span>WhatsApp Testing</span>}
-              </button>
-
-              <button
-                onClick={() => navigate('/integrations')}
-                title={isCollapsed ? 'Integrations' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  gap: '10px',
-                  padding: isCollapsed ? '10px 0' : '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: isItemActive('/integrations') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: isItemActive('/integrations') ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isItemActive('/integrations') ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%'
-                }}
-              >
-                <Plug size={16} color={isItemActive('/integrations') ? 'var(--primary)' : 'currentColor'} />
-                {!isCollapsed && <span>Integrations</span>}
-              </button>
-            </div>
-          </div>
-
-          {/* TOOLS & DEPLOY */}
-          <div>
-            {!isCollapsed && (
-              <div style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                padding: '4px 8px 6px 8px'
-              }}>
-                Tools &amp; Deploy
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <button
-                onClick={() => navigate('/demo')}
-                title={isCollapsed ? 'Client Demo Site' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  gap: '10px',
-                  padding: isCollapsed ? '10px 0' : '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: isItemActive('/demo') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: isItemActive('/demo') ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isItemActive('/demo') ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%'
-                }}
-              >
-                <Radio size={16} color={isItemActive('/demo') ? 'var(--primary)' : 'currentColor'} />
-                {!isCollapsed && <span>Client Demo Site</span>}
-              </button>
-
-              <button
-                onClick={() => navigate('/deployment')}
-                title={isCollapsed ? 'Cloud Deployment' : undefined}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
-                  gap: '10px',
-                  padding: isCollapsed ? '10px 0' : '8px 10px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  backgroundColor: isItemActive('/deployment') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                  color: isItemActive('/deployment') ? 'var(--primary)' : 'var(--text-secondary)',
-                  fontWeight: isItemActive('/deployment') ? 700 : 500,
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  width: '100%'
-                }}
-              >
-                <CloudLightning size={16} color={isItemActive('/deployment') ? 'var(--primary)' : 'currentColor'} />
-                {!isCollapsed && <span>Cloud Deployment</span>}
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Area: Special Action + Utilities + Workspace Selector */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border-subtle)' }}>
-        {/* Special "Ask OmniBot AI" Button matching Chatzy Image 1 */}
+        {/* Special "Ask NovaByte AI" Button */}
         {!isCollapsed ? (
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={onOpenCopilot}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -651,11 +499,11 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
             }}
           >
             <Sparkles size={15} color="var(--primary)" />
-            <span>Ask OmniBot AI</span>
+            <span>Ask NovaByte AI</span>
           </button>
         ) : (
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={onOpenCopilot}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -666,7 +514,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
               backgroundColor: 'rgba(79, 70, 229, 0.06)',
               cursor: 'pointer'
             }}
-            title="Ask OmniBot AI"
+            title="Ask NovaByte AI"
           >
             <Sparkles size={16} color="var(--primary)" />
           </button>

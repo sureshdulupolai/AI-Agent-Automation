@@ -775,3 +775,29 @@ export async function processWhatsAppIncoming({
     sessionId
   };
 }
+
+export function getActiveBotId() {
+  const keys = Array.from(activeSockets.keys());
+  return keys.length > 0 ? keys[0] : null;
+}
+
+export async function safeSendMessage(botId, jid, content) {
+  let targetBotId = botId;
+  if (!targetBotId) {
+    const keys = Array.from(activeSockets.keys());
+    if (keys.length > 0) targetBotId = keys[0];
+  }
+  if (!targetBotId || !activeSockets.has(targetBotId)) {
+    return false;
+  }
+  const sock = activeSockets.get(targetBotId);
+  try {
+    await sock.sendMessage(jid, content);
+    return true;
+  } catch (err) {
+    console.error(`safeSendMessage error to ${jid}:`, err.message);
+    return false;
+  }
+}
+
+

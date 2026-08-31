@@ -29,6 +29,8 @@ backend/data/gemini_keys.json
 gemini_keys.json
 backend/data/google_tokens.json
 google_tokens.json
+backend/data/campaigns.json
+backend/data/email_automations*.json
 
 # Production Builds
 frontend/dist/
