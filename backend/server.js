@@ -15,6 +15,9 @@ import * as whatsappController from './controllers/whatsappController.js';
 import * as inboxController from './controllers/inboxController.js';
 import * as verifyWebsiteController from './controllers/verifyWebsiteController.js';
 import * as journeyController from './controllers/journeyController.js';
+import * as integrationController from './controllers/integrationController.js';
+import * as oauthController from './controllers/oauthController.js';
+import { initAllWhatsAppSessions } from './services/baileysService.js';
 
 dotenv.config();
 
@@ -85,6 +88,7 @@ app.get('/api/bots/:botId', botController.getBot);
 app.get('/api/bots/:botId/public', botController.getPublicBotConfig); // Public for widget
 app.post('/api/bots', authenticateToken, botController.createBot);
 app.put('/api/bots/:botId', authenticateToken, botController.updateBot);
+app.post('/api/bots/:botId/crawl-website', authenticateToken, botController.crawlWebsite);
 app.delete('/api/bots/:botId', authenticateToken, botController.deleteBot);
 
 // ----------------------------------------------------
@@ -103,11 +107,16 @@ app.get('/api/inbox/conversations/:sessionId', authenticateToken, inboxControlle
 app.post('/api/inbox/reply', authenticateToken, inboxController.sendAgentReply);
 
 // ----------------------------------------------------
-// Lead Management CRM Routes
+// Lead Management & Audience CRM Routes
 // ----------------------------------------------------
 app.get('/api/leads', authenticateToken, leadController.listLeads);
+app.post('/api/leads', authenticateToken, leadController.createLead);
+app.delete('/api/leads/:leadId', authenticateToken, leadController.deleteLead);
 app.patch('/api/leads/:leadId/status', authenticateToken, leadController.updateLeadStatus);
 app.get('/api/leads/export/csv', authenticateToken, leadController.exportLeadsCsv);
+app.get('/api/segments', authenticateToken, leadController.listSegments);
+app.post('/api/segments', authenticateToken, leadController.createSegment);
+app.delete('/api/segments/:segmentId', authenticateToken, leadController.deleteSegment);
 
 // ----------------------------------------------------
 // WhatsApp Automation Routes (QR + 8-Digit Pairing Code + Meta)
@@ -131,11 +140,43 @@ app.get('/api/journeys/:id', authenticateToken, journeyController.getJourney);
 app.post('/api/journeys', authenticateToken, journeyController.createJourney);
 app.put('/api/journeys/:id', authenticateToken, journeyController.updateJourney);
 app.patch('/api/journeys/:id/toggle-status', authenticateToken, journeyController.toggleJourneyStatus);
+app.post('/api/journeys/:id/simulate-run', authenticateToken, journeyController.simulateRun);
 app.delete('/api/journeys/:id', authenticateToken, journeyController.deleteJourney);
+
+// ----------------------------------------------------
+// Third-Party Integrations & AI Gateway Multi-Key Hub Routes
+// ----------------------------------------------------
+app.get('/api/integrations', authenticateToken, integrationController.listIntegrations);
+app.patch('/api/integrations/:id', authenticateToken, integrationController.updateIntegration);
+app.post('/api/integrations/:id/test', authenticateToken, integrationController.testIntegrationConnection);
+
+// AI Gateway Keys & WhatsApp Alerts
+app.get('/api/integrations/ai-gateway/keys', authenticateToken, integrationController.getAiGatewayKeys);
+app.post('/api/integrations/ai-gateway/keys', authenticateToken, integrationController.addAiGatewayKey);
+app.delete('/api/integrations/ai-gateway/keys/:id', authenticateToken, integrationController.deleteAiGatewayKey);
+app.post('/api/integrations/ai-gateway/test-key', authenticateToken, integrationController.testAiGatewayKey);
+app.post('/api/integrations/ai-gateway/notification-settings', authenticateToken, integrationController.updateNotificationSettings);
+
+// Integration Checks
+app.post('/api/integrations/google/test-sync', authenticateToken, integrationController.testGoogleSheetsSync);
+app.post('/api/integrations/instagram/test-connection', authenticateToken, integrationController.testInstagramConnection);
+app.post('/api/integrations/whatsapp/test-connection', authenticateToken, integrationController.testWhatsAppConnection);
+
+// ----------------------------------------------------
+// Production OAuth 2.0 Live Authentication Routes
+// ----------------------------------------------------
+app.get('/api/auth/oauth-status', oauthController.getOAuthConfigStatus);
+app.get('/api/auth/google/url', oauthController.getGoogleAuthUrl);
+app.get('/api/auth/google/callback', oauthController.googleCallback);
+app.get('/api/auth/instagram/url', oauthController.getInstagramAuthUrl);
+app.get('/api/auth/instagram/callback', oauthController.instagramCallback);
 
 // Start Server
 app.listen(PORT, () => {
   console.log(`🚀 OmniBot SaaS Backend Server running on http://localhost:${PORT}`);
   console.log(`📦 Embed Widget hosted at http://localhost:${PORT}/widget.js`);
   console.log(`🧪 Interactive test page at http://localhost:${PORT}/test-widget.html`);
+  
+  // Restore any persistent WhatsApp sessions
+  initAllWhatsAppSessions().catch(err => console.error('WhatsApp startup session init error:', err));
 });

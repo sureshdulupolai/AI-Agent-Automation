@@ -496,9 +496,43 @@ export default function JourneyStudioPage({ bots = [] }) {
                     {journey?.trigger?.label || 'Conversation'}
                   </h4>
                   <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    Channel: {journey?.trigger?.channel || 'WhatsApp / Web'}
+                    Channel: {journey?.trigger?.channel === 'instagram' ? 'Instagram' : 'WhatsApp / Web'}
                   </span>
                 </div>
+              </div>
+
+              {/* Active Connected Account Badge */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: 'var(--bg-subtle)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: '11.5px',
+                marginBottom: '12px',
+                border: '1px solid var(--border-subtle)'
+              }}>
+                <span style={{ color: 'var(--text-muted)' }}>
+                  Active Account: <strong style={{ color: 'var(--text-primary)' }}>{journey?.channel === 'instagram' ? '@apex_agency_official' : '+91 98206 46838'}</strong>
+                </span>
+                <button
+                  onClick={() => navigate('/integrations')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--primary)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}
+                >
+                  <span>Manage</span>
+                  <ExternalLink size={10} />
+                </button>
               </div>
 
               {/* + Add Trigger Button */}

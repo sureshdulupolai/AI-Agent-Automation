@@ -23,7 +23,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   GitBranch,
-  Search
+  Search,
+  Plug
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 import { useAuth } from '../../context/AuthContext';
@@ -40,6 +41,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showTeamSubmenu, setShowTeamSubmenu] = useState(false);
   const [isJourneysOpen, setIsJourneysOpen] = useState(true);
+  const [isAudienceOpen, setIsAudienceOpen] = useState(true);
   const profileMenuRef = useRef(null);
 
   // Close profile dropdown when clicked outside
@@ -249,30 +251,101 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
               {!isCollapsed && <span>Conversations</span>}
             </button>
 
-            {/* Leads CRM */}
-            <button
-              onClick={() => navigate('/leads')}
-              title={isCollapsed ? 'Leads CRM' : undefined}
-              style={{
+          {/* AUDIENCE SECTION matching Chatzy */}
+          <div>
+            {!isCollapsed ? (
+              <div
+                onClick={() => setIsAudienceOpen(!isAudienceOpen)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-primary)',
+                  fontWeight: 700,
+                  fontSize: '13px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Users size={16} />
+                  <span>Audience</span>
+                </div>
+                {isAudienceOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/contacts')}
+                title="Audience"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '10px 0',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                  color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  width: '100%'
+                }}
+              >
+                <Users size={16} />
+              </button>
+            )}
+
+            {/* Audience Sub-items */}
+            {!isCollapsed && isAudienceOpen && (
+              <div style={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: isCollapsed ? 'center' : 'flex-start',
-                gap: '10px',
-                padding: isCollapsed ? '10px 0' : '8px 10px',
-                borderRadius: '8px',
-                border: 'none',
-                backgroundColor: isItemActive('/leads', ['/leads', '/audience']) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                color: isItemActive('/leads', ['/leads', '/audience']) ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: isItemActive('/leads', ['/leads', '/audience']) ? 700 : 500,
-                fontSize: '13px',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%'
-              }}
-            >
-              <Users size={16} color={isItemActive('/leads', ['/leads', '/audience']) ? 'var(--primary)' : 'currentColor'} />
-              {!isCollapsed && <span>Leads CRM</span>}
-            </button>
+                flexDirection: 'column',
+                gap: '2px',
+                paddingLeft: '14px',
+                marginTop: '3px',
+                borderLeft: '1.5px solid var(--border-subtle)',
+                marginLeft: '16px'
+              }}>
+                <button
+                  onClick={() => navigate('/contacts')}
+                  style={{
+                    display: 'block',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                    color: (location.pathname === '/contacts' || location.pathname === '/leads') ? 'var(--primary)' : 'var(--text-secondary)',
+                    fontWeight: (location.pathname === '/contacts' || location.pathname === '/leads') ? 700 : 500,
+                    fontSize: '12.5px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%'
+                  }}
+                >
+                  Contacts
+                </button>
+
+                <button
+                  onClick={() => navigate('/lists-and-segments')}
+                  style={{
+                    display: 'block',
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: location.pathname === '/lists-and-segments' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                    color: location.pathname === '/lists-and-segments' ? 'var(--primary)' : 'var(--text-secondary)',
+                    fontWeight: location.pathname === '/lists-and-segments' ? 700 : 500,
+                    fontSize: '12.5px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%'
+                  }}
+                >
+                  Lists &amp; Segments
+                </button>
+              </div>
+            )}
+          </div>
 
             {/* Analytics & Logs */}
             <button
@@ -458,6 +531,30 @@ export default function Sidebar({ isCollapsed, onToggleCollapse }) {
               >
                 <MessageSquare size={16} color={isItemActive('/channels/whatsapp') ? 'var(--primary)' : 'currentColor'} />
                 {!isCollapsed && <span>WhatsApp Testing</span>}
+              </button>
+
+              <button
+                onClick={() => navigate('/integrations')}
+                title={isCollapsed ? 'Integrations' : undefined}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isCollapsed ? 'center' : 'flex-start',
+                  gap: '10px',
+                  padding: isCollapsed ? '10px 0' : '8px 10px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  backgroundColor: isItemActive('/integrations') ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                  color: isItemActive('/integrations') ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: isItemActive('/integrations') ? 700 : 500,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%'
+                }}
+              >
+                <Plug size={16} color={isItemActive('/integrations') ? 'var(--primary)' : 'currentColor'} />
+                {!isCollapsed && <span>Integrations</span>}
               </button>
             </div>
           </div>

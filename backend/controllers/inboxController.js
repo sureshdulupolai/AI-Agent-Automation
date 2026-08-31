@@ -90,12 +90,17 @@ export async function getConversationDetails(req, res) {
     const { sessionId } = req.params;
     const { botId } = req.query;
 
-    const messages = await db.getMessages(botId || '', sessionId);
-    const leads = await db.getLeads(null, botId || null);
-    const matchingLead = leads.find(l => l.session_id === sessionId);
+    const messages = await db.getMessages(botId || null, sessionId);
+    const leads = await db.getLeads(null, null);
+    const matchingLead = leads.find(l => l.session_id === sessionId || (l.lead_phone && sessionId.includes(l.lead_phone.replace(/\D/g, ''))));
+
+    const bots = await db.getBots();
+    const currentBotId = messages[0]?.bot_id || botId || 'bot-ec0db899';
+    const bot = bots.find(b => b.id === currentBotId) || { id: currentBotId, bot_name: 'AI Assistant' };
 
     return res.json({
       sessionId,
+      bot,
       messages,
       lead: matchingLead || null
     });

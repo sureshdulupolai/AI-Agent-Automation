@@ -24,6 +24,10 @@ backend/data/test_wa_session/
 *.session
 *.session-journal
 
+# AI API Keys & Secret Pools (Do NOT commit secrets to GitHub)
+backend/data/gemini_keys.json
+gemini_keys.json
+
 # Production Builds
 frontend/dist/
 frontend/build/

@@ -372,15 +372,104 @@ export const db = {
     return null;
   },
 
+  async deleteLead(leadId) {
+    if (supabase) {
+      await supabase.from('leads').delete().eq('id', leadId);
+      return true;
+    }
+    const local = readDb();
+    local.leads = local.leads.filter(l => l.id !== leadId);
+    writeDb(local);
+    return true;
+  },
+
+  // LISTS & SEGMENTS
+  async getSegments(userId = null) {
+    const local = readDb();
+    if (!local.segments || local.segments.length === 0) {
+      local.segments = [
+        {
+          id: 'seg-1',
+          name: 'Campus Ambassador Partners',
+          type: 'list',
+          description: 'College students applying for campus lead automation',
+          members_count: 0,
+          created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+          updated_at: new Date(Date.now() - 24 * 3600000).toISOString()
+        },
+        {
+          id: 'seg-2',
+          name: 'Enterprise & Business',
+          type: 'list',
+          description: 'Founders, CTOs, and agency clients requesting full-stack web builds',
+          members_count: 3,
+          created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+          updated_at: new Date(Date.now() - 24 * 3600000).toISOString()
+        },
+        {
+          id: 'seg-3',
+          name: 'Student Capstone Leads',
+          type: 'list',
+          description: 'CS/IT students inquiring about AI chatbot templates',
+          members_count: 1,
+          created_at: new Date(Date.now() - 25 * 3600000).toISOString(),
+          updated_at: new Date(Date.now() - 25 * 3600000).toISOString()
+        },
+        {
+          id: 'seg-4',
+          name: 'WhatsApp Inbound Leads',
+          type: 'segment',
+          description: 'Contacts that initiated conversations directly via WhatsApp number',
+          members_count: 2,
+          created_at: new Date(Date.now() - 10 * 3600000).toISOString(),
+          updated_at: new Date(Date.now() - 10 * 3600000).toISOString()
+        }
+      ];
+      writeDb(local);
+    }
+    return local.segments;
+  },
+
+  async createSegment(segmentData) {
+    const local = readDb();
+    if (!local.segments) local.segments = [];
+    const newSegment = {
+      id: `seg-${uuidv4().substring(0, 8)}`,
+      name: segmentData.name,
+      type: segmentData.type || 'list',
+      description: segmentData.description || '',
+      members_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    local.segments.unshift(newSegment);
+    writeDb(local);
+    return newSegment;
+  },
+
+  async deleteSegment(segmentId) {
+    const local = readDb();
+    if (local.segments) {
+      local.segments = local.segments.filter(s => s.id !== segmentId);
+      writeDb(local);
+    }
+    return true;
+  },
+
   // MESSAGES & HISTORY
   async getMessages(botId, sessionId) {
     if (supabase) {
-      const { data, error } = await supabase.from('messages').select('*').eq('bot_id', botId).eq('session_id', sessionId).order('created_at', { ascending: true });
+      let q = supabase.from('messages').select('*').eq('session_id', sessionId).order('created_at', { ascending: true });
+      if (botId && botId.trim()) q = q.eq('bot_id', botId);
+      const { data, error } = await q;
       if (!error && data) return data;
     }
 
     const local = readDb();
-    return local.messages.filter(m => m.bot_id === botId && m.session_id === sessionId);
+    if (botId && botId.trim()) {
+      return local.messages.filter(m => m.bot_id === botId && m.session_id === sessionId);
+    }
+    return local.messages.filter(m => m.session_id === sessionId);
   },
 
   async addMessage(msgData) {

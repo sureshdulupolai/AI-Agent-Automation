@@ -1,50 +1,83 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Bot, 
   Sparkles, 
   Palette, 
-  Shield, 
-  Code2, 
+  Globe, 
+  FileText, 
+  HelpCircle, 
   Save, 
   Send, 
   Check, 
   Copy, 
   MessageSquare, 
-  Headphones, 
-  CheckCircle2,
-  RefreshCw,
-  ArrowLeft
+  CheckCircle2, 
+  RefreshCw, 
+  ArrowLeft,
+  Plus,
+  Trash2,
+  ExternalLink,
+  Shield,
+  Smartphone,
+  Zap,
+  Info,
+  CheckCheck,
+  Filter,
+  X
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
+import { formatWhatsAppText } from '../utils/formatWhatsAppText';
 
-export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }) {
+export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
   const { botId: routeBotId } = useParams();
   const navigate = useNavigate();
-  const activeBotId = routeBotId || propBotId;
+  const activeBotId = routeBotId || (bots[0]?.id || '');
 
   const [bot, setBot] = useState(null);
-  const [activeTab, setActiveTab] = useState('appearance');
+  const [activeTab, setActiveTab] = useState('training'); // 'training' | 'appearance' | 'channels'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Form State
+  // Training & Knowledge Form State
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [crawling, setCrawling] = useState(false);
+  const [crawlResult, setCrawlResult] = useState(null);
+
+  const [systemInstructions, setSystemInstructions] = useState('');
+  const [businessKnowledge, setBusinessKnowledge] = useState('');
+  const [faqs, setFaqs] = useState([
+    { question: 'What services do you offer?', answer: 'We specialize in custom web development, AI chatbots, and full-stack SaaS automation.' },
+    { question: 'What is your turnaround time?', answer: 'Most custom websites and AI chatbots are delivered within 3 to 7 business days.' }
+  ]);
+  const [newFaqQ, setNewFaqQ] = useState('');
+  const [newFaqA, setNewFaqA] = useState('');
+
+  // Appearance State
   const [botName, setBotName] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#4f46e5');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [placeholderText, setPlaceholderText] = useState('Type your message...');
-  const [businessKnowledge, setBusinessKnowledge] = useState('');
-  const [systemInstructions, setSystemInstructions] = useState('');
   const [launcherIcon, setLauncherIcon] = useState('chat');
   const [launcherPosition, setLauncherPosition] = useState('bottom-right');
   const [teaserText, setTeaserText] = useState('How can I help you today?');
   const [showTeaser, setShowTeaser] = useState(true);
 
+  // WhatsApp Status & Trigger Filter
+  const [waStatus, setWaStatus] = useState({ status: 'disconnected', phoneNumber: null });
+  const [replyMode, setReplyMode] = useState('all'); // 'all' | 'keywords'
+  const [keywords, setKeywords] = useState([
+    'website', 'price', 'pricing', 'cost', 'ai', 'chatbot', 'service', 'portfolio', 'package', 'quote', 'hire', 'demo', 'contact'
+  ]);
+  const [newKeyword, setNewKeyword] = useState('');
+
   // Interactive Sandbox Chat State
   const [sandboxMessages, setSandboxMessages] = useState([]);
   const [sandboxInput, setSandboxInput] = useState('');
   const [sandboxTyping, setSandboxTyping] = useState(false);
+  const sandboxEndRef = useRef(null);
 
   const fetchBot = async () => {
     if (!activeBotId) return;
@@ -60,13 +93,24 @@ export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }
         setPlaceholderText(b.placeholder_text || 'Type your message...');
         setBusinessKnowledge(b.business_knowledge || '');
         setSystemInstructions(b.system_instructions || '');
+        setWebsiteUrl(b.website_url || '');
         setLauncherIcon(b.launcher_icon || 'chat');
         setLauncherPosition(b.launcher_position || 'bottom-right');
         setTeaserText(b.teaser_text || 'How can I help you today?');
         setShowTeaser(b.show_teaser !== false);
 
+        setReplyMode(b.whatsapp_reply_mode || 'all');
+        if (Array.isArray(b.whatsapp_keywords) && b.whatsapp_keywords.length > 0) {
+          setKeywords(b.whatsapp_keywords);
+        }
+
+        setWaStatus({
+          status: b.whatsapp_status || 'disconnected',
+          phoneNumber: b.whatsapp_number || null
+        });
+
         setSandboxMessages([
-          { sender: 'bot', content: b.welcome_message || 'Hello! How can I help you today?' }
+          { sender: 'bot', content: b.welcome_message || 'Hello! How can I help you today?', time: 'Just now' }
         ]);
       }
     } catch (err) {
@@ -80,17 +124,28 @@ export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }
     fetchBot();
   }, [activeBotId]);
 
-  const handleBack = () => {
-    if (onBack) onBack();
-    else navigate('/dashboard');
-  };
+  useEffect(() => {
+    if (sandboxEndRef.current) {
+      sandboxEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [sandboxMessages, sandboxTyping]);
 
+  // Save Bot Details
   const handleSave = async () => {
     setSaving(true);
     setSavedSuccess(false);
 
+    // Append FAQs to knowledge if any
+    let compiledKnowledge = businessKnowledge;
+    if (faqs.length > 0) {
+      const faqText = faqs.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n');
+      if (!compiledKnowledge.includes('FREQUENTLY ASKED QUESTIONS')) {
+        compiledKnowledge = `${compiledKnowledge}\n\n---\nFREQUENTLY ASKED QUESTIONS:\n${faqText}`.trim();
+      }
+    }
+
     try {
-      const res = await fetch(`/api/bots/${botId}`, {
+      const res = await fetch(`/api/bots/${activeBotId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,17 +153,21 @@ export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }
           primary_color: primaryColor,
           welcome_message: welcomeMessage,
           placeholder_text: placeholderText,
-          business_knowledge: businessKnowledge,
+          business_knowledge: compiledKnowledge,
           system_instructions: systemInstructions,
+          website_url: websiteUrl,
           launcher_icon: launcherIcon,
           launcher_position: launcherPosition,
           teaser_text: teaserText,
-          show_teaser: showTeaser
+          show_teaser: showTeaser,
+          whatsapp_reply_mode: replyMode,
+          whatsapp_keywords: keywords
         })
       });
 
       if (res.ok) {
         setSavedSuccess(true);
+        confetti({ particleCount: 25, spread: 35, origin: { y: 0.6 } });
         setTimeout(() => setSavedSuccess(false), 3000);
       }
     } catch (err) {
@@ -118,525 +177,912 @@ export default function BotDetailsPage({ botId: propBotId, onBack, onOpenEmbed }
     }
   };
 
-  const handleSandboxSend = async (e) => {
-    e.preventDefault();
-    if (!sandboxInput.trim() || sandboxTyping) return;
-
-    const userText = sandboxInput.trim();
-    setSandboxInput('');
-
-    setSandboxMessages(prev => [...prev, { sender: 'user', content: userText }]);
-    setSandboxTyping(true);
+  // 1-Click Crawl Website
+  const handleCrawlWebsite = async () => {
+    if (!websiteUrl.trim()) {
+      alert('Please enter a valid website URL (e.g. https://yourcompany.com)');
+      return;
+    }
+    setCrawling(true);
+    setCrawlResult(null);
 
     try {
-      const res = await fetch(`/api/chat/${botId}`, {
+      const res = await fetch(`/api/bots/${activeBotId}/crawl-website`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userText,
-          sessionId: 'sandbox-session-preview'
-        })
+        body: JSON.stringify({ url: websiteUrl.trim() })
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setSandboxMessages(prev => [...prev, { sender: 'bot', content: data.reply }]);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to crawl website');
+
+      setCrawlResult(data);
+      if (data.bot?.business_knowledge) {
+        setBusinessKnowledge(data.bot.business_knowledge);
       }
+      confetti({ particleCount: 30, spread: 45, origin: { y: 0.5 } });
     } catch (err) {
-      setSandboxMessages(prev => [...prev, { sender: 'bot', content: 'Connection issue. Please verify backend is running.' }]);
+      alert('Crawling failed: ' + err.message);
     } finally {
-      setSandboxTyping(false);
+      setCrawling(false);
     }
   };
 
+  // Add FAQ pair
+  const handleAddFaq = () => {
+    if (!newFaqQ.trim() || !newFaqA.trim()) return;
+    setFaqs(prev => [...prev, { question: newFaqQ.trim(), answer: newFaqA.trim() }]);
+    setNewFaqQ('');
+    setNewFaqA('');
+  };
+
+  const handleRemoveFaq = (index) => {
+    setFaqs(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Add Keyword tag
+  const handleAddKeyword = (e) => {
+    if (e) e.preventDefault();
+    const tag = newKeyword.trim().toLowerCase();
+    if (!tag) return;
+    if (!keywords.includes(tag)) {
+      setKeywords(prev => [...prev, tag]);
+    }
+    setNewKeyword('');
+  };
+
+  const handleRemoveKeyword = (tagToRemove) => {
+    setKeywords(prev => prev.filter(t => t !== tagToRemove));
+  };
+
+  // Test Sandbox message sending
+  const handleSendSandbox = async (e) => {
+    if (e) e.preventDefault();
+    const text = sandboxInput.trim();
+    if (!text || sandboxTyping || !activeBotId) return;
+
+    setSandboxMessages(prev => [...prev, { sender: 'user', content: text, time: 'Just now' }]);
+    setSandboxInput('');
+    setSandboxTyping(true);
+
+    try {
+      const res = await fetch(`/api/bots/${activeBotId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          sessionId: 'sandbox-test-session'
+        })
+      });
+
+      const data = await res.json();
+      setSandboxTyping(false);
+
+      if (data.reply) {
+        setSandboxMessages(prev => [
+          ...prev,
+          { sender: 'bot', content: data.reply, time: 'Just now' }
+        ]);
+      }
+    } catch (err) {
+      setSandboxTyping(false);
+      setSandboxMessages(prev => [
+        ...prev,
+        { sender: 'bot', content: `⚠️ Error: ${err.message}`, time: 'Just now' }
+      ]);
+    }
+  };
+
+  // Pre-made Prompt Persona Templates
+  const promptTemplates = [
+    {
+      title: 'Digital Agency / Freelancer',
+      prompt: 'You are the official AI representative for Suresh Polai Digital Studio. You are polite, consultative, concise, and focused on explaining web development ($499-$2500) and AI automation services. Always ask for client project details and preferred callback time.'
+    },
+    {
+      title: 'WhatsApp Sales Representative',
+      prompt: 'You are an enthusiastic, consultative WhatsApp sales assistant. You write concise messages with bullet points and friendly emojis. You answer product and pricing inquiries promptly and capture client name and WhatsApp number.'
+    },
+    {
+      title: 'Customer Support Concierge',
+      prompt: 'You are a patient, helpful 24/7 customer support specialist. You resolve user inquiries using the provided business knowledge and escalate complex issues gracefully.'
+    }
+  ];
+
   if (loading) {
     return (
-      <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+      <div style={{ padding: '60px', textAlign: 'center', color: '#71717a' }}>
         <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px auto' }} />
-        <p style={{ fontSize: '13px' }}>Loading configuration...</p>
+        <p style={{ fontSize: '13px' }}>Loading AI Agent Studio...</p>
       </div>
     );
   }
 
-  const colorPresets = [
-    { label: 'Indigo', color: '#4f46e5' },
-    { label: 'Emerald', color: '#059669' },
-    { label: 'Violet', color: '#7c3aed' },
-    { label: 'Cyan', color: '#0891b2' },
-    { label: 'Rose', color: '#e11d48' },
-    { label: 'Slate', color: '#334155' }
-  ];
-
-  const iconOptions = [
-    { id: 'chat', label: 'Chat Bubble', icon: MessageSquare },
-    { id: 'sparkles', label: 'Sparkles', icon: Sparkles },
-    { id: 'headset', label: 'Support', icon: Headphones },
-    { id: 'bot', label: 'Assistant', icon: Bot }
-  ];
-
-  const botInitial = getInitialLetter(botName || 'Bot');
-  const botInitialBg = primaryColor || getInitialColor(botName || 'Bot');
-
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '24px 32px', maxWidth: '1280px', margin: '0 auto' }}>
+      
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button onClick={handleBack} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12.5px' }}>
-            <ArrowLeft size={14} /> Back
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid #e4e4e7',
+              backgroundColor: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              color: '#71717a'
+            }}
+          >
+            <ArrowLeft size={14} />
+            <span>Back</span>
           </button>
+
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{botName || 'Chatbot'} Studio</h1>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-              Configure appearance, icons, knowledge base, and live preview.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                {botName || 'AI Agent Studio'}
+              </h1>
+              <span style={{
+                backgroundColor: waStatus.status === 'connected' ? '#dcfce7' : '#f4f4f5',
+                color: waStatus.status === 'connected' ? '#166534' : '#71717a',
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                fontWeight: 700
+              }}>
+                {waStatus.status === 'connected' ? 'WhatsApp Active' : 'Offline / Standby'}
+              </span>
+            </div>
+            <p style={{ fontSize: '12.5px', color: '#71717a', margin: '2px 0 0 0' }}>
+              Train your agent with website content, behavioral instructions, and WhatsApp automation rules.
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => onOpenEmbed(bot)} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 14px' }}>
-            <Code2 size={14} /> Embed Code
-          </button>
-
-          <button onClick={handleSave} disabled={saving} className="btn-primary" style={{ fontSize: '13px', padding: '8px 16px' }}>
-            {savedSuccess ? <CheckCircle2 size={15} /> : <Save size={15} />}
-            <span>{saving ? 'Saving...' : savedSuccess ? 'Saved' : 'Save Changes'}</span>
-          </button>
-        </div>
+        {/* Save Changes Button */}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-primary"
+          style={{
+            padding: '8px 20px',
+            fontSize: '13px',
+            backgroundColor: savedSuccess ? '#10b981' : 'var(--primary)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          {saving ? <RefreshCw size={14} className="animate-spin" /> : (savedSuccess ? <Check size={14} /> : <Save size={14} />)}
+          <span>{saving ? 'Saving...' : (savedSuccess ? 'Saved Changes!' : 'Save & Update Agent')}</span>
+        </button>
       </div>
 
-      {/* Main Grid: Left Tabs/Settings, Right Live Preview */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr', gap: '24px', alignItems: 'start' }}>
-        {/* Left Settings Panel */}
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          {/* Navigation Tabs */}
-          <div style={{
+      {/* Main Studio Navigation Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '6px',
+        backgroundColor: '#f4f4f5',
+        border: '1px solid #e4e4e7',
+        padding: '4px',
+        borderRadius: '10px',
+        marginBottom: '20px',
+        width: 'fit-content'
+      }}>
+        <button
+          onClick={() => setActiveTab('training')}
+          style={{
             display: 'flex',
-            gap: '6px',
-            borderBottom: '1px solid var(--border-subtle)',
-            paddingBottom: '12px',
-            marginBottom: '18px'
-          }}>
-            {[
-              { id: 'appearance', label: 'Widget & Icons', icon: Palette },
-              { id: 'knowledge', label: 'Knowledge Base', icon: Sparkles },
-              { id: 'personality', label: 'Instructions & Tone', icon: Shield },
-              { id: 'embed', label: 'Embed Script', icon: Code2 }
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '8px',
+            backgroundColor: activeTab === 'training' ? '#ffffff' : 'transparent',
+            color: activeTab === 'training' ? '#09090b' : '#71717a',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'training' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+          }}
+        >
+          <Sparkles size={15} color="var(--primary)" />
+          <span>Train Agent &amp; Knowledge</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('appearance')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '8px',
+            backgroundColor: activeTab === 'appearance' ? '#ffffff' : 'transparent',
+            color: activeTab === 'appearance' ? '#09090b' : '#71717a',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'appearance' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+          }}
+        >
+          <Palette size={15} />
+          <span>Appearance &amp; Widget</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('channels')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '8px',
+            backgroundColor: activeTab === 'channels' ? '#ffffff' : 'transparent',
+            color: activeTab === 'channels' ? '#09090b' : '#71717a',
+            fontWeight: 800,
+            fontSize: '13px',
+            cursor: 'pointer',
+            boxShadow: activeTab === 'channels' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+          }}
+        >
+          <Smartphone size={15} color="#10b981" />
+          <span>WhatsApp &amp; Channels</span>
+        </button>
+      </div>
+
+      {/* Main Two-Column Layout (Config on Left, Live Preview on Right) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: '24px', alignItems: 'start' }}>
+        
+        {/* Left Column: Editor & Knowledge Sources */}
+        <div>
+          
+          {/* ========================================================================= */}
+          {/* TAB 1: TRAIN AGENT & KNOWLEDGE */}
+          {/* ========================================================================= */}
+          {activeTab === 'training' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* SOURCE 1: WEBSITE CRAWLER (Chatzy Style) */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e4e4e7',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <Globe size={18} color="var(--primary)" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                    Train with Your Website (Recommended)
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#71717a', margin: '0 0 14px 0' }}>
+                  Point your agent at your website URL. We'll crawl pages, extract services, pricing, and FAQs automatically.
+                </p>
+
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  <div style={{ position: 'relative', flex: 1 }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '10px', fontSize: '13px', color: '#94a3b8', fontWeight: 600 }}>
+                      https://
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="www.yourcompany.com"
+                      value={websiteUrl.replace(/^https?:\/\//, '')}
+                      onChange={(e) => setWebsiteUrl('https://' + e.target.value.replace(/^https?:\/\//, ''))}
+                      style={{ width: '100%', padding: '9px 12px 9px 68px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCrawlWebsite}
+                    disabled={crawling || !websiteUrl.trim()}
+                    className="btn-primary"
+                    style={{ padding: '9px 16px', fontSize: '12.5px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    {crawling ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
+                    <span>{crawling ? 'Crawling...' : 'Crawl & Extract'}</span>
+                  </button>
+                </div>
+
+                {crawlResult && (
+                  <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '12px', fontSize: '12px', color: '#166534' }}>
+                    <div style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={14} color="#22c55e" />
+                      <span>Extracted: {crawlResult.title}</span>
+                    </div>
+                    <div style={{ marginTop: '4px', color: '#15803d' }}>
+                      {crawlResult.extractedSnippet}...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SOURCE 2: BEHAVIORAL PROMPT & PERSONA INSTRUCTIONS */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e4e4e7',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Bot size={18} color="#7c3aed" />
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                      Agent Instructions &amp; Behavioral Prompt
+                    </h3>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 600 }}>Governs tone &amp; rules</span>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#71717a', margin: '0 0 12px 0' }}>
+                  Instruct the AI on how to represent your business on WhatsApp and Website chat.
+                </p>
+
+                {/* Quick Persona Chips */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11.5px', color: '#71717a', fontWeight: 700, alignSelf: 'center' }}>Preset Roles:</span>
+                  {promptTemplates.map((tmpl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSystemInstructions(tmpl.prompt)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #e2e8f0',
+                        backgroundColor: '#f8fafc',
+                        fontSize: '11.5px',
+                        fontWeight: 600,
+                        color: '#334155',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {tmpl.title}
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  rows={4}
+                  value={systemInstructions}
+                  onChange={(e) => setSystemInstructions(e.target.value)}
+                  placeholder="e.g. You are Suresh's Digital Agency AI representative. Be polite, explain our web development packages ($499-$2500), and capture lead contact info..."
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '7px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid',
-                    borderColor: isActive ? 'var(--primary)' : 'transparent',
-                    backgroundColor: isActive ? 'var(--bg-subtle)' : 'transparent',
-                    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: isActive ? 600 : 500,
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                    fontFamily: 'inherit'
                   }}
-                >
-                  <Icon size={14} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* TAB 1: Widget & Icon Appearance */}
-          {activeTab === 'appearance' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* 1. Launcher Icon Style */}
-              <div>
-                <label className="form-label" style={{ marginBottom: '8px', display: 'block' }}>
-                  Launcher Icon Style
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                  {iconOptions.map((opt) => {
-                    const Icon = opt.icon;
-                    const isSelected = launcherIcon === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setLauncherIcon(opt.id)}
-                        style={{
-                          padding: '12px 8px',
-                          borderRadius: '8px',
-                          border: `1.5px solid ${isSelected ? primaryColor : 'var(--border-subtle)'}`,
-                          backgroundColor: isSelected ? 'var(--bg-subtle)' : 'var(--bg-surface)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '6px',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                      >
-                        <Icon size={18} color={isSelected ? primaryColor : 'var(--text-secondary)'} />
-                        <span style={{ fontSize: '11.5px', fontWeight: 600, color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                          {opt.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 2. Position */}
-              <div className="form-group">
-                <label className="form-label">Launcher Position</label>
-                <select
-                  value={launcherPosition}
-                  onChange={(e) => setLauncherPosition(e.target.value)}
-                  className="form-select"
-                >
-                  <option value="bottom-right">Bottom Right</option>
-                  <option value="bottom-left">Bottom Left</option>
-                </select>
-              </div>
-
-              {/* 3. Popup Teaser Callout */}
-              <div className="form-group" style={{ background: 'var(--bg-subtle)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label className="form-label" style={{ marginBottom: 0 }}>
-                    Greeting Callout Bubble
-                  </label>
-                  <input
-                    type="checkbox"
-                    checked={showTeaser}
-                    onChange={(e) => setShowTeaser(e.target.checked)}
-                    style={{ width: '15px', height: '15px', accentColor: primaryColor }}
-                  />
-                </div>
-                <input
-                  type="text"
-                  value={teaserText}
-                  onChange={(e) => setTeaserText(e.target.value)}
-                  placeholder="e.g. How can I help you today?"
-                  className="form-input"
-                  style={{ width: '100%', fontSize: '13px' }}
                 />
               </div>
 
-              {/* 4. Brand Color */}
-              <div className="form-group">
-                <label className="form-label">Brand Color</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  {colorPresets.map((p) => (
-                    <button
-                      key={p.color}
-                      type="button"
-                      onClick={() => setPrimaryColor(p.color)}
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        backgroundColor: p.color,
-                        border: primaryColor === p.color ? '2.5px solid var(--text-primary)' : '1px solid transparent',
-                        cursor: 'pointer'
-                      }}
-                      title={p.label}
-                    />
+              {/* SOURCE 3: BUSINESS KNOWLEDGE & CATALOG */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e4e4e7',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <FileText size={18} color="#0891b2" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                    Business Knowledge &amp; Pricing Catalog
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#71717a', margin: '0 0 12px 0' }}>
+                  Detailed facts, services, package prices, turnaround times, and refund policies.
+                </p>
+
+                <textarea
+                  rows={6}
+                  value={businessKnowledge}
+                  onChange={(e) => setBusinessKnowledge(e.target.value)}
+                  placeholder="Add details: Services, Pricing tiers ($499, $999, $1499), Tech stack, Delivery timelines, Contact info..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    lineHeight: 1.5,
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              {/* SOURCE 4: FREQUENTLY ASKED QUESTIONS (FAQ) */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e4e4e7',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <HelpCircle size={18} color="#ea580c" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                    Q&amp;A Knowledge Pairs (FAQs)
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#71717a', margin: '0 0 14px 0' }}>
+                  Add common customer questions and the exact answers your AI bot should provide.
+                </p>
+
+                {/* FAQ List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
+                  {faqs.map((faq, idx) => (
+                    <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 14px', position: 'relative' }}>
+                      <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#0f172a', marginBottom: '3px' }}>
+                        Q: {faq.question}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
+                        A: {faq.answer}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFaq(idx)}
+                        style={{ position: 'absolute', right: '10px', top: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   ))}
+                </div>
+
+                {/* Add new FAQ inputs */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '8px', alignItems: 'end' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '3px' }}>Question</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Do you provide post-launch support?"
+                      value={newFaqQ}
+                      onChange={(e) => setNewFaqQ(e.target.value)}
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '3px' }}>Answer</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Yes, 30 days free support included."
+                      value={newFaqA}
+                      onChange={(e) => setNewFaqA(e.target.value)}
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddFaq}
+                    className="btn-secondary"
+                    style={{ padding: '7px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Plus size={13} />
+                    <span>Add</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 2: APPEARANCE & WIDGET */}
+          {/* ========================================================================= */}
+          {activeTab === 'appearance' && (
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              border: '1px solid #e4e4e7',
+              padding: '24px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '18px'
+            }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  Bot / Agent Name:
+                </label>
+                <input
+                  type="text"
+                  value={botName}
+                  onChange={(e) => setBotName(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13.5px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  Primary Brand Color:
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <input
                     type="color"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                    style={{ width: '40px', height: '40px', borderRadius: '8px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
                   />
                   <input
                     type="text"
                     value={primaryColor}
                     onChange={(e) => setPrimaryColor(e.target.value)}
-                    className="form-input"
-                    style={{ width: '90px', fontSize: '12px', fontFamily: 'var(--font-mono)' }}
+                    style={{ width: '120px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', fontFamily: 'monospace' }}
                   />
                 </div>
               </div>
 
-              {/* 5. Display Name */}
-              <div className="form-group">
-                <label className="form-label">Display Name</label>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  Welcome Greeting Message:
+                </label>
                 <input
                   type="text"
-                  value={botName}
-                  onChange={(e) => setBotName(e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              {/* 6. Welcome Message */}
-              <div className="form-group">
-                <label className="form-label">Welcome Message</label>
-                <textarea
                   value={welcomeMessage}
                   onChange={(e) => setWelcomeMessage(e.target.value)}
-                  className="form-textarea"
-                  style={{ minHeight: '65px' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#1e293b', marginBottom: '6px' }}>
+                  Input Placeholder Text:
+                </label>
+                <input
+                  type="text"
+                  value={placeholderText}
+                  onChange={(e) => setPlaceholderText(e.target.value)}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
                 />
               </div>
             </div>
           )}
 
-          {/* TAB 2: Knowledge Base */}
-          {activeTab === 'knowledge' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="form-group">
-                <label className="form-label">Business Knowledge & FAQs</label>
-                <textarea
-                  value={businessKnowledge}
-                  onChange={(e) => setBusinessKnowledge(e.target.value)}
-                  className="form-textarea"
-                  style={{ minHeight: '260px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
-                  placeholder="Enter services, pricing, company policies, FAQs, working hours..."
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  The AI model references this knowledge base to generate responses.
-                </span>
-              </div>
-            </div>
-          )}
+          {/* ========================================================================= */}
+          {/* TAB 3: WHATSAPP & CHANNELS */}
+          {/* ========================================================================= */}
+          {activeTab === 'channels' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* WhatsApp Connection Status Card */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1px solid #e4e4e7',
+                padding: '24px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Smartphone size={20} color="#10b981" />
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                      WhatsApp Channel Hub
+                    </h3>
+                  </div>
 
-          {/* TAB 3: Personality */}
-          {activeTab === 'personality' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="form-group">
-                <label className="form-label">System Instructions</label>
-                <textarea
-                  value={systemInstructions}
-                  onChange={(e) => setSystemInstructions(e.target.value)}
-                  className="form-textarea"
-                  style={{ minHeight: '200px' }}
-                  placeholder="You are an expert sales consultant for our agency. Always be professional, helpful..."
-                />
-              </div>
-            </div>
-          )}
+                  <span style={{
+                    backgroundColor: waStatus.status === 'connected' ? '#dcfce7' : '#f4f4f5',
+                    color: waStatus.status === 'connected' ? '#166534' : '#71717a',
+                    fontSize: '11px',
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    fontWeight: 700
+                  }}>
+                    {waStatus.status === 'connected' ? 'Connected' : 'Not Connected'}
+                  </span>
+                </div>
 
-          {/* TAB 4: Embed Code */}
-          {activeTab === 'embed' && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                Add this script tag to your website:
-              </p>
-              <div style={{ position: 'relative' }}>
-                <pre style={{
-                  background: 'var(--bg-subtle)',
-                  padding: '14px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontFamily: 'var(--font-mono)',
-                  overflowX: 'auto',
-                  border: '1px solid var(--border-subtle)'
+                {waStatus.status === 'connected' ? (
+                  <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                    <CheckCircle2 size={36} color="#16a34a" style={{ margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#166534' }}>
+                      Linked Number: {waStatus.phoneNumber}
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#15803d', margin: '4px 0 16px 0' }}>
+                      All incoming messages on this WhatsApp number are answered by your trained AI model.
+                    </p>
+                    <button
+                      onClick={() => navigate('/channels/whatsapp')}
+                      className="btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '12.5px', backgroundColor: '#10b981' }}
+                    >
+                      Open WhatsApp Testing Hub
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+                    <Smartphone size={36} color="#64748b" style={{ margin: '0 auto 8px auto' }} />
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>
+                      Pair WhatsApp Device (No API Key Required)
+                    </div>
+                    <p style={{ fontSize: '12.5px', color: '#64748b', maxWidth: '420px', margin: '0 auto 16px auto' }}>
+                      Scan QR code or use an 8-Digit code to link your WhatsApp number directly to this bot.
+                    </p>
+                    <button
+                      onClick={() => navigate(`/channels/whatsapp?botId=${activeBotId}`)}
+                      className="btn-primary"
+                      style={{ padding: '8px 18px', fontSize: '12.5px', backgroundColor: '#10b981' }}
+                    >
+                      Pair WhatsApp Device Now &rarr;
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Trigger Filter & Keywords Settings */}
+              <div style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                border: '1.5px solid #e0e7ff',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <Filter size={18} color="var(--primary)" />
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#09090b', margin: 0 }}>
+                    Auto-Reply Policy &amp; Trigger Keywords
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 14px 0' }}>
+                  Choose whether the AI should answer all incoming messages or only trigger when specific business keywords are detected.
+                </p>
+
+                {/* Professional Segmented Control Mode Toggle (No emojis) */}
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  backgroundColor: '#f1f5f9',
+                  padding: '4px',
+                  borderRadius: '10px',
+                  marginBottom: '14px'
                 }}>
-                  {`<script src="http://localhost:5000/widget.js" data-bot-id="${botId}"></script>`}
-                </pre>
-                <button
-                  onClick={() => navigator.clipboard.writeText(`<script src="http://localhost:5000/widget.js" data-bot-id="${botId}"></script>`)}
-                  className="btn-secondary"
-                  style={{ position: 'absolute', top: '8px', right: '8px', padding: '4px 10px', fontSize: '11px' }}
-                >
-                  <Copy size={12} /> Copy
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setReplyMode('all')}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: replyMode === 'all' ? '1px solid #e2e8f0' : 'none',
+                      backgroundColor: replyMode === 'all' ? '#ffffff' : 'transparent',
+                      color: replyMode === 'all' ? '#0f172a' : '#64748b',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: replyMode === 'all' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <Zap size={13} color={replyMode === 'all' ? '#16a34a' : '#94a3b8'} />
+                    <span>All Incoming Messages</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setReplyMode('keywords')}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: replyMode === 'keywords' ? '1px solid #e2e8f0' : 'none',
+                      backgroundColor: replyMode === 'keywords' ? '#ffffff' : 'transparent',
+                      color: replyMode === 'keywords' ? '#0f172a' : '#64748b',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: replyMode === 'keywords' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <Filter size={13} color={replyMode === 'keywords' ? '#4f46e5' : '#94a3b8'} />
+                    <span>Keyword Triggers Only</span>
+                  </button>
+                </div>
+
+                {replyMode === 'keywords' && (
+                  <div style={{ backgroundColor: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
+                      Active Trigger Keywords:
+                    </label>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                      {keywords.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '11.5px',
+                            fontWeight: 600,
+                            color: '#1e293b'
+                          }}
+                        >
+                          <span>{tag}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveKeyword(tag)}
+                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#94a3b8' }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+
+                    <form onSubmit={handleAddKeyword} style={{ display: 'flex', gap: '6px' }}>
+                      <input
+                        type="text"
+                        placeholder="Add keyword tag (e.g. package, website, quote)..."
+                        value={newKeyword}
+                        onChange={(e) => setNewKeyword(e.target.value)}
+                        style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12px' }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={!newKeyword.trim()}
+                        className="btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '11.5px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Plus size={12} />
+                        <span>Add Tag</span>
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
+
             </div>
           )}
+
         </div>
 
-        {/* Right Live Interactive Preview */}
-        <div style={{ position: 'sticky', top: '75px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Interactive Preview
-            </span>
-            <span className="badge badge-green" style={{ fontSize: '10.5px' }}>
-              Live
-            </span>
+        {/* Right Column: Live Interactive Sandbox Chat */}
+        <div style={{
+          position: 'sticky',
+          top: '20px',
+          backgroundColor: '#ffffff',
+          borderRadius: '20px',
+          border: '1px solid #d1d5db',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '620px'
+        }}>
+          {/* Chat Header */}
+          <div style={{
+            backgroundColor: primaryColor,
+            padding: '14px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: '#ffffff'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>
+                {botName ? botName.charAt(0) : 'B'}
+              </div>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '14px' }}>{botName} (Live Preview)</div>
+                <div style={{ fontSize: '11px', opacity: 0.9 }}>Trained AI Assistant</div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSandboxMessages([{ sender: 'bot', content: welcomeMessage, time: 'Just now' }])}
+              style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', opacity: 0.8 }}
+              title="Reset Preview Chat"
+            >
+              <RefreshCw size={14} />
+            </button>
           </div>
 
-          {/* Widget Preview Container */}
+          {/* Messages Body */}
           <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid var(--border-subtle)',
-            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08)',
-            overflow: 'hidden',
+            flex: 1,
+            backgroundColor: '#f8fafc',
+            padding: '16px',
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            height: '520px'
+            gap: '12px'
           }}>
-            {/* Header */}
-            <div style={{
-              backgroundColor: primaryColor,
-              padding: '12px 16px',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: botInitialBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  color: '#ffffff',
-                  border: '1.5px solid rgba(255,255,255,0.7)'
-                }}>
-                  {botInitial}
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '13.5px', fontWeight: 700, color: '#ffffff' }}>{botName}</h4>
-                  <span style={{ fontSize: '10.5px', color: 'rgba(255,255,255,0.85)' }}>Online</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Chat Body */}
-            <div style={{
-              flex: 1,
-              padding: '14px',
-              overflowY: 'auto',
-              background: '#f8fafc',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px'
-            }}>
-              {sandboxMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    padding: '9px 13px',
-                    borderRadius: '12px',
+            {sandboxMessages.map((m, idx) => {
+              const isUser = m.sender === 'user';
+              return (
+                <div key={idx} style={{ display: 'flex', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    maxWidth: '82%',
+                    backgroundColor: isUser ? primaryColor : '#ffffff',
+                    color: isUser ? '#ffffff' : '#1e293b',
+                    padding: '10px 14px',
+                    borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
                     fontSize: '13px',
-                    lineHeight: 1.45,
-                    backgroundColor: msg.sender === 'user' ? primaryColor : '#ffffff',
-                    color: msg.sender === 'user' ? '#ffffff' : '#0f172a',
-                    border: msg.sender === 'user' ? 'none' : '1px solid var(--border-subtle)'
-                  }}
-                >
-                  {msg.content}
+                    lineHeight: 1.45
+                  }}>
+                    {formatWhatsAppText(m.content)}
+                  </div>
                 </div>
-              ))}
+              );
+            })}
 
-              {sandboxTyping && (
-                <div style={{
-                  alignSelf: 'flex-start',
-                  padding: '7px 11px',
-                  borderRadius: '10px',
-                  background: '#ffffff',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '11.5px',
-                  color: 'var(--text-muted)'
-                }}>
-                  Thinking...
+            {sandboxTyping && (
+              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{ backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '12px', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <RefreshCw size={12} className="animate-spin" color={primaryColor} />
+                  <span>{botName} is thinking...</span>
                 </div>
-              )}
-            </div>
-
-            {/* Chat Footer */}
-            <form
-              onSubmit={handleSandboxSend}
-              style={{
-                padding: '10px 12px',
-                borderTop: '1px solid var(--border-subtle)',
-                background: '#ffffff',
-                display: 'flex',
-                gap: '6px'
-              }}
-            >
-              <input
-                type="text"
-                placeholder={placeholderText}
-                value={sandboxInput}
-                onChange={(e) => setSandboxInput(e.target.value)}
-                style={{
-                  flex: 1,
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '8px',
-                  padding: '7px 11px',
-                  fontSize: '12.5px',
-                  background: '#f1f5f9',
-                  color: '#0f172a',
-                  outline: 'none'
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  background: primaryColor,
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
-
-          {/* Launcher Preview */}
-          <div style={{ marginTop: '10px', display: 'flex', justifyContent: launcherPosition === 'bottom-left' ? 'flex-start' : 'flex-end', alignItems: 'center', gap: '8px' }}>
-            {showTeaser && teaserText && (
-              <div style={{
-                background: '#ffffff',
-                color: '#0f172a',
-                padding: '6px 11px',
-                borderRadius: '10px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                fontSize: '12px',
-                fontWeight: 600,
-                border: '1px solid var(--border-subtle)'
-              }}>
-                {teaserText}
               </div>
             )}
-            <div style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '50%',
-              backgroundColor: primaryColor,
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.15)'
-            }}>
-              {launcherIcon === 'sparkles' ? (
-                <Sparkles size={20} />
-              ) : launcherIcon === 'headset' ? (
-                <Headphones size={20} />
-              ) : launcherIcon === 'bot' ? (
-                <Bot size={20} />
-              ) : (
-                <MessageSquare size={20} />
-              )}
-            </div>
+            <div ref={sandboxEndRef} />
           </div>
+
+          {/* Chat Input */}
+          <form
+            onSubmit={handleSendSandbox}
+            style={{
+              padding: '12px 16px',
+              backgroundColor: '#ffffff',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              gap: '8px'
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Ask a question to test AI training..."
+              value={sandboxInput}
+              onChange={(e) => setSandboxInput(e.target.value)}
+              style={{ flex: 1, padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+            />
+            <button
+              type="submit"
+              disabled={sandboxTyping || !sandboxInput.trim()}
+              style={{
+                padding: '9px 14px',
+                borderRadius: '8px',
+                backgroundColor: primaryColor,
+                color: '#ffffff',
+                border: 'none',
+                cursor: sandboxTyping || !sandboxInput.trim() ? 'not-allowed' : 'pointer',
+                opacity: sandboxTyping || !sandboxInput.trim() ? 0.6 : 1
+              }}
+            >
+              <Send size={15} />
+            </button>
+          </form>
         </div>
+
       </div>
     </div>
   );

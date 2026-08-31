@@ -3,7 +3,7 @@ import { db } from '../config/database.js';
 export async function listLeads(req, res) {
   try {
     const userId = req.user?.userId || 'usr-demo-1';
-    const { botId, channel, status, search } = req.query;
+    const { botId, channel, status, search, listId } = req.query;
 
     let leads = await db.getLeads(userId, botId || null);
 
@@ -27,6 +27,45 @@ export async function listLeads(req, res) {
   } catch (err) {
     console.error('List leads error:', err);
     return res.status(500).json({ error: 'Failed to retrieve leads' });
+  }
+}
+
+export async function createLead(req, res) {
+  try {
+    const userId = req.user?.userId || 'usr-demo-1';
+    const { lead_name, lead_phone, lead_email, lead_requirement, channel, bot_id, status } = req.body;
+
+    if (!lead_name && !lead_phone && !lead_email) {
+      return res.status(400).json({ error: 'At least a name, phone, or email is required' });
+    }
+
+    const newLead = await db.createLead({
+      user_id: userId,
+      bot_id: bot_id || 'bot-ec0db899',
+      lead_name: lead_name || 'Contact',
+      lead_phone: lead_phone || null,
+      lead_email: lead_email || null,
+      lead_requirement: lead_requirement || 'Directly created from Contacts CRM',
+      channel: channel || 'whatsapp',
+      status: status || 'new',
+      session_id: lead_phone ? `wa-${lead_phone.replace(/[^0-9]/g, '')}` : `contact-${Date.now()}`
+    });
+
+    return res.status(201).json({ lead: newLead });
+  } catch (err) {
+    console.error('Create lead error:', err);
+    return res.status(500).json({ error: 'Failed to create contact' });
+  }
+}
+
+export async function deleteLead(req, res) {
+  try {
+    const { leadId } = req.params;
+    await db.deleteLead(leadId);
+    return res.json({ success: true, message: 'Contact deleted successfully' });
+  } catch (err) {
+    console.error('Delete lead error:', err);
+    return res.status(500).json({ error: 'Failed to delete contact' });
   }
 }
 
@@ -78,5 +117,46 @@ export async function exportLeadsCsv(req, res) {
   } catch (err) {
     console.error('Export CSV error:', err);
     return res.status(500).json({ error: 'Failed to generate CSV export' });
+  }
+}
+
+// LISTS & SEGMENTS ENDPOINTS
+export async function listSegments(req, res) {
+  try {
+    const userId = req.user?.userId || 'usr-demo-1';
+    const segments = await db.getSegments(userId);
+    return res.json({ segments });
+  } catch (err) {
+    console.error('List segments error:', err);
+    return res.status(500).json({ error: 'Failed to retrieve lists & segments' });
+  }
+}
+
+export async function createSegment(req, res) {
+  try {
+    const { name, type, description } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    const newSegment = await db.createSegment({
+      name: name.trim(),
+      type: type || 'list',
+      description: description?.trim() || ''
+    });
+    return res.status(201).json({ segment: newSegment });
+  } catch (err) {
+    console.error('Create segment error:', err);
+    return res.status(500).json({ error: 'Failed to create segment' });
+  }
+}
+
+export async function deleteSegment(req, res) {
+  try {
+    const { segmentId } = req.params;
+    await db.deleteSegment(segmentId);
+    return res.json({ success: true, message: 'Segment deleted successfully' });
+  } catch (err) {
+    console.error('Delete segment error:', err);
+    return res.status(500).json({ error: 'Failed to delete segment' });
   }
 }

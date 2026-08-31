@@ -129,3 +129,110 @@ export async function deleteBot(req, res) {
     return res.status(500).json({ error: 'Failed to delete bot' });
   }
 }
+
+/**
+ * 1-Click Website URL Crawler & Knowledge Trainer
+ */
+export async function crawlWebsite(req, res) {
+  try {
+    const { botId } = req.params;
+    let { url } = req.body;
+
+    if (!url || !url.trim()) {
+      return res.status(400).json({ error: 'Website URL is required' });
+    }
+
+    url = url.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+
+    console.log(`🌐 Crawling website for bot ${botId}: ${url}`);
+
+    // Fetch website HTML
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) OmniBot-Crawler/2.0'
+      }
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return res.status(400).json({ error: `Failed to fetch website (HTTP ${response.status})` });
+    }
+
+    const html = await response.text();
+
+    // Extract Title
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : '';
+
+    // Extract Meta Description
+    const metaDescMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["']/i) ||
+                          html.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["']/i);
+    const metaDesc = metaDescMatch ? metaDescMatch[1].trim() : '';
+
+    // Clean HTML to extract readable text
+    let cleanText = html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ' ')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, ' ')
+      .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, ' ')
+      .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, ' ')
+      .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, ' ')
+      .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, ' ')
+      .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Limit to first 2,500 characters of high-signal content
+    if (cleanText.length > 2500) {
+      cleanText = cleanText.substring(0, 2500) + '...';
+    }
+
+    // Format knowledge snippet
+    const extractedKnowledge = `WEBSITE SOURCE: ${url}
+TITLE: ${title || 'Business Website'}
+DESCRIPTION: ${metaDesc || 'N/A'}
+CONTENT SUMMARY:
+${cleanText}`;
+
+    // Update bot database
+    const bot = await db.getBotById(botId);
+    if (!bot) return res.status(404).json({ error: 'Bot not found' });
+
+    const currentKnowledge = bot.business_knowledge || '';
+    const updatedKnowledge = currentKnowledge.trim()
+      ? `${currentKnowledge}\n\n---\n${extractedKnowledge}`
+      : extractedKnowledge;
+
+    const updatedBot = await db.updateBot(botId, {
+      website_url: url,
+      business_knowledge: updatedKnowledge
+    });
+
+    console.log(`✅ Website knowledge successfully extracted for bot ${botId}`);
+
+    return res.json({
+      success: true,
+      url,
+      title,
+      metaDesc,
+      extractedSnippet: cleanText.substring(0, 300),
+      bot: updatedBot
+    });
+  } catch (err) {
+    console.error('Website crawling error:', err);
+    return res.status(500).json({ error: 'Failed to crawl website: ' + err.message });
+  }
+}
+

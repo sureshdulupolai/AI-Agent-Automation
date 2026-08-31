@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Inbox, 
   Search, 
@@ -17,9 +17,13 @@ import {
   Smile, 
   ChevronDown, 
   CheckCheck,
-  XCircle
+  XCircle,
+  FileText,
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
+import { formatWhatsAppText } from '../utils/formatWhatsAppText';
 
 export default function InboxPage() {
   const [conversations, setConversations] = useState([]);
@@ -30,6 +34,7 @@ export default function InboxPage() {
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingReply, setSendingReply] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const fetchConversations = async () => {
     try {
@@ -72,6 +77,12 @@ export default function InboxPage() {
       fetchSessionDetails(selectedSessionId);
     }
   }, [selectedSessionId]);
+
+  useEffect(() => {
+    if (sessionDetails?.messages) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [sessionDetails?.messages]);
 
   const handleSendReply = async (e) => {
     if (e) e.preventDefault();
@@ -417,47 +428,77 @@ export default function InboxPage() {
                 gap: '14px',
                 backgroundColor: '#ffffff'
               }}>
-                {sessionDetails?.messages?.map((msg, i) => {
-                  const isUser = msg.sender === 'user';
-                  const isAgent = msg.sender === 'agent';
+                {(!sessionDetails?.messages || sessionDetails.messages.length === 0) ? (
+                  <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <MessageSquare size={32} style={{ margin: '0 auto 10px auto', opacity: 0.3 }} />
+                    <p style={{ fontSize: '13px', fontWeight: 600 }}>No messages in this session yet</p>
+                    <span style={{ fontSize: '12px' }}>Send a message below to start chatting.</span>
+                  </div>
+                ) : (
+                  sessionDetails.messages.map((msg, i) => {
+                    const isUser = msg.sender === 'user';
+                    const isAgent = msg.sender === 'agent';
+                    const isWa = activeConv.channel === 'whatsapp';
 
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isUser ? 'flex-end' : 'flex-start',
-                        maxWidth: '75%',
-                        alignSelf: isUser ? 'flex-end' : 'flex-start'
-                      }}
-                    >
-                      <div style={{
-                        padding: '12px 16px',
-                        borderRadius: '14px',
-                        fontSize: '13px',
-                        lineHeight: 1.5,
-                        backgroundColor: isUser 
-                          ? '#f3f4f6' 
-                          : isAgent 
-                            ? '#0891b2' 
-                            : '#f8fafc',
-                        color: isAgent ? '#ffffff' : '#0f172a',
-                        border: isAgent ? 'none' : '1px solid #e2e8f0',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                        whiteSpace: 'pre-wrap'
-                      }}>
-                        {msg.content}
-                      </div>
+                    return (
+                      <div
+                        key={i}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: isUser ? 'flex-end' : 'flex-start',
+                          maxWidth: '78%',
+                          alignSelf: isUser ? 'flex-end' : 'flex-start'
+                        }}
+                      >
+                        {/* Sender Label */}
+                        <div style={{
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          color: '#64748b',
+                          marginBottom: '3px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {isUser ? (
+                            <span>{activeConv.senderName}</span>
+                          ) : isAgent ? (
+                            <span style={{ color: '#0891b2', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <User size={11} /> Support Agent
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Bot size={11} /> {sessionDetails.bot?.bot_name || 'AI Assistant'}
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Timestamp & Double Checkmarks */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                        <span>{new Date(msg.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}, {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        <CheckCheck size={13} color="#059669" />
+                        <div style={{
+                          padding: '12px 16px',
+                          borderRadius: isUser ? '16px 16px 3px 16px' : '16px 16px 16px 3px',
+                          fontSize: '13.5px',
+                          lineHeight: 1.5,
+                          backgroundColor: isUser 
+                            ? (isWa ? '#dcf8c6' : '#eef2ff')
+                            : (isAgent ? '#0891b2' : '#ffffff'),
+                          color: isAgent ? '#ffffff' : '#0f172a',
+                          border: isAgent ? 'none' : '1px solid #e2e8f0',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                        }}>
+                          {formatWhatsAppText(msg.content)}
+                        </div>
+
+                        {/* Timestamp & Double Checkmarks */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <CheckCheck size={13} color={isUser ? '#059669' : '#94a3b8'} />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Bottom Input Bar matching Chatzy Image 1 */}

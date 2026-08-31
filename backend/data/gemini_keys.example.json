@@ -1,0 +1,39 @@
+{
+  "client_keys": [
+    {
+      "id": "key-client-primary",
+      "label": "Primary Google AI Studio Key",
+      "key": "AIzaSy_YOUR_CUSTOM_GEMINI_KEY_HERE",
+      "status": "not_configured",
+      "latency_ms": 0,
+      "last_tested": "Never",
+      "models_available": [
+        "gemini-2.5-flash"
+      ],
+      "priority": 1
+    }
+  ],
+  "system_keys": [
+    {
+      "id": "key-system-fallback-a",
+      "label": "OmniBot Global Safety-Net Pool A",
+      "key": "AIzaSy_YOUR_BACKUP_KEY_A",
+      "status": "not_configured",
+      "latency_ms": 0,
+      "priority": 2
+    },
+    {
+      "id": "key-system-fallback-b",
+      "label": "OmniBot High-Concurrency Pool B",
+      "key": "AIzaSy_YOUR_BACKUP_KEY_B",
+      "status": "not_configured",
+      "latency_ms": 0,
+      "priority": 2
+    }
+  ],
+  "notification_settings": {
+    "whatsapp_alert_phone": "",
+    "alert_on_rate_limit": true,
+    "last_alert_sent": null
+  }
+}

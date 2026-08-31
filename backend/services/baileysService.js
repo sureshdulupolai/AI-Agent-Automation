@@ -2,7 +2,8 @@ import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
   fetchLatestBaileysVersion,
-  Browsers
+  Browsers,
+  downloadMediaMessage
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import QRCode from 'qrcode';
@@ -65,7 +66,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
     const sock = makeWASocket({
       version,
       auth: state,
-      logger: pino({ level: 'silent' }),
+      logger: pino({ level: 'warn' }),
       printQRInTerminal: false,
       browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: false,
@@ -93,6 +94,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
           });
           activeQR.set(botId, qrDataUrl);
           await db.updateBot(botId, { whatsapp_status: 'pairing', whatsapp_type: 'qr' });
+          console.log(`📱 [WHATSAPP QR CODE GENERATED] for Bot ${botId}`);
         } catch (err) {
           console.error('QR generation error:', err);
         }
@@ -112,15 +114,15 @@ export async function getOrCreateSocket(botId, forceReset = false) {
           whatsapp_type: 'qr'
         });
 
-        console.log(`✅ WhatsApp LIVE Connected successfully for Bot: ${botId} (${formattedPhone})`);
+        console.log(`✅ [WHATSAPP LIVE CONNECTED] Bot ${botId} is linked to phone: ${formattedPhone}`);
       }
 
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const currentBot = await db.getBotById(botId);
-        const isExplicitLogout = statusCode === DisconnectReason.loggedOut && currentBot?.whatsapp_status === 'connected';
+        const isExplicitLogout = statusCode === DisconnectReason.loggedOut;
 
-        console.log(`ℹ️ WhatsApp socket closed for bot ${botId} (code: ${statusCode}). Auto-reconnecting: ${!isExplicitLogout}`);
+        console.log(`ℹ️ [WHATSAPP CLOSED] Bot ${botId} (code: ${statusCode}, loggedOut: ${isExplicitLogout})`);
 
         activeSockets.delete(botId);
         connectingLocks.delete(botId);
@@ -133,39 +135,97 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             try { fs.rmSync(sessionFolder, { recursive: true, force: true }); } catch (e) {}
           }
         } else {
-          // Automatic seamless reconnection so the handshake completes with the phone!
+          // Reconnect automatically if it was a temporary connection drop
           setTimeout(() => {
-            getOrCreateSocket(botId, false);
-          }, 1000);
+            if (!activeSockets.has(botId)) {
+              getOrCreateSocket(botId, false).catch(() => {});
+            }
+          }, 2000);
         }
       }
     });
 
-    // Handle real customer incoming messages & auto AI response
+    // Handle real incoming WhatsApp messages & send real-time Gemini AI response
     sock.ev.on('messages.upsert', async ({ messages: incomingMsgs, type }) => {
       if (type !== 'notify') return;
 
       for (const msg of incomingMsgs) {
-        if (msg.key.fromMe || !msg.message || msg.key.remoteJid.includes('@broadcast') || msg.key.remoteJid.includes('@newsletter')) {
-          continue;
-        }
+        if (!msg.message) continue;
+
+        // Ignore messages sent by the connected phone itself
+        if (msg.key.fromMe) continue;
 
         const senderJid = msg.key.remoteJid;
-        const senderPhone = '+' + senderJid.split('@')[0];
+        if (!senderJid) continue;
+        if (senderJid.includes('@broadcast') || senderJid.includes('@newsletter')) continue;
+
+        const senderPhone = '+' + senderJid.split('@')[0].split(':')[0];
         const senderName = msg.pushName || 'WhatsApp Customer';
+
+        let mediaPayload = null;
+        if (msg.message.imageMessage) {
+          try {
+            const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            mediaPayload = {
+              mimeType: msg.message.imageMessage.mimetype || 'image/jpeg',
+              base64: buffer.toString('base64'),
+              caption: msg.message.imageMessage.caption || ''
+            };
+          } catch (e) {
+            console.warn('Could not download image:', e.message);
+          }
+        } else if (msg.message.audioMessage) {
+          try {
+            const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            mediaPayload = {
+              mimeType: msg.message.audioMessage.mimetype || 'audio/ogg',
+              base64: buffer.toString('base64')
+            };
+          } catch (e) {
+            console.warn('Could not download audio:', e.message);
+          }
+        } else if (msg.message.documentMessage) {
+          try {
+            const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            mediaPayload = {
+              mimeType: msg.message.documentMessage.mimetype || 'application/pdf',
+              base64: buffer.toString('base64'),
+              filename: msg.message.documentMessage.fileName || 'file'
+            };
+          } catch (e) {
+            console.warn('Could not download document:', e.message);
+          }
+        }
 
         const messageText = msg.message.conversation ||
           msg.message.extendedTextMessage?.text ||
+          msg.message.imageMessage?.caption ||
+          msg.message.videoMessage?.caption ||
+          msg.message.documentMessage?.title ||
           msg.message.buttonsResponseMessage?.selectedButtonId ||
-          '';
+          msg.message.templateButtonReplyMessage?.selectedId ||
+          (mediaPayload ? `[Attached ${mediaPayload.mimeType.startsWith('image') ? 'Image' : (mediaPayload.mimeType.startsWith('audio') ? 'Voice Note' : 'Document')}]` : '');
 
-        if (!messageText.trim()) continue;
+        if (!messageText && !mediaPayload) continue;
 
-        console.log(`📩 Incoming WhatsApp from ${senderPhone} (${senderName}): "${messageText}"`);
+        console.log(`📩 [REAL WHATSAPP INCOMING] from ${senderPhone} (${senderName}): "${messageText || '[Media Attachment]'}"`);
 
         try {
           const currentBot = await db.getBotById(botId);
           if (!currentBot) continue;
+
+          // Check Auto-Reply Mode & Trigger Keywords Filter (Media attachments always trigger)
+          const replyMode = currentBot.whatsapp_reply_mode || 'all';
+          const keywords = Array.isArray(currentBot.whatsapp_keywords) ? currentBot.whatsapp_keywords : [];
+
+          if (replyMode === 'keywords' && keywords.length > 0 && !mediaPayload) {
+            const lowerMsg = (messageText || '').toLowerCase();
+            const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
+            if (!hasKeywordMatch) {
+              console.log(`⏭️ [SKIPPED AUTO-REPLY] Message from ${senderPhone} ("${messageText}") did not match any trigger keywords. Owner can reply manually.`);
+              continue;
+            }
+          }
 
           const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
 
@@ -174,13 +234,14 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             bot_id: botId,
             session_id: sessionId,
             sender: 'user',
-            content: messageText,
+            content: messageText || `[Attached ${mediaPayload?.mimeType || 'file'}]`,
             channel: 'whatsapp'
           });
 
-          // 2. Extract and create lead in CRM
+          // 2. Extract potential lead
           const history = await db.getMessages(botId, sessionId);
-          const leadData = extractLeadDetails(messageText, history);
+          const leadData = extractLeadDetails(messageText || 'Inquiry with attachment', history);
+
           const finalPhone = leadData?.lead_phone || senderPhone;
           const finalName = leadData?.lead_name !== 'Website Visitor' ? leadData?.lead_name : senderName;
 
@@ -190,23 +251,24 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             lead_name: finalName,
             lead_phone: finalPhone,
             lead_email: leadData?.lead_email || null,
-            lead_requirement: leadData?.lead_requirement || messageText,
+            lead_requirement: leadData?.lead_requirement || messageText || 'Sent media attachment',
             channel: 'whatsapp',
             session_id: sessionId,
             status: 'new'
           });
 
-          // 3. Generate Gemini AI Response
+          // 3. Generate Gemini AI Response (with Vision/Audio/Doc multimodal context)
           const { reply } = await generateBotReply({
             bot: currentBot,
             userMessage: messageText,
-            history
+            history,
+            media: mediaPayload
           });
 
           // 4. Send AI reply back on WhatsApp
           await sock.sendMessage(senderJid, { text: reply }, { quoted: msg });
 
-          // 5. Store bot reply in message logs
+          // 5. Store bot reply in history
           await db.addMessage({
             bot_id: botId,
             session_id: sessionId,
@@ -215,7 +277,7 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             channel: 'whatsapp'
           });
 
-          console.log(`🤖 AI Auto-Reply sent to ${senderPhone}: "${reply.substring(0, 80)}..."`);
+          console.log(`🤖 [REAL WHATSAPP SENT] to ${senderPhone}: "${reply.substring(0, 80)}..."`);
         } catch (err) {
           console.error('Error handling incoming WhatsApp message:', err);
         }
@@ -233,6 +295,32 @@ export async function getOrCreateSocket(botId, forceReset = false) {
   } catch (err) {
     connectingLocks.delete(botId);
     throw err;
+  }
+}
+
+/**
+ * Restore all saved WhatsApp sessions across server restarts
+ */
+export async function initAllWhatsAppSessions() {
+  try {
+    if (!fs.existsSync(SESSIONS_DIR)) return;
+    const dirs = fs.readdirSync(SESSIONS_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
+
+    for (const botId of dirs) {
+      const credsFile = path.join(SESSIONS_DIR, botId, 'creds.json');
+      if (fs.existsSync(credsFile)) {
+        console.log(`🔄 Restoring active WhatsApp session for bot: ${botId}...`);
+        try {
+          await getOrCreateSocket(botId, false);
+        } catch (e) {
+          console.error(`Failed to restore session for ${botId}:`, e.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in initAllWhatsAppSessions:', err);
   }
 }
 
@@ -338,7 +426,7 @@ export async function requestPairingCode(botId, rawPhoneNumber) {
  */
 export async function getWhatsAppStatus(botId) {
   const bot = await db.getBotById(botId);
-  if (!bot) return { status: 'disconnected' };
+  if (!bot) return { status: 'disconnected', phoneNumber: null };
 
   const qr = activeQR.get(botId) || null;
   const pairingCode = activePairingCodes.get(botId) || null;
@@ -360,11 +448,13 @@ export async function confirmWhatsAppPairing(botId, phoneNumber) {
   const bot = await db.getBotById(botId);
   if (!bot) throw new Error('Bot not found');
 
-  const phone = phoneNumber || '+91 98765 ' + Math.floor(10000 + Math.random() * 90000);
+  if (!phoneNumber) {
+    throw new Error('Valid phone number is required for pairing');
+  }
 
   const updatedBot = await db.updateBot(botId, {
     whatsapp_status: 'connected',
-    whatsapp_number: phone,
+    whatsapp_number: phoneNumber,
     whatsapp_type: 'qr'
   });
 
@@ -412,6 +502,22 @@ export async function processWhatsAppIncoming({
   if (!bot) throw new Error('Bot not found');
 
   const sessionId = `wa-${senderPhone.replace(/[^0-9]/g, '')}`;
+
+  const replyMode = bot.whatsapp_reply_mode || 'all';
+  const keywords = Array.isArray(bot.whatsapp_keywords) ? bot.whatsapp_keywords : [];
+
+  if (replyMode === 'keywords' && keywords.length > 0) {
+    const lowerMsg = messageText.toLowerCase();
+    const hasKeywordMatch = keywords.some(k => k.trim() && lowerMsg.includes(k.toLowerCase().trim()));
+    if (!hasKeywordMatch) {
+      return {
+        reply: `⏭️ *(Auto-Reply Skipped by Smart Filter)*: This message did not match any of your active trigger keywords (${keywords.slice(0, 4).join(', ')}...). The bot left this message for your manual response.`,
+        senderPhone,
+        sessionId,
+        filtered: true
+      };
+    }
+  }
 
   // 1. Record incoming user message
   await db.addMessage({

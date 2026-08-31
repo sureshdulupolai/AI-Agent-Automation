@@ -86,17 +86,18 @@ export async function disconnect(req, res) {
 export async function simulateIncoming(req, res) {
   try {
     const { botId } = req.params;
-    const { senderPhone, messageText, senderName } = req.body;
+    const { senderPhone, messageText, senderName, media } = req.body;
 
-    if (!messageText || !senderPhone) {
-      return res.status(400).json({ error: 'senderPhone and messageText are required' });
+    if ((!messageText && !media) || !senderPhone) {
+      return res.status(400).json({ error: 'senderPhone and either messageText or media attachment are required' });
     }
 
     const result = await processWhatsAppIncoming({
       botId,
       senderPhone,
-      messageText,
-      senderName: senderName || 'WhatsApp Customer'
+      messageText: messageText || '',
+      senderName: senderName || 'WhatsApp Customer',
+      media: media || null
     });
 
     return res.json(result);

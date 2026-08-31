@@ -7,12 +7,15 @@ import InboxPage from './pages/InboxPage';
 import WhatsAppPage from './pages/WhatsAppPage';
 import WebsiteChannelPage from './pages/WebsiteChannelPage';
 import LeadsPage from './pages/LeadsPage';
+import ListsSegmentsPage from './pages/ListsSegmentsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import DemoSitePage from './pages/DemoSitePage';
 import DeploymentGuidePage from './pages/DeploymentGuidePage';
 import JourneyTemplatesPage from './pages/journeys/JourneyTemplatesPage';
 import MyJourneysPage from './pages/journeys/MyJourneysPage';
 import JourneyStudioPage from './pages/journeys/JourneyStudioPage';
+import JourneyDetailsPage from './pages/journeys/JourneyDetailsPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import { AuthProvider } from './context/AuthContext';
 
@@ -87,19 +90,23 @@ export default function App() {
             <Route path="/journeys/templates" element={<JourneyTemplatesPage />} />
             <Route path="/journeys/create" element={<Navigate to="/journeys/templates" replace />} />
             <Route path="/journeys" element={<MyJourneysPage />} />
+            <Route path="/journeys/:journeyId" element={<JourneyDetailsPage />} />
             <Route path="/journeys/journey-studio/:journeyId" element={<JourneyStudioPage bots={bots} />} />
 
-            {/* Channels */}
+            {/* Channels & Integrations */}
             <Route path="/channels/website" element={<WebsiteChannelPage bots={bots} />} />
             <Route path="/channels/whatsapp" element={<WhatsAppPage bots={bots} />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
 
             {/* Conversations Inbox */}
             <Route path="/inbox" element={<InboxPage />} />
             <Route path="/conversations" element={<Navigate to="/inbox" replace />} />
 
-            {/* Leads CRM */}
-            <Route path="/leads" element={<LeadsPage bots={bots} />} />
-            <Route path="/audience" element={<Navigate to="/leads" replace />} />
+            {/* Audience CRM (Chatzy Identical) */}
+            <Route path="/contacts" element={<LeadsPage bots={bots} />} />
+            <Route path="/leads" element={<Navigate to="/contacts" replace />} />
+            <Route path="/lists-and-segments" element={<ListsSegmentsPage />} />
+            <Route path="/audience" element={<Navigate to="/contacts" replace />} />
 
             {/* Analytics & Logs */}
             <Route path="/analytics" element={<AnalyticsPage bots={bots} />} />
