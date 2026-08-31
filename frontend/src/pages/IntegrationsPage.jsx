@@ -93,6 +93,16 @@ export default function IntegrationsPage() {
   const [testingKeyId, setTestingKeyId] = useState(null);
   const [keyTestResults, setKeyTestResults] = useState({});
 
+  // Google Live Sheets & Email Actions State
+  const [syncingGoogleSheets, setSyncingGoogleSheets] = useState(false);
+  const [googleSheetResult, setGoogleSheetResult] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailSubject, setEmailSubject] = useState('Regarding Your Project Inquiry - Suresh Polai');
+  const [emailBody, setEmailBody] = useState('Hi there,\n\nThank you for reaching out regarding your project. We offer full-stack website development and custom AI automation solutions tailored to your business needs.\n\nPlease let us know if you would like to schedule a quick 10-minute discovery call.\n\nBest regards,\nSuresh Polai');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSuccessMsg, setEmailSuccessMsg] = useState('');
+
   const fetchIntegrations = async () => {
     try {
       setLoading(true);
@@ -158,7 +168,16 @@ export default function IntegrationsPage() {
     fetchBots();
     fetchAiGatewayKeys();
 
-    // Check for OAuth return in URL query
+    // Listen for OAuth completion message from popup window
+    const handleOAuthMessage = (event) => {
+      if (event.data?.type === 'OAUTH_SUCCESS') {
+        confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
+        fetchIntegrations();
+      }
+    };
+    window.addEventListener('message', handleOAuthMessage);
+
+    // Check for OAuth return in URL query (if opened in same window)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('google_connected') === 'true') {
       confetti({ particleCount: 60, spread: 80, origin: { y: 0.6 } });
@@ -169,6 +188,8 @@ export default function IntegrationsPage() {
       window.history.replaceState({}, document.title, window.location.pathname);
       fetchIntegrations();
     }
+
+    return () => window.removeEventListener('message', handleOAuthMessage);
   }, []);
 
   // Polling WhatsApp status when modal is active
@@ -256,6 +277,60 @@ export default function IntegrationsPage() {
     }
   ];
 
+  const handleSyncGoogleSheets = async () => {
+    try {
+      setSyncingGoogleSheets(true);
+      setGoogleSheetResult(null);
+      const res = await fetch('/api/integrations/google/sync-sheets', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setGoogleSheetResult(data);
+        confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 } });
+        fetchIntegrations();
+      } else {
+        alert(data.error || 'Failed to sync Google Sheets');
+      }
+    } catch (e) {
+      alert('Sync error: ' + e.message);
+    } finally {
+      setSyncingGoogleSheets(false);
+    }
+  };
+
+  const handleSendEmail = async (e) => {
+    if (e) e.preventDefault();
+    if (!emailTo) return;
+    try {
+      setSendingEmail(true);
+      setEmailSuccessMsg('');
+      const res = await fetch('/api/integrations/google/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: emailTo,
+          subject: emailSubject,
+          message: emailBody,
+          leadName: 'Client'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEmailSuccessMsg(data.message || `Email sent successfully to ${emailTo}!`);
+        confetti({ particleCount: 30, spread: 45, origin: { y: 0.6 } });
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSuccessMsg('');
+        }, 2200);
+      } else {
+        alert(data.error || 'Failed to send email');
+      }
+    } catch (e) {
+      alert('Email error: ' + e.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   // Generate QR Code for live scan
   const handleGenerateQR = async () => {
     if (!selectedBotId) return;
@@ -335,11 +410,19 @@ export default function IntegrationsPage() {
           const height = 650;
           const left = window.screen.width / 2 - width / 2;
           const top = window.screen.height / 2 - height / 2;
-          window.open(
+          const popup = window.open(
             data.authUrl,
             'GoogleSignIn',
             `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
           );
+          if (popup) {
+            const timer = setInterval(() => {
+              if (popup.closed) {
+                clearInterval(timer);
+                fetchIntegrations();
+              }
+            }, 800);
+          }
           return;
         } else {
           setConnectingId(null);
@@ -364,11 +447,19 @@ export default function IntegrationsPage() {
           const height = 700;
           const left = window.screen.width / 2 - width / 2;
           const top = window.screen.height / 2 - height / 2;
-          window.open(
+          const popup = window.open(
             data.authUrl,
             'MetaLogin',
             `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=yes, resizable=yes, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
           );
+          if (popup) {
+            const timer = setInterval(() => {
+              if (popup.closed) {
+                clearInterval(timer);
+                fetchIntegrations();
+              }
+            }, 800);
+          }
           return;
         } else {
           setConnectingId(null);
@@ -643,6 +734,89 @@ export default function IntegrationsPage() {
                     </div>
                   )}
 
+                  {/* Google Live Actions */}
+                  {item.id === 'google' && isConnected && (
+                    <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={handleSyncGoogleSheets}
+                          disabled={syncingGoogleSheets}
+                          style={{
+                            flex: 1,
+                            minWidth: '150px',
+                            padding: '7px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: '#f0fdf4',
+                            color: '#166534',
+                            border: '1px solid #bbf7d0',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: syncingGoogleSheets ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          {syncingGoogleSheets ? (
+                            <>
+                              <RefreshCw size={12} className="animate-spin" />
+                              <span>Syncing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 size={13} color="#22c55e" />
+                              <span>Sync Leads to Sheet</span>
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowEmailModal(true)}
+                          style={{
+                            padding: '7px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: '#eef2ff',
+                            color: '#4338ca',
+                            border: '1px solid #c7d2fe',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px'
+                          }}
+                          title="Send direct email via connected Google"
+                        >
+                          <MessageSquare size={12} />
+                          <span>Send Email</span>
+                        </button>
+                      </div>
+
+                      {googleSheetResult?.spreadsheet_url && (
+                        <a
+                          href={googleSheetResult.spreadsheet_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: '11.5px',
+                            color: 'var(--primary)',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <span>Open Google Sheet ({googleSheetResult.synced_count} Leads)</span>
+                          <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   {/* Bottom Actions */}
                   <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {isConnected ? (
@@ -664,22 +838,6 @@ export default function IntegrationsPage() {
                           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff1f2'; }}
                         >
                           Disconnect
-                        </button>
-
-                        <button
-                          onClick={() => handleConnectClick(item)}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '8px',
-                            backgroundColor: '#f4f4f5',
-                            color: '#18181b',
-                            border: '1px solid #e4e4e7',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Manage Connection
                         </button>
                       </>
                     ) : (
@@ -1734,6 +1892,126 @@ export default function IntegrationsPage() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Google/Gmail Email Dispatch Modal */}
+      {showEmailModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '16px'
+        }}>
+          <div className="animate-fade-in" style={{
+            width: '540px',
+            maxWidth: '100%',
+            backgroundColor: '#ffffff',
+            borderRadius: '20px',
+            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.4)',
+            padding: '28px',
+            border: '1px solid #e4e4e7'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <GoogleLogo />
+                <div>
+                  <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#18181b', margin: 0 }}>
+                    Send Email via Google
+                  </h3>
+                  <span style={{ fontSize: '12px', color: '#71717a' }}>
+                    Connected account: sureshpolai63@gmail.com
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setShowEmailModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#71717a' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {emailSuccessMsg ? (
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '12px',
+                textAlign: 'center',
+                color: '#166534',
+                fontSize: '14px',
+                fontWeight: 700
+              }}>
+                ✓ {emailSuccessMsg}
+              </div>
+            ) : (
+              <form onSubmit={handleSendEmail} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Recipient Email Address
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="client@company.com"
+                    value={emailTo}
+                    onChange={(e) => setEmailTo(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Subject Line
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Email Body / Proposal Message
+                  </label>
+                  <textarea
+                    rows={5}
+                    required
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailModal(false)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 18px', fontSize: '13px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingEmail}
+                    className="btn-primary"
+                    style={{ padding: '8px 22px', fontSize: '13px', fontWeight: 700 }}
+                  >
+                    {sendingEmail ? 'Sending via Gmail...' : 'Send Email Now'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

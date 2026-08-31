@@ -20,10 +20,11 @@ import * as oauthController from './controllers/oauthController.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
 import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -166,11 +167,13 @@ app.post('/api/integrations/instagram/test-connection', authenticateToken, integ
 app.post('/api/integrations/whatsapp/test-connection', authenticateToken, integrationController.testWhatsAppConnection);
 
 // ----------------------------------------------------
-// Production OAuth 2.0 Live Authentication Routes
+// Production OAuth 2.0 Live Authentication & Tool Routes
 // ----------------------------------------------------
 app.get('/api/auth/oauth-status', oauthController.getOAuthConfigStatus);
 app.get('/api/auth/google/url', oauthController.getGoogleAuthUrl);
 app.get('/api/auth/google/callback', oauthController.googleCallback);
+app.post('/api/integrations/google/sync-sheets', oauthController.syncGoogleSheets);
+app.post('/api/integrations/google/send-email', oauthController.sendGoogleEmail);
 app.get('/api/auth/instagram/url', oauthController.getInstagramAuthUrl);
 app.get('/api/auth/instagram/callback', oauthController.instagramCallback);
 

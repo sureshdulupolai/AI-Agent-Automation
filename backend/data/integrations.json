@@ -4,11 +4,11 @@
     "name": "Google",
     "service": "Google Sheets & Drive Automation",
     "description": "Use Google Sheets and other Google services directly inside OmniBot.",
-    "status": "connected",
-    "account": "sureshpolai63@gmail.com",
-    "connected_since": "Aug 31, 2026",
+    "status": "not_configured",
+    "account": null,
+    "connected_since": null,
     "sync_target": "OmniBot Leads CRM",
-    "updated_at": "2026-08-31T10:24:59.022Z"
+    "updated_at": "2026-08-31T10:33:53.022Z"
   },
   {
     "id": "whatsapp",

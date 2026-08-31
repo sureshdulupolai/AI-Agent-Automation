@@ -27,6 +27,8 @@ backend/data/test_wa_session/
 # AI API Keys & Secret Pools (Do NOT commit secrets to GitHub)
 backend/data/gemini_keys.json
 gemini_keys.json
+backend/data/google_tokens.json
+google_tokens.json
 
 # Production Builds
 frontend/dist/

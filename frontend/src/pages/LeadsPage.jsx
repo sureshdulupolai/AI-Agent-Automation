@@ -19,7 +19,8 @@ import {
   Calendar,
   Layers,
   Send,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
 
@@ -56,6 +57,15 @@ export default function LeadsPage({ bots = [] }) {
   const [editEmail, setEditEmail] = useState('');
   const [editReq, setEditReq] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Google Sheets Sync & Direct Email Proposal State
+  const [syncingSheets, setSyncingSheets] = useState(false);
+  const [showLeadEmailModal, setShowLeadEmailModal] = useState(false);
+  const [leadEmailTo, setLeadEmailTo] = useState('');
+  const [leadEmailSubject, setLeadEmailSubject] = useState('');
+  const [leadEmailBody, setLeadEmailBody] = useState('');
+  const [sendingLeadEmail, setSendingLeadEmail] = useState(false);
+  const [leadEmailSuccess, setLeadEmailSuccess] = useState('');
 
   // Contact Creation Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -200,6 +210,59 @@ export default function LeadsPage({ bots = [] }) {
 
   const handleExportCsv = () => {
     window.open('/api/leads/export/csv', '_blank');
+  };
+
+  const handleSyncGoogleSheets = async () => {
+    try {
+      setSyncingSheets(true);
+      const res = await fetch('/api/integrations/google/sync-sheets', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert(`✓ ${data.message}`);
+        if (data.spreadsheet_url) {
+          window.open(data.spreadsheet_url, '_blank');
+        }
+      } else {
+        alert(data.error || 'Failed to sync with Google Sheets');
+      }
+    } catch (e) {
+      alert('Error syncing to Google Sheets: ' + e.message);
+    } finally {
+      setSyncingSheets(false);
+    }
+  };
+
+  const handleSendLeadEmail = async (e) => {
+    if (e) e.preventDefault();
+    if (!leadEmailTo) return;
+    try {
+      setSendingLeadEmail(true);
+      setLeadEmailSuccess('');
+      const res = await fetch('/api/integrations/google/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: leadEmailTo,
+          subject: leadEmailSubject,
+          message: leadEmailBody,
+          leadName: selectedContact?.lead_name || 'Client'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setLeadEmailSuccess(`✓ ${data.message || 'Email sent successfully!'}`);
+        setTimeout(() => {
+          setShowLeadEmailModal(false);
+          setLeadEmailSuccess('');
+        }, 2200);
+      } else {
+        alert(data.error || 'Failed to send email');
+      }
+    } catch (e) {
+      alert('Error sending email: ' + e.message);
+    } finally {
+      setSendingLeadEmail(false);
+    }
   };
 
   const handleSelectAll = (e) => {
@@ -359,6 +422,27 @@ export default function LeadsPage({ bots = [] }) {
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={handleSyncGoogleSheets}
+              disabled={syncingSheets}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                border: '1px solid #bbf7d0',
+                backgroundColor: '#f0fdf4',
+                color: '#166534',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: syncingSheets ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <CheckCircle2 size={14} color="#22c55e" />
+              <span>{syncingSheets ? 'Syncing...' : 'Sync to Google Sheets'}</span>
+            </button>
+
             <button
               onClick={handleExportCsv}
               style={{
@@ -878,7 +962,157 @@ export default function LeadsPage({ bots = [] }) {
                   <span>Direct WhatsApp Message</span>
                 </a>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setLeadEmailTo(selectedContact.lead_email || '');
+                  setLeadEmailSubject(`Regarding Your Project Inquiry - Suresh Polai`);
+                  setLeadEmailBody(
+                    `Hi ${selectedContact.lead_name || 'there'},\n\nThank you for reaching out regarding: "${selectedContact.lead_requirement || 'your project inquiry'}".\n\nI specialize in custom Web Development and AI Chatbot Automation. I would love to connect and discuss how we can build this for you.\n\nBest regards,\nSuresh Polai\nWhatsApp: +91 98206 46838`
+                  );
+                  setShowLeadEmailModal(true);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  backgroundColor: '#eef2ff',
+                  border: '1.5px solid #818cf8',
+                  color: '#4338ca',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Mail size={15} />
+                <span>Send Email / Proposal via Google</span>
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* LEAD EMAIL PROPOSAL MODAL VIA GOOGLE                                      */}
+      {/* ========================================================================= */}
+      {showLeadEmailModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1100,
+          padding: '16px'
+        }}>
+          <div className="animate-fade-in" style={{
+            width: '520px',
+            maxWidth: '100%',
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            padding: '24px',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Mail size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Send Email via Connected Google
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowLeadEmailModal(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {leadEmailSuccess ? (
+              <div style={{
+                padding: '20px',
+                backgroundColor: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '12px',
+                textAlign: 'center',
+                color: '#166534',
+                fontSize: '14px',
+                fontWeight: 700
+              }}>
+                {leadEmailSuccess}
+              </div>
+            ) : (
+              <form onSubmit={handleSendLeadEmail} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Recipient Email
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="client@gmail.com"
+                    value={leadEmailTo}
+                    onChange={(e) => setLeadEmailTo(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={leadEmailSubject}
+                    onChange={(e) => setLeadEmailSubject(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                    Message Content
+                  </label>
+                  <textarea
+                    rows={6}
+                    required
+                    value={leadEmailBody}
+                    onChange={(e) => setLeadEmailBody(e.target.value)}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', lineHeight: 1.5 }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowLeadEmailModal(false)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: '13px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={sendingLeadEmail}
+                    className="btn-primary"
+                    style={{ padding: '8px 20px', fontSize: '13px', fontWeight: 700 }}
+                  >
+                    {sendingLeadEmail ? 'Sending via Gmail...' : 'Send Email Now'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
