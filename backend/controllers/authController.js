@@ -16,8 +16,8 @@ export async function login(req, res) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Compare password (or permit demo password match)
-    const isMatch = password === 'password123' || (await bcrypt.compare(password, user.password_hash || ''));
+    // Secure password verification via bcrypt hash
+    const isMatch = await bcrypt.compare(password, user.password_hash || '');
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }

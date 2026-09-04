@@ -753,6 +753,26 @@ export async function processWhatsAppIncoming({
     });
   }
 
+  // 2.5 Opt-out / Compliance Gate ("Reply STOP to opt-out" - Anti-Ban Compliance)
+  const trimmedUpper = (messageText || '').trim().toUpperCase();
+  if (trimmedUpper === 'STOP' || trimmedUpper === 'UNSUBSCRIBE') {
+    cancelFollowUp(sessionId);
+    const optOutReply = 'You have been successfully unsubscribed from automated WhatsApp messages. Reply START anytime if you wish to re-enable notifications.';
+    await db.addMessage({
+      bot_id: botId,
+      session_id: sessionId,
+      sender: 'bot',
+      content: optOutReply,
+      channel: 'whatsapp'
+    });
+    return {
+      reply: optOutReply,
+      senderPhone,
+      sessionId,
+      optedOut: true
+    };
+  }
+
   // 3. Generate Gemini AI Response
   const { reply } = await generateBotReply({
     bot,
@@ -830,6 +850,49 @@ export async function safeSendMessage(botId, jid, content) {
 export async function sendWhatsAppMessage(botId, phone, text) {
   const remoteJid = phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
   return await safeSendMessage(botId, remoteJid, { text });
+}
+
+/**
+ * Send rich media (PDF brochure, Image with DP, Video, Audio) - 100% Free via Baileys
+ */
+export async function sendWhatsAppMedia(botId, phone, { type = 'image', url, buffer, caption = '', fileName = 'proposal.pdf' }) {
+  const remoteJid = phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+  let messagePayload = null;
+
+  if (type === 'image') {
+    messagePayload = { image: buffer || { url }, caption };
+  } else if (type === 'document' || type === 'pdf') {
+    messagePayload = { document: buffer || { url }, mimetype: 'application/pdf', fileName, caption };
+  } else if (type === 'video') {
+    messagePayload = { video: buffer || { url }, caption };
+  } else if (type === 'audio') {
+    messagePayload = { audio: buffer || { url }, mimetype: 'audio/mp4', ptt: true };
+  }
+
+  if (!messagePayload) return false;
+  return await safeSendMessage(botId, remoteJid, messagePayload);
+}
+
+/**
+ * Send Interactive Quick Actions / Buttons
+ */
+export async function sendWhatsAppButtons(botId, phone, { text, footer = 'OmniBot Automation', buttons = [] }) {
+  const remoteJid = phone.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+
+  const formattedButtons = buttons.map((b, idx) => ({
+    buttonId: b.id || `btn_${idx + 1}`,
+    buttonText: { displayText: b.text || b.title },
+    type: 1
+  }));
+
+  const buttonMessage = {
+    text,
+    footer,
+    buttons: formattedButtons,
+    headerType: 1
+  };
+
+  return await safeSendMessage(botId, remoteJid, buttonMessage);
 }
 
 /**

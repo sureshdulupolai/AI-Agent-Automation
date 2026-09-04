@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/layout/Sidebar';
 import DashboardPage from './pages/DashboardPage';
@@ -30,10 +30,22 @@ import { AuthProvider } from './context/AuthContext';
 
 export default function App() {
   const location = useLocation();
+  const mainContentRef = useRef(null);
   const [bots, setBots] = useState([]);
   const [embedModalBot, setEmbedModalBot] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+
+  // Always reset scroll to absolute top on every route change
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      mainContentRef.current.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
 
   const handleOpenCopilot = () => {
     setIsSidebarCollapsed(true);
@@ -85,14 +97,17 @@ export default function App() {
         )}
 
         {/* Main Scrollable Viewport with Real React Router Navigation */}
-        <main style={{
-          flex: 1,
-          height: '100vh',
-          overflowY: location.pathname.startsWith('/inbox') ? 'hidden' : 'auto',
-          overflowX: 'hidden',
-          backgroundColor: 'var(--bg-page)',
-          position: 'relative'
-        }}>
+        <main
+          ref={mainContentRef}
+          style={{
+            flex: 1,
+            height: '100vh',
+            overflowY: location.pathname.startsWith('/inbox') ? 'hidden' : 'auto',
+            overflowX: 'hidden',
+            backgroundColor: 'var(--bg-page)',
+            position: 'relative'
+          }}
+        >
           <Routes>
             {/* Dashboard / AI Bots Studio */}
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -166,7 +181,11 @@ export default function App() {
         )}
 
         {/* Global Floating AI Chat Widget Bubble (Bottom-Right) */}
-        <NovaByteFloatingBot botId={bots[0]?.id || 'bot-ec0db899'} />
+        <NovaByteFloatingBot 
+          botId={bots[0]?.id || 'bot-ec0db899'} 
+          bot={bots[0]} 
+          botName={bots[0]?.bot_name} 
+        />
       </div>
     </AuthProvider>
   );

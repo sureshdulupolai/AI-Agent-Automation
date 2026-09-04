@@ -14,7 +14,7 @@
     {
       "id": "bot-ec0db899",
       "created_at": "2026-08-30T16:02:52.879Z",
-      "updated_at": "2026-08-31T17:28:20.563Z",
+      "updated_at": "2026-09-04T17:49:53.652Z",
       "is_active": true,
       "allowed_domains": [
         "*"
@@ -79,6 +79,20 @@
     }
   ],
   "leads": [
+    {
+      "id": "lead-d9d7683e",
+      "status": "new",
+      "created_at": "2026-09-04T17:51:04.565Z",
+      "updated_at": "2026-09-04T17:51:04.565Z",
+      "bot_id": "bot-apex-agency",
+      "user_id": "usr-demo-1",
+      "lead_name": "WA User +919876543210",
+      "lead_phone": "+919876543210",
+      "lead_email": null,
+      "lead_requirement": "STOP",
+      "channel": "whatsapp",
+      "session_id": "wa-919876543210"
+    },
     {
       "id": "lead-51cb1d42",
       "status": "new",
@@ -633,6 +647,24 @@
       "sender": "bot",
       "content": "Thank you for reaching out! We build high-performing modern websites and intelligent AI chatbots tailored to your business needs.\n\nCould you share a little bit about your project goals or timeline? 🚀",
       "channel": "whatsapp"
+    },
+    {
+      "id": "msg-bfdd8800",
+      "created_at": "2026-09-04T17:51:04.559Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "wa-919876543210",
+      "sender": "user",
+      "content": "STOP",
+      "channel": "whatsapp"
+    },
+    {
+      "id": "msg-c6f444a1",
+      "created_at": "2026-09-04T17:51:04.571Z",
+      "bot_id": "bot-apex-agency",
+      "session_id": "wa-919876543210",
+      "sender": "bot",
+      "content": "You have been successfully unsubscribed from automated WhatsApp messages. Reply START anytime if you wish to re-enable notifications.",
+      "channel": "whatsapp"
     }
   ],
   "whatsapp_sessions": [],
@@ -645,6 +677,30 @@
       "members_count": 0,
       "created_at": "2026-08-31T08:34:32.022Z",
       "updated_at": "2026-08-31T08:34:32.022Z"
+    }
+  ],
+  "wallets": [
+    {
+      "id": "wal-b832c471",
+      "user_id": "usr-demo-1",
+      "balance": 750,
+      "currency": "INR",
+      "cost_per_sms": 0.08,
+      "cost_per_marketing": 0.11,
+      "is_unlimited": true,
+      "total_messages_sent": 0,
+      "updated_at": "2026-09-04T17:50:48.325Z"
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-3ad5fcf5",
+      "user_id": "usr-demo-1",
+      "type": "credit",
+      "amount": 250,
+      "balance_after": 750,
+      "description": "Wallet Top-Up (INSTANT_CREDIT)",
+      "created_at": "2026-09-04T17:50:48.325Z"
     }
   ]
 }

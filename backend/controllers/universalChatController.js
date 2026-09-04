@@ -37,19 +37,16 @@ function saveProfiles(data) {
 }
 
 /**
- * GET /api/universal/profile/:botId
+ * Internal safe profile retriever/synthesizer
  */
-export async function getBusinessProfile(req, res) {
+export async function getProfileForBot(botId) {
   try {
-    const { botId } = req.params;
     const profiles = readProfiles();
-    
-    if (profiles[botId]) {
-      return res.json({ success: true, profile: profiles[botId] });
+    if (botId && profiles[botId]) {
+      return profiles[botId];
     }
 
-    // Default template synthesized from bot record
-    const bot = await db.getBotById(botId);
+    const bot = botId ? await db.getBotById(botId).catch(() => null) : null;
     const defaultProfile = {
       business_name: bot?.bot_name || 'NovaByte AI Studio',
       industry_category: bot?.industry || 'Full-Stack Web & AI Automation',
@@ -87,9 +84,29 @@ export async function getBusinessProfile(req, res) {
       }
     };
 
-    profiles[botId] = defaultProfile;
-    saveProfiles(profiles);
-    return res.json({ success: true, profile: defaultProfile });
+    if (botId) {
+      profiles[botId] = defaultProfile;
+      saveProfiles(profiles);
+    }
+    return defaultProfile;
+  } catch (err) {
+    return {
+      business_name: 'NovaByte AI Studio',
+      industry_category: 'Full-Stack Web & AI Automation',
+      brand_voice: 'Warm, Consultative, and Authoritative Senior Specialist',
+      core_offerings: []
+    };
+  }
+}
+
+/**
+ * GET /api/universal/profile/:botId
+ */
+export async function getBusinessProfile(req, res) {
+  try {
+    const { botId } = req.params;
+    const profile = await getProfileForBot(botId);
+    return res.json({ success: true, profile });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -149,13 +166,7 @@ export async function autoGenerateProfile(req, res) {
 export async function handleUniversalInboundChat(req, res) {
   try {
     const { botId, userMessage, history, media, senderPhone, senderName, channel = 'simulator', apiKeyOverride } = req.body;
-    const profiles = readProfiles();
-    let profile = profiles[botId];
-
-    if (!profile) {
-      const defaultRes = await getBusinessProfile({ params: { botId } }, { json: (d) => d });
-      profile = defaultRes?.profile || {};
-    }
+    const profile = await getProfileForBot(botId);
 
     const result = await processUniversalChat({
       businessProfile: profile,

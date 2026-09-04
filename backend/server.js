@@ -26,6 +26,7 @@ import * as copilotController from './controllers/copilotController.js';
 import * as safeCampaignController from './controllers/safeCampaignController.js';
 import * as leadRouterController from './controllers/leadRouterController.js';
 import * as dynamicChatController from './controllers/dynamicChatController.js';
+import * as walletController from './controllers/walletController.js';
 import * as whatsappBaileys from './services/whatsappBaileys.js';
 import { initAllWhatsAppSessions } from './services/baileysService.js';
 import { restoreFollowUpsOnStartup } from './services/followUpScheduler.js';
@@ -65,23 +66,25 @@ app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 // Serve static assets (including widget.js and test page)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Optional Auth Middleware (Allows demo usage if token not provided)
+// Hardened Authentication Middleware (Guards against invalid/forged tokens)
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    // Fallback to default demo user context
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(401).json({ success: false, error: 'Authentication required: Missing Bearer token' });
+    }
+    // Safe local demo context in development
     req.user = { userId: 'usr-demo-1', email: 'demo@omnibot.io', plan: 'pro' };
     return next();
   }
 
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      req.user = { userId: 'usr-demo-1', email: 'demo@omnibot.io', plan: 'pro' };
-    } else {
-      req.user = user;
+      return res.status(403).json({ success: false, error: 'Forbidden: Invalid or expired security token' });
     }
+    req.user = user;
     next();
   });
 }
@@ -274,6 +277,7 @@ app.post('/api/universal/chat', universalChatController.handleUniversalInboundCh
 // ----------------------------------------------------
 app.get('/api/deals', dealController.listDeals);
 app.post('/api/deals', dealController.createDeal);
+app.patch('/api/deals/:id', dealController.updateDeal);
 app.patch('/api/deals/:id/stage', dealController.updateStage);
 app.delete('/api/deals/:id', dealController.deleteDeal);
 
@@ -320,6 +324,14 @@ app.delete('/api/whatsapp/multi-sessions/:botId', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ----------------------------------------------------
+// Free & Unlimited Wallet & Per-Message Metering Routes
+// ----------------------------------------------------
+app.get('/api/wallet', authenticateToken, walletController.getWallet);
+app.post('/api/wallet/topup', authenticateToken, walletController.topUpWallet);
+app.get('/api/wallet/transactions', authenticateToken, walletController.getTransactions);
+app.post('/api/wallet/settings', authenticateToken, walletController.updateWalletSettings);
 
 // ----------------------------------------------------
 // Autonomous Operations Copilot & Action Agent Routes

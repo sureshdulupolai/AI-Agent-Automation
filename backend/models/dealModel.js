@@ -90,6 +90,19 @@ export function updateDealStage(dealId, newStage) {
 }
 
 /**
+ * Update any deal properties
+ */
+export function updateDeal(dealId, updates) {
+  const deals = readDeals();
+  const deal = deals.find(d => d.id === dealId);
+  if (!deal) return null;
+
+  Object.assign(deal, updates, { updated_at: new Date().toISOString() });
+  saveDeals(deals);
+  return deal;
+}
+
+/**
  * Delete deal
  */
 export function deleteDeal(dealId) {

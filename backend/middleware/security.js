@@ -65,10 +65,25 @@ export function sanitizePayloads(req, res, next) {
   next();
 }
 
+function sanitizeString(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/javascript\s*:/gi, 'blocked:');
+}
+
 function sanitizeObject(obj) {
   for (const key of Object.keys(obj)) {
+    // Prevent Prototype Pollution
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      delete obj[key];
+      continue;
+    }
+    // Prevent NoSQL operator injection
     if (key.startsWith('$') || key.includes('.')) {
       delete obj[key];
+    } else if (typeof obj[key] === 'string') {
+      obj[key] = sanitizeString(obj[key]);
     } else if (typeof obj[key] === 'object' && obj[key] !== null) {
       sanitizeObject(obj[key]);
     }

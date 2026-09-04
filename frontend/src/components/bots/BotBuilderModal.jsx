@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Bot, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { getInitialColor, getInitialLetter } from '../../utils/avatarUtils';
 
 const COLOR_PRESETS = [
   '#4f46e5', // Indigo
@@ -25,8 +24,10 @@ export default function BotBuilderModal({ onClose, onCreated }) {
 
   const [loading, setLoading] = useState(false);
 
-  const botInitial = getInitialLetter(formData.bot_name || 'Bot');
-  const botInitialBg = formData.primary_color || getInitialColor(formData.bot_name || 'Bot');
+  // Normalize color for dynamic styling
+  const activeColor = (formData.primary_color && formData.primary_color.trim())
+    ? (formData.primary_color.trim().startsWith('#') ? formData.primary_color.trim() : `#${formData.primary_color.trim()}`)
+    : '#4f46e5';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +38,10 @@ export default function BotBuilderModal({ onClose, onCreated }) {
       const res = await fetch('/api/bots', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          primary_color: activeColor
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create bot');
@@ -82,19 +86,22 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         border: '1px solid var(--border-subtle)'
       }}>
-        {/* Header */}
+        {/* Header - Dynamically updates logo background with selected brand color */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '38px',
-              height: '38px',
+              width: '40px',
+              height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #4f46e5, #0891b2)',
+              background: `linear-gradient(135deg, ${activeColor}, #0891b2)`,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: `0 4px 14px ${activeColor}50`,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              flexShrink: 0
             }}>
-              <Bot size={20} color="#ffffff" />
+              <Bot size={22} color="#ffffff" />
             </div>
             <div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Create New AI Chatbot</h3>
@@ -114,58 +121,114 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Bot Name & Initial Badge Preview */}
+          {/* Bot Name & Dynamic Brand Color Selector */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label">Chatbot Name *</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  backgroundColor: botInitialBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: '15px',
-                  color: '#ffffff',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-                  flexShrink: 0
-                }}>
-                  {botInitial}
-                </div>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Zenith Support"
-                  value={formData.bot_name}
-                  onChange={(e) => setFormData({ ...formData, bot_name: e.target.value })}
-                  required
-                  style={{ flex: 1 }}
-                />
-              </div>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. Zenith Support"
+                value={formData.bot_name}
+                onChange={(e) => setFormData({ ...formData, bot_name: e.target.value })}
+                required
+                style={{ width: '100%' }}
+              />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Brand Color</label>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
-                {COLOR_PRESETS.map((color) => (
-                  <button
-                    type="button"
-                    key={color}
-                    onClick={() => setFormData({ ...formData, primary_color: color })}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>Brand Color</label>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                  {activeColor}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Preset Circles */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {COLOR_PRESETS.map((color) => {
+                    const isSelected = activeColor.toLowerCase() === color.toLowerCase();
+                    return (
+                      <button
+                        type="button"
+                        key={color}
+                        onClick={() => setFormData({ ...formData, primary_color: color })}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          backgroundColor: color,
+                          border: isSelected ? '2.5px solid #0f172a' : '2px solid transparent',
+                          transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? `0 2px 8px ${color}80` : '0 1px 3px rgba(0,0,0,0.15)',
+                          transition: 'all 0.15s ease',
+                          padding: 0
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Custom Color Picker & Hex Input */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '2px 8px',
+                  gap: '6px',
+                  height: '30px',
+                  boxSizing: 'border-box'
+                }}>
+                  <label style={{ position: 'relative', width: '18px', height: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', margin: 0 }}>
+                    <input
+                      type="color"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(activeColor) ? activeColor : '#4f46e5'}
+                      onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
+                      style={{
+                        opacity: 0,
+                        position: 'absolute',
+                        width: '100%',
+                        height: '100%',
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '5px',
+                      backgroundColor: activeColor,
+                      border: '1px solid rgba(0,0,0,0.15)',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                    }} />
+                  </label>
+                  <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>#</span>
+                  <input
+                    type="text"
+                    placeholder="4F46E5"
+                    maxLength={6}
+                    value={activeColor.replace(/^#/, '')}
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/[^0-9a-fA-F]/g, '');
+                      setFormData({ ...formData, primary_color: clean ? `#${clean}` : '' });
+                    }}
                     style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '50%',
-                      backgroundColor: color,
-                      border: formData.primary_color === color ? '2.5px solid var(--text-primary)' : '2px solid transparent',
-                      cursor: 'pointer',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                      width: '58px',
+                      border: 'none',
+                      background: 'transparent',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      outline: 'none',
+                      padding: 0,
+                      textTransform: 'uppercase'
                     }}
                   />
-                ))}
+                </div>
               </div>
             </div>
           </div>
@@ -181,16 +244,11 @@ export default function BotBuilderModal({ onClose, onCreated }) {
             />
           </div>
 
-          {/* Business Knowledge Base (RAG Training) */}
+          {/* Business Knowledge Base (RAG Training) - Gemini Active removed */}
           <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="form-label">
-                Knowledge Base (FAQs, Services, Pricing)
-              </label>
-              <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>
-                Gemini Active
-              </span>
-            </div>
+            <label className="form-label">
+              Knowledge Base (FAQs, Services, Pricing)
+            </label>
             <textarea
               className="form-textarea"
               style={{ minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}

@@ -77,7 +77,7 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
   const [sandboxMessages, setSandboxMessages] = useState([]);
   const [sandboxInput, setSandboxInput] = useState('');
   const [sandboxTyping, setSandboxTyping] = useState(false);
-  const sandboxEndRef = useRef(null);
+  const sandboxBoxRef = useRef(null);
 
   const fetchBot = async () => {
     if (!activeBotId) return;
@@ -124,9 +124,10 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
     fetchBot();
   }, [activeBotId]);
 
+  // Scroll internal sandbox chat only (never scroll outer page/window)
   useEffect(() => {
-    if (sandboxEndRef.current) {
-      sandboxEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (sandboxBoxRef.current) {
+      sandboxBoxRef.current.scrollTop = sandboxBoxRef.current.scrollHeight;
     }
   }, [sandboxMessages, sandboxTyping]);
 
@@ -1007,15 +1008,18 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
           </div>
 
           {/* Messages Body */}
-          <div style={{
-            flex: 1,
-            backgroundColor: '#f8fafc',
-            padding: '16px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
+          <div
+            ref={sandboxBoxRef}
+            style={{
+              flex: 1,
+              backgroundColor: '#f8fafc',
+              padding: '16px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}
+          >
             {sandboxMessages.map((m, idx) => {
               const isUser = m.sender === 'user';
               return (
@@ -1044,7 +1048,6 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
                 </div>
               </div>
             )}
-            <div ref={sandboxEndRef} />
           </div>
 
           {/* Chat Input */}

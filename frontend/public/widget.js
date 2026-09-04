@@ -23,6 +23,20 @@
   const urlObj = new URL(scriptUrl, window.location.href);
   const backendBaseUrl = currentScript.getAttribute('data-api-url') || urlObj.origin;
 
+  // Dynamic client-side color override (Zero-DB Load)
+  let rawOverrideColor = (currentScript && currentScript.getAttribute('data-color')) ||
+                         urlObj.searchParams.get('color') ||
+                         (new URLSearchParams(window.location.search)).get('bot_color') ||
+                         (new URLSearchParams(window.location.search)).get('color') ||
+                         null;
+
+  if (rawOverrideColor) {
+    rawOverrideColor = rawOverrideColor.trim();
+    if (!rawOverrideColor.startsWith('#')) {
+      rawOverrideColor = '#' + rawOverrideColor;
+    }
+  }
+
   if (!botId) {
     console.warn('⚠️ OmniBot Widget: "data-bot-id" attribute is required.');
     return;
@@ -64,7 +78,7 @@
     id: botId,
     bot_name: 'AI Support Assistant',
     bot_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    primary_color: '#4f46e5',
+    primary_color: rawOverrideColor || '#4f46e5',
     welcome_message: 'Hello! 👋 How can I help you today?',
     placeholder_text: 'Type a message...',
     quick_prompts: ['What services do you offer?', 'Pricing details', 'Talk to an agent'],
@@ -709,6 +723,9 @@
       if (res.ok) {
         const data = await res.json();
         botConfig = { ...botConfig, ...data };
+        if (rawOverrideColor) {
+          botConfig.primary_color = rawOverrideColor;
+        }
 
         // Domain Security Restriction
         if (botConfig.website_url && botConfig.website_url.trim()) {

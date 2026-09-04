@@ -136,14 +136,31 @@ You must provide your response in valid JSON with exactly this structure:
 }
 `.trim();
 
-  // Format History
+  // Format History according to Gemini requirements:
+  // 1. First turn MUST be role 'user'
+  // 2. Roles must strictly alternate: 'user', 'model', 'user', 'model'
   const formattedContents = [];
   const recentHistory = (history || []).slice(-6);
+  let expectedRole = 'user';
+
   for (const msg of recentHistory) {
-    formattedContents.push({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.content || ' ' }]
-    });
+    const role = (msg.sender === 'user' || msg.role === 'user') ? 'user' : 'model';
+    // Skip leading model messages
+    if (formattedContents.length === 0 && role === 'model') {
+      continue;
+    }
+    if (role === expectedRole) {
+      formattedContents.push({
+        role,
+        parts: [{ text: msg.content || msg.text || ' ' }]
+      });
+      expectedRole = role === 'user' ? 'model' : 'user';
+    } else if (formattedContents.length > 0) {
+      const last = formattedContents[formattedContents.length - 1];
+      if (last.parts && last.parts[0]) {
+        last.parts[0].text += '\n' + (msg.content || msg.text || '');
+      }
+    }
   }
 
   const userParts = [];
@@ -156,10 +173,20 @@ You must provide your response in valid JSON with exactly this structure:
     text: userMessage || 'Hello!'
   });
 
-  formattedContents.push({
-    role: 'user',
-    parts: userParts
-  });
+  if (expectedRole === 'user' || formattedContents.length === 0) {
+    formattedContents.push({
+      role: 'user',
+      parts: userParts
+    });
+  } else {
+    // If last turn was user, append current text to it
+    const last = formattedContents[formattedContents.length - 1];
+    if (last.parts) {
+      last.parts.push(...userParts);
+    } else {
+      last.parts = userParts;
+    }
+  }
 
   const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
 
@@ -371,7 +398,14 @@ function generateUniversalFailSafe({ businessProfile, userMessage, startTime }) 
   let temp = '⚡ Warm';
   let intent = 'General Inquiry';
 
-  if (lower.includes('price') || lower.includes('cost') || lower.includes('quote') || lower.includes('how much')) {
+  if (lower.includes('service') || lower.includes('offer') || lower.includes('provide') || lower.includes('what do you do') || lower.includes('package') || lower.includes('feature')) {
+    const offerings = businessProfile.core_offerings || [];
+    const list = offerings.map(o => `• *${o.name}*: ${o.description || 'Specialized service'} (${o.price_range || 'Custom pricing'}, Turnaround: ${o.turnaround || 'Standard delivery'})`).join('\n');
+    reply = `We offer premier ${category} solutions designed to scale your business:\n\n${list || '• Custom Web Development\n• 24/7 Autonomous AI Chatbots'}\n\nWhich of these would you like to explore further? 😊`;
+    score = 65;
+    temp = '⚡ Warm';
+    intent = 'Inquire Services';
+  } else if (lower.includes('price') || lower.includes('cost') || lower.includes('quote') || lower.includes('how much') || lower.includes('rate')) {
     const offerings = businessProfile.core_offerings || [];
     const list = offerings.map(o => `• *${o.name}*: ${o.price_range || 'Custom quote'} (${o.turnaround || 'Standard delivery'})`).join('\n');
     reply = `Here is an overview of our ${category} packages:\n\n${list || 'Please share your specific scope for a tailored quote!'}\n\nCould you share a little bit about your requirements so I can give you an exact estimate? 😊`;

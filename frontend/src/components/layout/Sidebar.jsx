@@ -298,9 +298,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
                     padding: '8px 10px',
                     borderRadius: '8px',
                     cursor: 'pointer',
-                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
-                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
-                    fontWeight: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 700 : 500,
+                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments') || location.pathname.startsWith('/pipeline') || location.pathname.startsWith('/deals')) ? 'var(--primary)' : 'var(--text-secondary)',
+                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments') || location.pathname.startsWith('/pipeline') || location.pathname.startsWith('/deals')) ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                    fontWeight: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments') || location.pathname.startsWith('/pipeline') || location.pathname.startsWith('/deals')) ? 700 : 500,
                     fontSize: '13px'
                   }}
                 >
@@ -321,8 +321,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
                     padding: '10px 0',
                     borderRadius: '8px',
                     border: 'none',
-                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
-                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments')) ? 'var(--primary)' : 'var(--text-secondary)',
+                    backgroundColor: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments') || location.pathname.startsWith('/pipeline') || location.pathname.startsWith('/deals')) ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                    color: (location.pathname.startsWith('/contacts') || location.pathname.startsWith('/leads') || location.pathname.startsWith('/lists-and-segments') || location.pathname.startsWith('/pipeline') || location.pathname.startsWith('/deals')) ? 'var(--primary)' : 'var(--text-secondary)',
                     cursor: 'pointer',
                     width: '100%'
                   }}

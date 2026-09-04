@@ -54,14 +54,14 @@
     "contact_phone": "+91 98765 12340",
     "contact_email": "dr.anita@apexcare.com",
     "value": 8500,
-    "stage": "proposal_sent",
+    "stage": "new_deal",
     "lead_score": 88,
     "lead_temperature": "🔥 Hot",
     "source": "website_widget",
     "notes": "Sent project scope proposal. Awaiting confirmation deposit.",
     "assigned_to": "Senior Solutions Lead",
     "created_at": "2026-08-31T13:23:14.771Z",
-    "updated_at": "2026-08-31T13:23:14.771Z"
+    "updated_at": "2026-09-04T18:40:30.943Z"
   },
   {
     "id": "deal-a1c26acf",

@@ -211,7 +211,10 @@ function readDb() {
   try {
     initDbFile();
     const raw = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    if (!data.wallets) data.wallets = [];
+    if (!data.transactions) data.transactions = [];
+    return data;
   } catch (err) {
     console.error('Error reading local db:', err);
     return initialSeedData;
@@ -551,6 +554,95 @@ export const db = {
     local.users.push(newUser);
     writeDb(local);
     return newUser;
+  },
+
+  // WALLET & PER-MESSAGE BILLING (Supports 100% Free Unlimited Mode and 0.08 - 0.11 INR metering)
+  async getWalletByUserId(userId) {
+    const local = readDb();
+    let wallet = (local.wallets || []).find(w => w.user_id === userId);
+    if (!wallet) {
+      wallet = {
+        id: `wal-${uuidv4().substring(0, 8)}`,
+        user_id: userId,
+        balance: 500.00,
+        currency: 'INR',
+        cost_per_sms: 0.08,
+        cost_per_marketing: 0.11,
+        is_unlimited: true,
+        total_messages_sent: 0,
+        updated_at: new Date().toISOString()
+      };
+      if (!local.wallets) local.wallets = [];
+      local.wallets.push(wallet);
+      writeDb(local);
+    }
+    return wallet;
+  },
+
+  async getTransactions(userId) {
+    const local = readDb();
+    return (local.transactions || []).filter(t => t.user_id === userId).reverse();
+  },
+
+  async addWalletCredit(userId, amount, description = 'Recharge') {
+    const local = readDb();
+    let wallet = (local.wallets || []).find(w => w.user_id === userId);
+    if (!wallet) {
+      wallet = await this.getWalletByUserId(userId);
+    }
+    wallet.balance = Number((Number(wallet.balance) + Number(amount)).toFixed(2));
+    wallet.updated_at = new Date().toISOString();
+
+    const tx = {
+      id: `tx-${uuidv4().substring(0, 8)}`,
+      user_id: userId,
+      type: 'credit',
+      amount: Number(amount),
+      balance_after: wallet.balance,
+      description,
+      created_at: new Date().toISOString()
+    };
+    if (!local.transactions) local.transactions = [];
+    local.transactions.push(tx);
+    writeDb(local);
+    return { wallet, transaction: tx };
+  },
+
+  async deductMessageCredit(userId, messageCount = 1, type = 'utility') {
+    const local = readDb();
+    let wallet = (local.wallets || []).find(w => w.user_id === userId);
+    if (!wallet) {
+      wallet = await this.getWalletByUserId(userId);
+    }
+
+    const rate = type === 'marketing' ? (wallet.cost_per_marketing || 0.11) : (wallet.cost_per_sms || 0.08);
+    const totalCost = Number((rate * messageCount).toFixed(2));
+
+    if (wallet.balance < totalCost && !wallet.is_unlimited) {
+      return { success: false, error: 'Insufficient wallet balance', balance: wallet.balance, required: totalCost };
+    }
+
+    if (!wallet.is_unlimited) {
+      wallet.balance = Math.max(0, Number((wallet.balance - totalCost).toFixed(2)));
+    }
+    wallet.total_messages_sent = (wallet.total_messages_sent || 0) + messageCount;
+    wallet.updated_at = new Date().toISOString();
+
+    const tx = {
+      id: `tx-${uuidv4().substring(0, 8)}`,
+      user_id: userId,
+      type: 'debit',
+      amount: totalCost,
+      message_count: messageCount,
+      rate_per_message: rate,
+      balance_after: wallet.balance,
+      description: `Dispatched ${messageCount} WhatsApp ${type} message(s)`,
+      created_at: new Date().toISOString()
+    };
+    if (!local.transactions) local.transactions = [];
+    local.transactions.push(tx);
+    writeDb(local);
+    return { success: true, wallet, transaction: tx };
   }
 };
 

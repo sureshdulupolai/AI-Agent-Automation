@@ -18,11 +18,47 @@ export async function verifyWebsiteWidget(req, res) {
 
   // Normalize protocol
   if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-    if (targetUrl.startsWith('localhost') || targetUrl.startsWith('127.0.0.1')) {
-      targetUrl = `http://${targetUrl}`;
-    } else {
-      targetUrl = `https://${targetUrl}`;
+    targetUrl = `https://${targetUrl}`;
+  }
+
+  // SSRF Protection: Block private IP ranges, loopbacks, and cloud metadata endpoints
+  try {
+    const parsed = new URL(targetUrl);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return res.status(400).json({
+        success: false,
+        status: 'security_violation',
+        message: 'Only HTTP and HTTPS protocols are permitted.'
+      });
     }
+
+    const host = parsed.hostname.toLowerCase();
+    const isPrivate = 
+      host === 'localhost' || 
+      host === '127.0.0.1' || 
+      host === '::1' || 
+      host === '0.0.0.0' ||
+      host.endsWith('.local') || 
+      host.endsWith('.internal') ||
+      host === '169.254.169.254' || 
+      host.startsWith('169.254.') ||
+      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host);
+
+    if (isPrivate && process.env.ALLOW_LOCAL_PROBE !== 'true') {
+      return res.status(403).json({
+        success: false,
+        status: 'security_violation',
+        message: 'Security Alert: Scanning loopback, internal network, or cloud metadata endpoints is prohibited.'
+      });
+    }
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      status: 'invalid_url',
+      message: 'Invalid URL format provided.'
+    });
   }
 
   try {

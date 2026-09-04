@@ -10,12 +10,14 @@ export function errorHandler(err, req, res, next) {
     console.error(err.stack);
   }
 
+  const showStack = process.env.SHOW_DEBUG_STACK === 'true';
+
   res.status(statusCode).json({
     success: false,
     error: err.message || 'Internal Server Error',
     code: err.code || 'INTERNAL_ERROR',
     timestamp: new Date().toISOString(),
-    ...(isProduction ? {} : { stack: err.stack })
+    ...(showStack ? { stack: err.stack } : {})
   });
 }
 

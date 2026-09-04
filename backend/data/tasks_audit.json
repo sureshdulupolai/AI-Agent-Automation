@@ -1,5 +1,67 @@
 [
   {
+    "id": "task-f16875d1",
+    "type": "qualification",
+    "title": "Lead Qualified & Captured via WhatsApp: undefined",
+    "channel": "whatsapp",
+    "recipient": "+919876543210",
+    "status": "completed",
+    "metadata": {
+      "bot_id": "bot-apex-agency"
+    },
+    "error": null,
+    "created_at": "2026-09-04T17:51:04.570Z",
+    "timestamp": 1788544264570
+  },
+  {
+    "id": "task-628dedd4",
+    "type": "follow_up",
+    "title": "Follow-up Queued - Channel Disconnected (Step 1)",
+    "channel": "whatsapp",
+    "recipient": "+918454873214 (SUBHANKAR)",
+    "status": "failed",
+    "metadata": {
+      "step": 1,
+      "message_preview": "Hey! 👋 Just wanted to check in and see how everything is going. Feel free to reach out anytime if you need help with your project!",
+      "session_id": "wa-918454873214"
+    },
+    "error": "Cannot read properties of undefined (reading 'id')",
+    "created_at": "2026-09-04T17:49:52.825Z",
+    "timestamp": 1788544192825
+  },
+  {
+    "id": "task-8215a82a",
+    "type": "follow_up",
+    "title": "Follow-up Queued - Channel Disconnected (Step 1)",
+    "channel": "whatsapp",
+    "recipient": "+919999900001 (Customer)",
+    "status": "failed",
+    "metadata": {
+      "step": 1,
+      "message_preview": "Hey! 👋 Just wanted to check in and see how everything is going. Feel free to reach out anytime if you need help with your project!",
+      "session_id": "wa-919999900001"
+    },
+    "error": "Cannot read properties of undefined (reading 'id')",
+    "created_at": "2026-09-04T17:49:52.819Z",
+    "timestamp": 1788544192819
+  },
+  {
+    "id": "task-7049ed5d",
+    "type": "follow_up",
+    "title": "Follow-up Queued - Channel Disconnected (Step 1)",
+    "channel": "whatsapp",
+    "recipient": "+919154958908 (WhatsApp Customer)",
+    "status": "failed",
+    "metadata": {
+      "step": 1,
+      "message_preview": "Hey! 👋 Just wanted to check in and see how everything is going. Feel free to reach out anytime if you need help with your project!",
+      "session_id": "wa-919154958908"
+    },
+    "error": "Cannot read properties of undefined (reading 'id')",
+    "created_at": "2026-09-04T17:49:52.811Z",
+    "timestamp": 1788544192811
+  },
+  {
     "id": "task-818293ad",
     "type": "qualification",
     "title": "Lead Qualified & Captured via WhatsApp: undefined",

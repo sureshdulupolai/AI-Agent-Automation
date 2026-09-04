@@ -222,7 +222,8 @@ export default function WebsiteChannelPage({ bots = [] }) {
   const scriptUrl = `${origin}/widget.js`;
 
   const linkTag = `<link rel="stylesheet" href="https://chatzy-kb-store.s3.amazonaws.com/icons/5ab07987-b5db-477c-82ff-1287e0883acb"/>`;
-  const scriptTag = `<script src="${scriptUrl}" id="${selectedBot?.id || 'bot-apex-agency'}" class="chatzy_widget_script" defer></script>`;
+  const botColor = selectedBot?.primary_color || '#4f46e5';
+  const scriptTag = `<script src="${scriptUrl}?color=${encodeURIComponent(botColor)}" id="${selectedBot?.id || 'bot-apex-agency'}" data-bot-id="${selectedBot?.id || 'bot-apex-agency'}" data-color="${botColor}" class="chatzy_widget_script" defer></script>`;
 
   const embedCodeSnippet = `${linkTag}\n${scriptTag}`;
 

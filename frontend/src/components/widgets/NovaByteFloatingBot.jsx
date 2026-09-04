@@ -20,16 +20,66 @@ import {
 } from 'lucide-react';
 import { formatWhatsAppText } from '../../utils/formatWhatsAppText';
 
-export default function NovaByteFloatingBot({ botId = 'bot-ec0db899' }) {
+export default function NovaByteFloatingBot({ botId = 'bot-ec0db899', bot, botName }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [showTeaser, setShowTeaser] = useState(true);
+  const [activeBotData, setActiveBotData] = useState(bot || null);
+
+  useEffect(() => {
+    if (bot) {
+      setActiveBotData(bot);
+    } else if (botId) {
+      fetch(`/api/bots/${botId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.bot) setActiveBotData(data.bot);
+        })
+        .catch(err => console.error('Failed to load bot for widget:', err));
+    }
+  }, [bot, botId]);
+
+  const currentBotName = botName || activeBotData?.bot_name || 'AI Assistant';
+
+  // Teaser visibility states: auto-pops 1 time on first session visit for 3s, then only on hover
+  const [autoTeaserActive, setAutoTeaserActive] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  useEffect(() => {
+    // Check if teaser was already shown once in this session
+    const hasSeenTeaser = sessionStorage.getItem('bot_teaser_seen');
+    if (!hasSeenTeaser) {
+      sessionStorage.setItem('bot_teaser_seen', 'true');
+      setAutoTeaserActive(true);
+
+      // Auto dismiss smoothly after 3 seconds
+      const timer = setTimeout(() => {
+        setAutoTeaserActive(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const isTeaserVisible = !isOpen && !isDismissed && (autoTeaserActive || isHovered);
+
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      content: 'Hello! I am your NovaByte AI Assistant. How can I help your business automate leads and growth today?'
+      content: `Hello! I am your ${currentBotName}. How can I help your business automate leads and growth today?`
     }
   ]);
+
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].sender === 'bot') {
+      setMessages([
+        {
+          sender: 'bot',
+          content: `Hello! I am your ${currentBotName}. How can I help your business automate leads and growth today?`
+        }
+      ]);
+    }
+  }, [currentBotName]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
@@ -93,13 +143,13 @@ export default function NovaByteFloatingBot({ botId = 'bot-ec0db899' }) {
       } else {
         setMessages([...newMsgs, {
           sender: 'bot',
-          content: 'Thank you for reaching out! How can NovaByte AI assist your business today?'
+          content: `Thank you for reaching out! How can ${currentBotName} assist your business today?`
         }]);
       }
     } catch (err) {
       setMessages([...newMsgs, {
         sender: 'bot',
-        content: 'NovaByte AI is ready to automate your customer inquiries, WhatsApp follow-ups, and sales pipeline!'
+        content: `${currentBotName} is ready to automate your customer inquiries, WhatsApp follow-ups, and sales pipeline!`
       }]);
     } finally {
       setIsTyping(false);
@@ -160,83 +210,91 @@ export default function NovaByteFloatingBot({ botId = 'bot-ec0db899' }) {
   return (
     <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 99999, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       
-      {/* Floating Teaser Tooltip (When Closed) */}
-      {!isOpen && showTeaser && (
-        <div style={{
-          position: 'absolute',
-          bottom: '72px',
-          right: '0',
-          backgroundColor: 'var(--bg-surface, #ffffff)',
-          border: '1px solid var(--border-color, #e2e8f0)',
-          borderRadius: '14px',
-          padding: '10px 14px',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          whiteSpace: 'nowrap',
-          cursor: 'pointer',
-          animation: 'fadeIn 0.2s ease'
-        }}
-        onClick={() => {
-          setIsOpen(true);
-          setShowTeaser(false);
-        }}
-        >
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
-          <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
-            Need help? Chat with NovaByte AI
-          </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowTeaser(false);
-            }}
-            style={{ border: 'none', background: 'transparent', color: 'var(--text-muted, #94a3b8)', cursor: 'pointer', padding: '2px' }}
-          >
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {/* Floating Launcher Button */}
+      {/* Floating Launcher & Left-Sided Teaser Popup */}
       {!isOpen && (
-        <button
-          onClick={() => {
-            setIsOpen(true);
-            setShowTeaser(false);
-          }}
+        <div
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
           style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: '#4f46e5',
-            background: 'linear-gradient(135deg, #4f46e5, #06b6d4)',
-            color: '#ffffff',
-            border: 'none',
-            boxShadow: '0 8px 25px rgba(79, 70, 229, 0.4)',
-            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+            gap: '12px',
+            position: 'relative'
           }}
-          title="Open AI Chat Widget"
         >
-          <Bot size={28} />
-          {/* Online green indicator */}
-          <span style={{
-            position: 'absolute',
-            top: '2px',
-            right: '2px',
-            width: '14px',
-            height: '14px',
-            borderRadius: '50%',
-            backgroundColor: '#22c55e',
-            border: '2.5px solid #ffffff'
-          }}></span>
-        </button>
+          {/* Teaser Bubble (Positioned to the LEFT of the circular bot launcher) */}
+          <div
+            onClick={() => {
+              setIsOpen(true);
+              setAutoTeaserActive(false);
+              setIsHovered(false);
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              backgroundColor: 'var(--bg-surface, #ffffff)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              borderRadius: '16px',
+              padding: '9px 16px',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+              whiteSpace: 'nowrap',
+              cursor: 'pointer',
+              userSelect: 'none',
+              opacity: isTeaserVisible ? 1 : 0,
+              transform: isTeaserVisible ? 'translateX(0)' : 'translateX(20px)',
+              pointerEvents: isTeaserVisible ? 'auto' : 'none',
+              transition: 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+          >
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', flexShrink: 0 }} />
+            <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
+              Need help? Chat with {currentBotName}
+            </span>
+          </div>
+
+          {/* Floating Launcher Button */}
+          <button
+            onClick={() => {
+              setIsOpen(true);
+              setAutoTeaserActive(false);
+              setIsHovered(false);
+            }}
+            style={{
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              backgroundColor: activeBotData?.primary_color || '#4f46e5',
+              background: activeBotData?.primary_color
+                ? `linear-gradient(135deg, ${activeBotData.primary_color}, #06b6d4)`
+                : 'linear-gradient(135deg, #4f46e5, #06b6d4)',
+              color: '#ffffff',
+              border: 'none',
+              boxShadow: '0 8px 25px rgba(79, 70, 229, 0.4)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              flexShrink: 0,
+              transform: isHovered ? 'scale(1.06)' : 'scale(1)',
+              transition: 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease'
+            }}
+          >
+            <Bot size={28} />
+            {/* Online green indicator */}
+            <span style={{
+              position: 'absolute',
+              top: '2px',
+              right: '2px',
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              border: '2.5px solid #ffffff'
+            }} />
+          </button>
+        </div>
       )}
 
       {/* Expanded Floating Chat Modal Window */}
@@ -270,7 +328,7 @@ export default function NovaByteFloatingBot({ botId = 'bot-ec0db899' }) {
               </div>
               <div>
                 <div style={{ fontSize: '14px', fontWeight: 800 }}>
-                  NovaByte AI Assistant
+                  {currentBotName}
                 </div>
                 <div style={{ fontSize: '11px', opacity: 0.9, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4ade80' }}></span>

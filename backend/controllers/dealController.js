@@ -88,6 +88,19 @@ export function updateStage(req, res) {
   }
 }
 
+export function updateDeal(req, res) {
+  try {
+    const { id } = req.params;
+    const updated = dealModel.updateDeal(id, req.body);
+    if (!updated) {
+      return res.status(404).json({ success: false, error: 'Deal not found' });
+    }
+    return res.json({ success: true, deal: updated });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
 export function deleteDeal(req, res) {
   try {
     const { id } = req.params;

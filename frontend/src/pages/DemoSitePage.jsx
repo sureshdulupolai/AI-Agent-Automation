@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, Star, Zap, ArrowLeft, Globe, Shield, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function DemoSitePage({ bots = [], onNavigate }) {
-  const selectedBotId = bots[0]?.id || 'bot-apex-agency';
+  const queryParams = new URLSearchParams(window.location.search);
+  const urlBotId = queryParams.get('botId');
+  const urlColor = queryParams.get('color') || queryParams.get('bot_color');
+  const selectedBotId = urlBotId || bots[0]?.id || 'bot-apex-agency';
 
   // Dynamically inject widget.js when mounting
   useEffect(() => {
@@ -13,8 +16,11 @@ export default function DemoSitePage({ bots = [], onNavigate }) {
 
     // Inject widget script
     const script = document.createElement('script');
-    script.src = '/widget.js';
+    script.src = urlColor ? `/widget.js?color=${encodeURIComponent(urlColor)}` : '/widget.js';
     script.setAttribute('data-bot-id', selectedBotId);
+    if (urlColor) {
+      script.setAttribute('data-color', urlColor);
+    }
     script.async = true;
     document.body.appendChild(script);
 
@@ -24,7 +30,7 @@ export default function DemoSitePage({ bots = [], onNavigate }) {
       window.__OMNIBOT_INITIALIZED__ = false;
       script.remove();
     };
-  }, [selectedBotId]);
+  }, [selectedBotId, urlColor]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', position: 'relative', overflowX: 'hidden' }}>
