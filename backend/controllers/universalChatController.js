@@ -204,17 +204,31 @@ export async function updateBusinessProfile(req, res) {
   try {
     const { botId } = req.params;
     const newProfile = req.body;
+
+    // Guardrail validations to protect DB and token budgets
+    if (newProfile.direct_prompt && typeof newProfile.direct_prompt === 'string' && newProfile.direct_prompt.length > 5000) {
+      return res.status(400).json({ success: false, error: 'Direct master prompt exceeds maximum limit of 5,000 characters.' });
+    }
+    if (newProfile.business_name && typeof newProfile.business_name === 'string' && newProfile.business_name.length > 250) {
+      return res.status(400).json({ success: false, error: 'Business name exceeds maximum limit of 250 characters.' });
+    }
+
     const profiles = readProfiles();
+    const existing = profiles[botId] || {};
+    const nextRevision = typeof newProfile.revision_count === 'number'
+      ? Math.max(newProfile.revision_count, (existing.revision_count || 0) + 1)
+      : (existing.revision_count || 0) + 1;
 
     profiles[botId] = {
       ...newProfile,
+      revision_count: nextRevision,
       updated_at: new Date().toISOString()
     };
     saveProfiles(profiles);
 
     // Sync bot record system instructions and knowledge
     try {
-      const fullSynthesizedPrompt = synthesizeSystemPrompt(newProfile);
+      const fullSynthesizedPrompt = synthesizeSystemPrompt(profiles[botId]);
       await db.updateBot(botId, {
         bot_name: newProfile.business_name || undefined,
         system_instructions: fullSynthesizedPrompt,

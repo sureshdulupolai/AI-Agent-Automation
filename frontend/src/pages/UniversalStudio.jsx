@@ -1009,6 +1009,7 @@ export default function UniversalStudio({ bots = [] }) {
     fulfillment_type: 'custom_quote',
     direct_prompt_enabled: false,
     direct_prompt: '',
+    revision_count: 1,
     core_offerings: INDUSTRY_PRESETS[0].profile.core_offerings,
     qualification_rules: INDUSTRY_PRESETS[0].profile.qualification_rules,
     policies_and_faqs: INDUSTRY_PRESETS[0].profile.policies_and_faqs
@@ -1160,7 +1161,6 @@ export default function UniversalStudio({ bots = [] }) {
   };
 
   // Save Dynamic Profile and synchronize with connected bot
-  // Save Dynamic Profile and synchronize with connected bot
   const handleSaveProfile = async () => {
     if (!selectedBotId || !bots || bots.length === 0) {
       showToast({
@@ -1168,6 +1168,16 @@ export default function UniversalStudio({ bots = [] }) {
         title: 'Chatbot Connection Required',
         message: 'No active chatbot found. Please create a chatbot first before saving or deploying directives.',
         action: { label: 'Create Chatbot', onClick: () => navigate('/bots') },
+        duration: 5000
+      });
+      return;
+    }
+
+    if (profile.direct_prompt && profile.direct_prompt.length > 5000) {
+      showToast({
+        type: 'error',
+        title: 'Validation Error',
+        message: `Direct master prompt exceeds maximum limit of 5,000 characters (${profile.direct_prompt.length} chars).`,
         duration: 5000
       });
       return;
@@ -1186,11 +1196,14 @@ export default function UniversalStudio({ bots = [] }) {
       const data = await res.json();
       if (data.success) {
         setSavedSuccess(true);
+        if (data.profile?.revision_count) {
+          setProfile(prev => ({ ...prev, revision_count: data.profile.revision_count }));
+        }
         confetti({ particleCount: 45, spread: 65, origin: { y: 0.6 } });
         showToast({
           type: 'success',
           title: 'Profile Saved Successfully',
-          message: `Dynamic business profile updated for ${activeBotName}.`,
+          message: `Dynamic profile updated for ${activeBotName} (Rev #${data.profile?.revision_count || ((profile.revision_count || 0) + 1)}).`,
           duration: 4500
         });
         setTimeout(() => setSavedSuccess(false), 3500);
@@ -1228,6 +1241,17 @@ export default function UniversalStudio({ bots = [] }) {
         business_name: activeBotName
       });
 
+      if (compiled && compiled.length > 5000) {
+        showToast({
+          type: 'error',
+          title: 'Validation Error',
+          message: `Compiled system prompt exceeds maximum limit of 5,000 characters (${compiled.length} chars). Please condense your directives.`,
+          duration: 5000
+        });
+        setLaunchingPrompt(false);
+        return;
+      }
+
       const updatedProfile = {
         ...profile,
         business_name: activeBotName,
@@ -1245,6 +1269,9 @@ export default function UniversalStudio({ bots = [] }) {
       const data = await res.json();
 
       if (data.success) {
+        if (data.profile?.revision_count) {
+          setProfile(prev => ({ ...prev, revision_count: data.profile.revision_count }));
+        }
         confetti({ particleCount: 75, spread: 80, origin: { y: 0.55 } });
         setLaunchSuccess(true);
         setTimeout(() => setLaunchSuccess(false), 5000);
@@ -1253,7 +1280,7 @@ export default function UniversalStudio({ bots = [] }) {
         showToast({
           type: 'success',
           title: 'Master Prompt Deployed!',
-          message: `System instructions successfully compiled & active for ${activeBotName} on WhatsApp and Web.`,
+          message: `System instructions active for ${activeBotName} (Rev #${data.profile?.revision_count || ((profile.revision_count || 0) + 1)}).`,
           duration: 4500
         });
       }
@@ -1643,6 +1670,7 @@ export default function UniversalStudio({ bots = [] }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <textarea
             rows={5}
+            maxLength={2000}
             placeholder="Explain your business & automation workflow in detail: What products/services do you offer? Why do you need this AI automation and what is its primary objective? How should the bot converse with leads, ask qualification questions (phone, email, project requirements, budget, timeline), and guide them toward pricing, quotes or booking? Our AI will analyze your entire business logic, synthesize your complete Master System Prompt, and auto-populate it into the Direct Master Prompt editor ready for you to save and test."
             value={generatorPrompt}
             onChange={(e) => setGeneratorPrompt(e.target.value)}
@@ -1662,7 +1690,10 @@ export default function UniversalStudio({ bots = [] }) {
             }}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', color: generatorPrompt.length > 1800 ? '#d97706' : 'var(--text-muted)' }}>
+              {generatorPrompt.length.toLocaleString()} / 2,000 characters
+            </span>
             <button
               onClick={() => handleSynthesizeProfile()}
               disabled={isSynthesizing || !generatorPrompt.trim()}
@@ -3240,9 +3271,13 @@ export default function UniversalStudio({ bots = [] }) {
                   <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                     System Instructions &amp; Behavioral Guidelines
                   </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Characters: {(profile.direct_prompt || '').length} | Est. Tokens: ~{Math.round(((profile.direct_prompt || '').length) / 4)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: '11px',
+                      color: (profile.direct_prompt || '').length > 4800 ? '#dc2626' : 'var(--text-muted)',
+                      fontWeight: (profile.direct_prompt || '').length > 4800 ? 700 : 500
+                    }}>
+                      Characters: {(profile.direct_prompt || '').length.toLocaleString()} / 5,000 ({Math.max(0, 5000 - (profile.direct_prompt || '').length).toLocaleString()} left) | Est. Tokens: ~{Math.round(((profile.direct_prompt || '').length) / 4)} | Rev: #{profile.revision_count || 1}
                     </span>
                     <span style={{
                       display: 'inline-flex',
@@ -3262,13 +3297,14 @@ export default function UniversalStudio({ bots = [] }) {
 
                 <textarea
                   value={profile.direct_prompt || ''}
+                  maxLength={5000}
                   onChange={(e) => setProfile(prev => ({
                     ...prev,
                     direct_prompt: e.target.value,
                     direct_prompt_enabled: true
                   }))}
                   rows={18}
-                  placeholder="Enter or customize your complete system prompt here..."
+                  placeholder="Enter or customize your complete system prompt here (up to 5,000 characters)..."
                   style={{
                     width: '100%',
                     flex: 1,
@@ -3415,8 +3451,31 @@ export default function UniversalStudio({ bots = [] }) {
                   <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Live WhatsApp &amp; Web Simulator
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    Testing: <strong style={{ color: '#4f46e5' }}>{activeBotName}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
+                    <span>Testing:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{activeBotName}</strong>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '1px 7px',
+                      borderRadius: '999px',
+                      fontSize: '9.5px',
+                      fontWeight: 700,
+                      backgroundColor: (studioMode === 'direct' || activeTab === 'direct') ? 'rgba(79, 70, 229, 0.1)' : 'rgba(14, 165, 233, 0.1)',
+                      color: (studioMode === 'direct' || activeTab === 'direct') ? '#4f46e5' : '#0284c7',
+                      border: `1px solid ${(studioMode === 'direct' || activeTab === 'direct') ? 'rgba(79, 70, 229, 0.25)' : 'rgba(14, 165, 233, 0.25)'}`
+                    }}>
+                      {(studioMode === 'direct' || activeTab === 'direct') ? (
+                        <>
+                          <FileText size={10} /> Direct Master Prompt
+                        </>
+                      ) : (
+                        <>
+                          <Sliders size={10} /> Guided 4-Step Studio
+                        </>
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -3545,50 +3604,42 @@ export default function UniversalStudio({ bots = [] }) {
                 </span>
 
                 <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                     {creditUsage.freeRemaining > 0
                       ? `${creditUsage.freeRemaining} / 10 Free Inquiries Left`
-                      : 'Free 10-Token Limit Reached'}
+                      : 'Free Limit Reached'}
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                     {creditUsage.freeRemaining > 0
-                      ? 'Complimentary test tokens. ₹0.60/query charged beyond 10.'
+                      ? '₹0.60/query charged beyond free quota.'
                       : 'Metered usage active: ₹0.60 per inquiry'}
                   </div>
                 </div>
               </div>
 
-              {/* Metered Cost Indicator */}
+              {/* Status Indicator (Plain Colored Text, No Button Box) */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {creditUsage.paidCount > 0 ? (
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
-                    padding: '3px 9px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                    gap: '4px',
                     color: '#dc2626',
-                    border: '1px solid rgba(220, 38, 38, 0.25)',
-                    fontWeight: 800,
+                    fontWeight: 700,
                     fontSize: '11px'
                   }}>
-                    <Coins size={12} /> Billed: ₹{Number(creditUsage.accruedCost || 0).toFixed(2)} ({creditUsage.paidCount} queries @ ₹0.60)
+                    <Coins size={12} /> Billed: ₹{Number(creditUsage.accruedCost || 0).toFixed(2)} ({creditUsage.paidCount} queries)
                   </span>
                 ) : (
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    backgroundColor: 'rgba(22, 163, 74, 0.08)',
-                    color: '#15803d',
-                    border: '1px solid rgba(22, 163, 74, 0.2)',
-                    fontWeight: 600,
-                    fontSize: '10.5px'
+                    color: '#16a34a',
+                    fontWeight: 700,
+                    fontSize: '11px'
                   }}>
-                    <ShieldCheck size={12} /> Free Tier Active
+                    <ShieldCheck size={13} /> Free Tier Active
                   </span>
                 )}
               </div>
