@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles,
   Building2,
@@ -45,6 +45,8 @@ import {
   Rocket,
   Award,
   AlertCircle,
+  AlertTriangle,
+  X,
   Coins,
   Copy
 } from 'lucide-react';
@@ -608,6 +610,156 @@ ${qualRulesText}
 ${policiesText}`.trim();
 }
 
+// Top-Right Animated Studio Toast Notification Component
+function StudioToastNotification({ toast, onClose }) {
+  if (!toast) return null;
+
+  const isVisible = toast.visible !== false;
+
+  const typeStyles = {
+    success: {
+      borderColor: 'rgba(34, 197, 94, 0.45)',
+      iconBg: 'rgba(34, 197, 94, 0.12)',
+      iconColor: '#16a34a',
+      Icon: CheckCircle2
+    },
+    warning: {
+      borderColor: 'rgba(245, 158, 11, 0.45)',
+      iconBg: 'rgba(245, 158, 11, 0.12)',
+      iconColor: '#d97706',
+      Icon: AlertTriangle
+    },
+    error: {
+      borderColor: 'rgba(239, 68, 68, 0.45)',
+      iconBg: 'rgba(239, 68, 68, 0.12)',
+      iconColor: '#dc2626',
+      Icon: AlertCircle
+    },
+    info: {
+      borderColor: 'rgba(79, 70, 229, 0.45)',
+      iconBg: 'rgba(79, 70, 229, 0.12)',
+      iconColor: '#4f46e5',
+      Icon: Sparkles
+    }
+  };
+
+  const styleConfig = typeStyles[toast.type] || typeStyles.info;
+  const ToastIcon = styleConfig.Icon;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: '24px',
+        right: '24px',
+        zIndex: 999999,
+        maxWidth: '430px',
+        minWidth: '320px',
+        backgroundColor: 'var(--bg-surface, #ffffff)',
+        borderRadius: '14px',
+        border: `1.5px solid ${styleConfig.borderColor}`,
+        boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.18), 0 4px 14px rgba(0, 0, 0, 0.08)',
+        padding: '16px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        transform: isVisible ? 'translateX(0) translateY(0)' : 'translateX(120%) translateY(0)',
+        opacity: isVisible ? 1 : 0,
+        transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease',
+        pointerEvents: isVisible ? 'auto' : 'none',
+        boxSizing: 'border-box',
+        overflow: 'hidden'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1, minWidth: 0 }}>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '9px',
+            backgroundColor: styleConfig.iconBg,
+            color: styleConfig.iconColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            marginTop: '1px'
+          }}>
+            <ToastIcon size={18} />
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: '13.5px',
+              fontWeight: 800,
+              color: 'var(--text-primary)',
+              lineHeight: 1.3,
+              marginBottom: '3px'
+            }}>
+              {toast.title}
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.45,
+              wordBreak: 'break-word'
+            }}>
+              {toast.message}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            padding: '2px',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            transition: 'color 0.15s ease'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {toast.action && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              toast.action.onClick();
+              onClose();
+            }}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              backgroundColor: styleConfig.iconColor,
+              color: '#ffffff',
+              fontSize: '11.5px',
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+            }}
+          >
+            {toast.action.label}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Custom Premium Dropdown Component for Target Chatbot Selection
 function CustomBotDropdown({ bots = [], selectedBotId, onSelectBot }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -941,8 +1093,44 @@ export default function UniversalStudio({ bots = [] }) {
     fetchCredits(selectedBotId);
   }, [selectedBotId]);
 
+  // Top-Right Toast Notification State
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+  const lastSynthesizedTextRef = useRef('');
+  const chatContainerRef = useRef(null);
+  const isInitialChatMount = useRef(true);
+
+  // Reusable Toast Dispatcher (Slides in from top-right, auto-dismisses after duration)
+  const showToast = useCallback(({ type = 'success', title, message, action = null, duration = 4500 }) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ type, title, message, action, visible: true });
+
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToast(null), 400);
+    }, duration);
+  }, []);
+
+  const closeToast = useCallback(() => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(prev => prev ? { ...prev, visible: false } : null);
+    setTimeout(() => setToast(null), 400);
+  }, []);
+
+  // Ensure page stays at the top on entry (prevents jumping to bottom)
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
+  // Safe internal scrolling for simulator chat (never drags whole window down)
+  useEffect(() => {
+    if (isInitialChatMount.current) {
+      isInitialChatMount.current = false;
+      return;
+    }
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
   }, [simMessages, simulating]);
 
   // Create Starter Bot if none exist
@@ -972,7 +1160,19 @@ export default function UniversalStudio({ bots = [] }) {
   };
 
   // Save Dynamic Profile and synchronize with connected bot
+  // Save Dynamic Profile and synchronize with connected bot
   const handleSaveProfile = async () => {
+    if (!selectedBotId || !bots || bots.length === 0) {
+      showToast({
+        type: 'warning',
+        title: 'Chatbot Connection Required',
+        message: 'No active chatbot found. Please create a chatbot first before saving or deploying directives.',
+        action: { label: 'Create Chatbot', onClick: () => navigate('/bots') },
+        duration: 5000
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/universal/profile/${selectedBotId}`, {
@@ -987,18 +1187,40 @@ export default function UniversalStudio({ bots = [] }) {
       if (data.success) {
         setSavedSuccess(true);
         confetti({ particleCount: 45, spread: 65, origin: { y: 0.6 } });
+        showToast({
+          type: 'success',
+          title: 'Profile Saved Successfully',
+          message: `Dynamic business profile updated for ${activeBotName}.`,
+          duration: 4500
+        });
         setTimeout(() => setSavedSuccess(false), 3500);
       }
     } catch (err) {
       console.error('Failed to save profile:', err);
-      alert('Error saving profile: ' + err.message);
+      showToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: err.message || 'Error saving profile.',
+        duration: 5000
+      });
     } finally {
       setSaving(false);
     }
   };
 
-  // 1-Click "Ready to Launch Prompt" - Compiles, injects & deploys master system prompt to active model
+  // 1-Click "Launch Prompt" - Compiles, injects & deploys master system prompt to active model
   const handleCompileAndDeployPrompt = async () => {
+    if (!selectedBotId || !bots || bots.length === 0) {
+      showToast({
+        type: 'warning',
+        title: 'Chatbot Connection Required',
+        message: 'No active chatbot found. Please create a chatbot first to deploy your master prompt.',
+        action: { label: 'Create Chatbot', onClick: () => navigate('/bots') },
+        duration: 5000
+      });
+      return;
+    }
+
     setLaunchingPrompt(true);
     try {
       const compiled = compileFullPromptFromProfile({
@@ -1027,20 +1249,22 @@ export default function UniversalStudio({ bots = [] }) {
         setLaunchSuccess(true);
         setTimeout(() => setLaunchSuccess(false), 5000);
 
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        setSimMessages(prev => [
-          ...prev,
-          {
-            id: `sys-${Date.now()}`,
-            sender: 'bot',
-            text: `*System Directive Deployed:* Production master system prompt has been compiled and injected into *${activeBotName}*. Live on connected WhatsApp and Web channels.`,
-            time: timeStr
-          }
-        ]);
+        // Slide-in top-right toast popup notification (chat bubble remains clean without clutter!)
+        showToast({
+          type: 'success',
+          title: 'Master Prompt Deployed!',
+          message: `System instructions successfully compiled & active for ${activeBotName} on WhatsApp and Web.`,
+          duration: 4500
+        });
       }
     } catch (err) {
       console.error('Launch prompt error:', err);
-      alert('Error launching prompt: ' + err.message);
+      showToast({
+        type: 'error',
+        title: 'Deployment Failed',
+        message: err.message || 'Error launching prompt.',
+        duration: 5000
+      });
     } finally {
       setLaunchingPrompt(false);
     }
@@ -1062,6 +1286,19 @@ export default function UniversalStudio({ bots = [] }) {
   const handleSynthesizeProfile = async (promptOverride) => {
     const textToUse = (promptOverride || generatorPrompt).trim();
     if (!textToUse) return;
+
+    // Token protection: If unchanged, switch directly without re-invoking AI or burning tokens
+    if (lastSynthesizedTextRef.current === textToUse && profile.direct_prompt) {
+      setStudioMode('direct');
+      setActiveTab('direct');
+      showToast({
+        type: 'info',
+        title: 'Already Synthesized',
+        message: 'Master prompt is already up-to-date with this workflow description. Direct Master Prompt opened.',
+        duration: 3500
+      });
+      return;
+    }
 
     setIsSynthesizing(true);
     try {
@@ -1089,14 +1326,27 @@ export default function UniversalStudio({ bots = [] }) {
         direct_prompt_enabled: true
       }));
 
+      lastSynthesizedTextRef.current = textToUse;
+
       // Automatically switch to Direct Master Prompt view so user immediately sees the generated prompt
       setStudioMode('direct');
       setActiveTab('direct');
 
       confetti({ particleCount: 60, spread: 75, origin: { y: 0.55 } });
+      showToast({
+        type: 'success',
+        title: 'Master Prompt Generated!',
+        message: `AI analyzed your business logic and populated the Direct Master Prompt for ${activeBotName}.`,
+        duration: 4500
+      });
     } catch (err) {
       console.error('Synthesis error:', err);
-      alert('AI Generation error: ' + err.message);
+      showToast({
+        type: 'error',
+        title: 'AI Generation Error',
+        message: err.message || 'Failed to synthesize prompt.',
+        duration: 5000
+      });
     } finally {
       setIsSynthesizing(false);
     }
@@ -1253,77 +1503,65 @@ export default function UniversalStudio({ bots = [] }) {
   return (
     <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '24px 24px 80px', position: 'relative' }}>
       
-      {/* Zero-Bot Blocking Modal Dialog */}
+      {/* Top-Right Animated Toast Notification */}
+      <StudioToastNotification toast={toast} onClose={closeToast} />
+
+      {/* Non-Blocking Chatbot Warning Banner */}
       {(!bots || bots.length === 0) && (
         <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 99999,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(6px)',
+          marginBottom: '18px',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          backgroundColor: 'rgba(245, 158, 11, 0.08)',
+          border: '1.5px solid rgba(245, 158, 11, 0.35)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
+          justifyContent: 'space-between',
+          gap: '14px',
+          flexWrap: 'wrap'
         }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '460px',
-            backgroundColor: 'var(--bg-surface, #ffffff)',
-            borderRadius: '16px',
-            padding: '32px 28px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            border: '1px solid var(--border-subtle, #e2e8f0)',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '16px'
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              backgroundColor: 'rgba(79, 70, 229, 0.1)',
-              color: '#4f46e5',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(245, 158, 11, 0.15)',
+              color: '#d97706',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}>
-              <Bot size={28} />
+              <Bot size={18} />
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '0 0 8px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#b45309' }}>
                 Chatbot Connection Required
-              </h2>
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary, #64748b)', margin: 0, lineHeight: 1.6 }}>
-                No active chatbot found. You must create a chatbot first to train and configure its neural knowledge base in Universal Studio.
-              </p>
+              </div>
+              <div style={{ fontSize: '12px', color: '#92400e' }}>
+                No active chatbot found. Create your first chatbot to deploy and synchronize your master prompt.
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/bots')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                width: '100%',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                border: 'none',
-                backgroundColor: '#4f46e5',
-                color: '#ffffff',
-                fontSize: '13.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <Bot size={16} />
-              <span>Create Your First Chatbot</span>
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/bots')}
+            style={{
+              padding: '8px 18px',
+              borderRadius: '8px',
+              backgroundColor: '#d97706',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '12.5px',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(217, 119, 6, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            Create Chatbot
+          </button>
         </div>
       )}
 
@@ -3093,23 +3331,24 @@ export default function UniversalStudio({ bots = [] }) {
                     onClick={handleCompileAndDeployPrompt}
                     disabled={launchingPrompt}
                     style={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
+                      gap: '6px',
+                      padding: '8px 16px',
                       borderRadius: '8px',
                       border: 'none',
                       backgroundColor: launchSuccess ? '#16a34a' : '#4f46e5',
                       color: '#ffffff',
-                      fontSize: '13px',
+                      fontSize: '12.5px',
                       fontWeight: 700,
                       cursor: launchingPrompt ? 'not-allowed' : 'pointer',
                       boxShadow: launchSuccess ? '0 2px 8px rgba(22, 163, 74, 0.3)' : '0 2px 8px rgba(79, 70, 229, 0.3)',
-                      transition: 'all 0.15s ease'
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    {launchSuccess ? <Check size={14} strokeWidth={3} /> : <Rocket size={14} />}
-                    <span>{launchingPrompt ? 'Deploying to Model...' : launchSuccess ? 'Prompt Deployed!' : `Ready to Launch Prompt (${activeBotName})`}</span>
+                    {launchSuccess ? <Check size={13} strokeWidth={3} /> : <Rocket size={13} />}
+                    <span>{launchingPrompt ? 'Deploying...' : launchSuccess ? 'Deployed!' : 'Deploy Prompt'}</span>
                   </button>
 
                   <button
@@ -3117,21 +3356,23 @@ export default function UniversalStudio({ bots = [] }) {
                     onClick={handleSaveProfile}
                     disabled={saving}
                     style={{
-                      display: 'flex',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 18px',
+                      gap: '6px',
+                      padding: '8px 16px',
                       borderRadius: '8px',
                       border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'var(--bg-surface)',
-                      color: 'var(--text-primary)',
-                      fontSize: '13px',
+                      backgroundColor: savedSuccess ? 'rgba(22, 163, 74, 0.1)' : 'var(--bg-surface)',
+                      color: savedSuccess ? '#16a34a' : 'var(--text-primary)',
+                      fontSize: '12.5px',
                       fontWeight: 700,
-                      cursor: 'pointer'
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    <Save size={14} />
-                    <span>{saving ? 'Saving...' : 'Save Profile'}</span>
+                    {savedSuccess ? <Check size={13} /> : <Save size={13} />}
+                    <span>{saving ? 'Saving...' : savedSuccess ? 'Saved!' : 'Save Profile'}</span>
                   </button>
                 </div>
               </div>
@@ -3181,31 +3422,6 @@ export default function UniversalStudio({ bots = [] }) {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={handleCompileAndDeployPrompt}
-                  disabled={launchingPrompt}
-                  title="Compile & Deploy Master Prompt into Bot Model"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: launchSuccess ? '#16a34a' : '#4f46e5',
-                    background: launchSuccess ? 'rgba(22, 163, 74, 0.1)' : 'rgba(79, 70, 229, 0.08)',
-                    border: `1px solid ${launchSuccess ? 'rgba(22, 163, 74, 0.3)' : 'rgba(79, 70, 229, 0.25)'}`,
-                    borderRadius: '6px',
-                    padding: '4px 8px',
-                    cursor: launchingPrompt ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  <Rocket size={11} />
-                  <span>{launchSuccess ? 'Deployed' : 'Launch Prompt'}</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={() => setSimMessages([{
@@ -3380,15 +3596,17 @@ export default function UniversalStudio({ bots = [] }) {
           </div>
 
           {/* Chat Messages Stream */}
-          <div style={{
-            flex: 1,
-            padding: '16px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            backgroundColor: 'var(--bg-page)'
-          }}>
+          <div 
+            ref={chatContainerRef}
+            style={{
+              flex: 1,
+              padding: '16px',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              backgroundColor: 'var(--bg-page)'
+            }}>
             {simMessages.map((m) => (
               <div
                 key={m.id}
@@ -3490,7 +3708,7 @@ export default function UniversalStudio({ bots = [] }) {
               }}
             >
               {launchSuccess ? <Check size={12} strokeWidth={3} /> : <Rocket size={12} />}
-              <span>{launchingPrompt ? 'Compiling & Launching...' : launchSuccess ? 'Prompt Deployed!' : 'Ready to Launch Prompt'}</span>
+              <span>{launchingPrompt ? 'Deploying...' : launchSuccess ? 'Deployed!' : 'Launch Prompt'}</span>
             </button>
           </div>
 
