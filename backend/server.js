@@ -19,6 +19,7 @@ import * as integrationController from './controllers/integrationController.js';
 import * as oauthController from './controllers/oauthController.js';
 import * as campaignController from './controllers/campaignController.js';
 import * as universalChatController from './controllers/universalChatController.js';
+import * as billingController from './controllers/billingController.js';
 import * as dealController from './controllers/dealController.js';
 import * as teamController from './controllers/teamController.js';
 import * as appointmentController from './controllers/appointmentController.js';
@@ -272,6 +273,15 @@ app.post('/api/universal/profile/:botId', universalChatController.updateBusiness
 app.post('/api/universal/generate-profile', universalChatController.autoGenerateProfile);
 app.post('/api/universal/chat', universalChatController.handleUniversalInboundChat);
 app.get('/api/universal/credits/:botId', universalChatController.getCreditsStatus);
+
+// ----------------------------------------------------
+// Billing, Service Controls & Multi-API Key Hub Routes
+// ----------------------------------------------------
+app.get('/api/billing/controls', billingController.getBillingControls);
+app.post('/api/billing/controls/toggle', billingController.updateBillingControlToggle);
+app.get('/api/billing/keys-health', billingController.getApiKeysHealth);
+app.post('/api/billing/keys-update', billingController.updateApiKeySlot);
+app.post('/api/billing/keys-test', billingController.testApiKeySlot);
 
 // ----------------------------------------------------
 // Deals & Sales Pipeline Kanban Routes

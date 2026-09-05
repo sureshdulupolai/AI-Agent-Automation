@@ -79,6 +79,15 @@ export async function createBot(req, res) {
       return res.status(400).json({ error: 'Bot name is required' });
     }
 
+    // Hard Limit: Max 3 Chatbots allowed per client
+    const existingBots = await db.getBots(userId);
+    if (existingBots && existingBots.length >= 3) {
+      return res.status(400).json({
+        success: false,
+        error: 'Maximum chatbot limit reached (3/3). You can create up to 3 chatbots on your account. Please manage or remove an existing bot to create a new one.'
+      });
+    }
+
     const newBot = await db.createBot({
       user_id: userId,
       bot_name,

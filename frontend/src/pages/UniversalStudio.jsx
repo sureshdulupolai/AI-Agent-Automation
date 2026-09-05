@@ -988,14 +988,40 @@ export default function UniversalStudio({ bots = [] }) {
     }
   };
 
-  // Persistent Credit Tracking State (Each bot model gets 10 independent free inquiries, then ₹0.60/query)
+  // Persistent Credit Tracking State (Each bot model gets 10 independent free inquiries, then ₹3.00/query)
   const [creditUsage, setCreditUsage] = useState(() => {
     const cached = localStorage.getItem(`omnibot_credits_${selectedBotId}`);
     if (cached) {
       try { return JSON.parse(cached); } catch (e) {}
     }
-    return { freeLimit: 10, usedCount: 0, freeRemaining: 10, paidCount: 0, pricePerQuery: 0.60, accruedCost: 0 };
+    return { freeLimit: 10, usedCount: 0, freeRemaining: 10, paidCount: 0, pricePerQuery: 3.00, accruedCost: 0 };
   });
+
+  // Prompt Architect Quota & Metered Billing State (3 free runs, ₹5.00/action beyond)
+  const [architectBilling, setArchitectBilling] = useState({
+    freeLimit: 3,
+    usedCount: 0,
+    autoMeteredEnabled: true,
+    ratePerAction: 5.00,
+    accruedCost: 0.00
+  });
+
+  const fetchBillingControls = useCallback(async () => {
+    try {
+      const res = await fetch('/api/billing/controls');
+      const data = await res.json();
+      if (data.success && data.services?.prompt_architect) {
+        const pa = data.services.prompt_architect;
+        setArchitectBilling({
+          freeLimit: pa.free_limit || 3,
+          usedCount: pa.used_count || 0,
+          autoMeteredEnabled: pa.auto_metered_enabled !== false,
+          ratePerAction: pa.rate_per_action || 5.00,
+          accruedCost: pa.accrued_cost || 0.00
+        });
+      }
+    } catch (e) {}
+  }, []);
 
   // AI Generator state
   const [generatorPrompt, setGeneratorPrompt] = useState('');
@@ -1088,11 +1114,12 @@ export default function UniversalStudio({ bots = [] }) {
     if (cached) {
       try { setCreditUsage(JSON.parse(cached)); } catch (e) {}
     } else {
-      setCreditUsage({ freeLimit: 10, usedCount: 0, freeRemaining: 10, paidCount: 0, pricePerQuery: 0.60, accruedCost: 0 });
+      setCreditUsage({ freeLimit: 10, usedCount: 0, freeRemaining: 10, paidCount: 0, pricePerQuery: 3.00, accruedCost: 0 });
     }
     fetchProfile();
     fetchCredits(selectedBotId);
-  }, [selectedBotId]);
+    fetchBillingControls();
+  }, [selectedBotId, fetchBillingControls]);
 
   // Top-Right Toast Notification State
   const [toast, setToast] = useState(null);
@@ -1136,6 +1163,16 @@ export default function UniversalStudio({ bots = [] }) {
 
   // Create Starter Bot if none exist
   const handleCreateStarterBot = async () => {
+    if (bots && bots.length >= 3) {
+      showToast({
+        type: 'error',
+        title: 'Chatbot Limit Reached (3/3)',
+        message: 'Maximum limit of 3 chatbots reached. Please manage or remove an existing chatbot from the dashboard.',
+        duration: 5000
+      });
+      return;
+    }
+
     setCreatingBot(true);
     try {
       const res = await fetch('/api/bots', {
@@ -1151,10 +1188,28 @@ export default function UniversalStudio({ bots = [] }) {
       const data = await res.json();
       if (data.bot) {
         setSelectedBotId(data.bot.id);
-        alert(`Chatbot "${data.bot.bot_name}" initialized and connected!`);
+        showToast({
+          type: 'success',
+          title: 'Chatbot Initialized',
+          message: `Chatbot "${data.bot.bot_name}" initialized and connected!`,
+          duration: 4000
+        });
+      } else if (!res.ok) {
+        showToast({
+          type: 'error',
+          title: 'Bot Creation Failed',
+          message: data.error || 'Failed to create starter bot',
+          duration: 5000
+        });
       }
     } catch (err) {
       console.error('Failed to create bot:', err);
+      showToast({
+        type: 'error',
+        title: 'Connection Error',
+        message: err.message || 'Failed to create starter bot',
+        duration: 5000
+      });
     } finally {
       setCreatingBot(false);
     }
@@ -1314,6 +1369,18 @@ export default function UniversalStudio({ bots = [] }) {
     const textToUse = (promptOverride || generatorPrompt).trim();
     if (!textToUse) return;
 
+    // Strict Lock Check: 3 free generations exhausted and auto-pay turned OFF
+    if (architectBilling.usedCount >= architectBilling.freeLimit && !architectBilling.autoMeteredEnabled) {
+      showToast({
+        type: 'error',
+        title: 'Prompt Architect Locked (3/3 Used)',
+        message: 'Free limit of 3 generations reached and auto-metered billing is turned OFF in Profile settings. Please enable auto-pay on the Profile page.',
+        action: { label: 'Go to Profile', onClick: () => navigate('/profile') },
+        duration: 6000
+      });
+      return;
+    }
+
     // Token protection: If unchanged, switch directly without re-invoking AI or burning tokens
     if (lastSynthesizedTextRef.current === textToUse && profile.direct_prompt) {
       setStudioMode('direct');
@@ -1335,6 +1402,19 @@ export default function UniversalStudio({ bots = [] }) {
         body: JSON.stringify({ description: textToUse })
       });
       const data = await res.json();
+
+      if (res.status === 403 || data.code === 'PROMPT_ARCHITECT_LOCKED') {
+        showToast({
+          type: 'error',
+          title: 'Prompt Architect Locked',
+          message: data.error || 'Free limit (3/3) reached and auto-metered billing is turned OFF in Profile settings.',
+          action: { label: 'Enable in Profile', onClick: () => navigate('/profile') },
+          duration: 6000
+        });
+        return;
+      }
+      if (!res.ok) throw new Error(data.error || 'Failed to synthesize prompt');
+
       const generatedProfile = (data.success && data.profile) ? data.profile : {};
 
       const compiled = compileFullPromptFromProfile({
@@ -1352,6 +1432,23 @@ export default function UniversalStudio({ bots = [] }) {
         direct_prompt: compiled,
         direct_prompt_enabled: true
       }));
+
+      // Update Prompt Architect telemetry & cost
+      if (data.architectUsage) {
+        setArchitectBilling(prev => ({
+          ...prev,
+          usedCount: data.architectUsage.used_count,
+          accruedCost: data.architectUsage.accrued_cost,
+          freeLimit: data.architectUsage.free_limit,
+          autoMeteredEnabled: data.architectUsage.auto_metered_enabled
+        }));
+      } else {
+        setArchitectBilling(prev => ({
+          ...prev,
+          usedCount: prev.usedCount + 1,
+          accruedCost: (prev.usedCount + 1 > prev.freeLimit) ? Number(((prev.usedCount + 1 - prev.freeLimit) * prev.ratePerAction).toFixed(2)) : prev.accruedCost
+        }));
+      }
 
       lastSynthesizedTextRef.current = textToUse;
 
@@ -1650,8 +1747,23 @@ export default function UniversalStudio({ bots = [] }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '7px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Wand2 size={15} color="#4f46e5" />
+            <div style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '7px',
+              backgroundColor: (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)
+                ? 'rgba(239, 68, 68, 0.15)'
+                : '#e0e7ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              {(architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled) ? (
+                <Lock size={15} color="#dc2626" />
+              ) : (
+                <Wand2 size={15} color="#4f46e5" />
+              )}
             </div>
             <div>
               <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'block', lineHeight: 1.2 }}>
@@ -1662,9 +1774,65 @@ export default function UniversalStudio({ bots = [] }) {
               </span>
             </div>
           </div>
-          <span style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 700 }}>
-            Powered by Google Gemini
-          </span>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {(architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled) ? (
+              <span style={{
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 800,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <Lock size={11} /> Locked (3/3 Free Limit Reached)
+              </span>
+            ) : architectBilling.usedCount >= (architectBilling.freeLimit || 3) ? (
+              <span style={{
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                color: '#4f46e5',
+                border: '1px solid rgba(79, 70, 229, 0.2)',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                ⚡ Metered Active (₹5.00/action)
+              </span>
+            ) : (
+              <span style={{
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                color: '#059669',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                padding: '3px 9px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 800
+              }}>
+                {Math.max(0, (architectBilling.freeLimit || 3) - (architectBilling.usedCount || 0))} / 3 Free Analyses Left
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigate('/profile')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '11px',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '0 4px'
+              }}
+              title="View Profile & Usage Settings"
+            >
+              Usage Controls
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1679,7 +1847,9 @@ export default function UniversalStudio({ bots = [] }) {
               minHeight: '140px',
               padding: '14px 16px',
               borderRadius: '10px',
-              border: '1px solid var(--border-subtle)',
+              border: (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)
+                ? '1px dashed #ef4444'
+                : '1px solid var(--border-subtle)',
               backgroundColor: 'var(--bg-surface)',
               fontSize: '13px',
               color: 'var(--text-primary)',
@@ -1690,13 +1860,35 @@ export default function UniversalStudio({ bots = [] }) {
             }}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '11px', color: generatorPrompt.length > 1800 ? '#d97706' : 'var(--text-muted)' }}>
-              {generatorPrompt.length.toLocaleString()} / 2,000 characters
-            </span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '11px', color: generatorPrompt.length > 1800 ? '#d97706' : 'var(--text-muted)' }}>
+                {generatorPrompt.length.toLocaleString()} / 2,000 characters
+              </span>
+              <span style={{ fontSize: '11px', color: (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled) ? '#dc2626' : 'var(--text-muted)' }}>
+                {(architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)
+                  ? '🔒 Auto-pay disabled in Profile. Action is locked.'
+                  : architectBilling.usedCount >= (architectBilling.freeLimit || 3)
+                    ? `⚡ Metered rate: ₹5.00/action (Accrued: ₹${Number(architectBilling.accruedCost || 0).toFixed(2)})`
+                    : `Complimentary quota: ${Math.max(0, (architectBilling.freeLimit || 3) - (architectBilling.usedCount || 0))} runs left (₹5/action beyond)`}
+              </span>
+            </div>
+
             <button
-              onClick={() => handleSynthesizeProfile()}
-              disabled={isSynthesizing || !generatorPrompt.trim()}
+              onClick={() => {
+                if (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled) {
+                  showToast({
+                    type: 'error',
+                    title: 'Prompt Architect Locked',
+                    message: 'Free quota (3/3) exhausted and auto-metered billing is turned OFF in Profile settings.',
+                    action: { label: 'Enable in Profile', onClick: () => navigate('/profile') },
+                    duration: 6000
+                  });
+                  return;
+                }
+                handleSynthesizeProfile();
+              }}
+              disabled={isSynthesizing || !generatorPrompt.trim() || (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1704,18 +1896,41 @@ export default function UniversalStudio({ bots = [] }) {
                 padding: '10px 22px',
                 borderRadius: '9px',
                 border: 'none',
-                backgroundColor: '#4f46e5',
+                backgroundColor: (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)
+                  ? '#ef4444'
+                  : '#4f46e5',
                 color: '#ffffff',
                 fontSize: '13px',
                 fontWeight: 700,
-                cursor: (isSynthesizing || !generatorPrompt.trim()) ? 'not-allowed' : 'pointer',
-                opacity: (isSynthesizing || !generatorPrompt.trim()) ? 0.6 : 1,
-                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+                cursor: (isSynthesizing || !generatorPrompt.trim() || (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled))
+                  ? 'not-allowed'
+                  : 'pointer',
+                opacity: (isSynthesizing || !generatorPrompt.trim() || (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled))
+                  ? 0.65
+                  : 1,
+                boxShadow: (architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled)
+                  ? 'none'
+                  : '0 2px 8px rgba(79, 70, 229, 0.3)',
                 transition: 'all 0.15s ease'
               }}
             >
-              <Sparkles size={14} className={isSynthesizing ? 'animate-spin' : ''} />
-              <span>{isSynthesizing ? 'Analyzing & Synthesizing Prompt...' : 'Analyze & Generate Master Prompt'}</span>
+              {(architectBilling.usedCount >= (architectBilling.freeLimit || 3) && !architectBilling.autoMeteredEnabled) ? (
+                <>
+                  <Lock size={14} />
+                  <span>Locked (3/3 Free Limit - Auto-Pay OFF)</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} className={isSynthesizing ? 'animate-spin' : ''} />
+                  <span>
+                    {isSynthesizing
+                      ? 'Analyzing & Synthesizing Prompt...'
+                      : architectBilling.usedCount >= (architectBilling.freeLimit || 3)
+                        ? 'Analyze & Generate Master Prompt (₹5.00)'
+                        : 'Analyze & Generate Master Prompt'}
+                  </span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -3611,8 +3826,8 @@ export default function UniversalStudio({ bots = [] }) {
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                     {creditUsage.freeRemaining > 0
-                      ? '₹0.60/query charged beyond free quota.'
-                      : 'Metered usage active: ₹0.60 per inquiry'}
+                      ? '₹3.00/query charged beyond free quota.'
+                      : 'Metered usage active: ₹3.00 per inquiry'}
                   </div>
                 </div>
               </div>

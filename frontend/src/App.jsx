@@ -22,6 +22,7 @@ import TaskCenter from './pages/TaskCenter';
 import UniversalStudio from './pages/UniversalStudio';
 import Pipeline from './pages/Pipeline';
 import DocumentationPage from './pages/DocumentationPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFound from './pages/NotFound';
 import EmbedSnippetModal from './components/bots/EmbedSnippetModal';
 import NovaByteCopilotDrawer from './components/layout/NovaByteCopilotDrawer';
@@ -160,6 +161,11 @@ export default function App() {
             <Route path="/documentation" element={<Navigate to="/docs" replace />} />
             <Route path="/demo" element={<DemoSitePage bots={bots} />} />
             <Route path="/deployment" element={<DeploymentGuidePage />} />
+
+            {/* Client Profile, Service Controls & Governance */}
+            <Route path="/profile" element={<ProfilePage bots={bots} />} />
+            <Route path="/billing" element={<Navigate to="/profile" replace />} />
+            <Route path="/account" element={<Navigate to="/profile" replace />} />
 
             {/* 404 Catch-All Route */}
             <Route path="*" element={<NotFound />} />

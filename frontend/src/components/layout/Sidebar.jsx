@@ -624,7 +624,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
             </button>
 
             <button
-              onClick={() => navigate('/deployment')}
+              onClick={() => navigate('/profile')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -632,11 +632,12 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
                 padding: '6px 8px',
                 borderRadius: '6px',
                 border: 'none',
-                background: 'transparent',
-                color: 'var(--text-secondary)',
+                background: location.pathname === '/profile' ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
+                color: location.pathname === '/profile' ? 'var(--primary)' : 'var(--text-secondary)',
                 fontSize: '12.5px',
                 cursor: 'pointer',
-                textAlign: 'left'
+                textAlign: 'left',
+                fontWeight: location.pathname === '/profile' ? 700 : 500
               }}
             >
               <CreditCard size={14} />
@@ -805,7 +806,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onOpenCopilot }
               <div 
                 onClick={() => {
                   setShowProfileMenu(false);
-                  alert(`Logged in as ${userName} (Pro Plan)`);
+                  navigate('/profile');
                 }}
                 style={{
                   display: 'flex',

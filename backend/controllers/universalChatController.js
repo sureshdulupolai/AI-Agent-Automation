@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import db from '../config/database.js';
 import { processUniversalChat, autoSynthesizeProfileFromDescription, synthesizeSystemPrompt } from '../services/universalBrain.js';
 import { logAutonomousTask } from '../services/taskEngine.js';
+import { canRunPromptArchitect, recordPromptArchitectUsage } from './billingController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,7 +47,7 @@ export function getCreditStats(botId = 'global') {
   // Isolate credits per bot: each model has its own independent 10 free inquiries
   const record = credits[key] || { usedCount: 0 };
   const freeLimit = 10;
-  const pricePerQuery = 0.60;
+  const pricePerQuery = 3.00; // Updated to ₹3.00 per simulator query
   const usedCount = Number(record.usedCount) || 0;
   const freeRemaining = Math.max(0, freeLimit - usedCount);
   const paidCount = Math.max(0, usedCount - freeLimit);
@@ -260,6 +261,7 @@ export async function getCreditsStatus(req, res) {
 
 /**
  * POST /api/universal/generate-profile
+ * AI Business & Automation Prompt Architect synthesis with 3 free runs quota and ₹5.00/run metered billing
  */
 export async function autoGenerateProfile(req, res) {
   try {
@@ -268,8 +270,24 @@ export async function autoGenerateProfile(req, res) {
       return res.status(400).json({ success: false, error: 'Business description prompt is required' });
     }
 
+    // Strict Limit & Lock Check: 3 free runs. If limit exceeded and auto-metered is OFF, completely block execution
+    const runCheck = canRunPromptArchitect();
+    if (!runCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        code: 'PROMPT_ARCHITECT_LOCKED',
+        error: 'Free limit (3/3) reached for AI Business & Automation Prompt Architect and auto-metered billing is turned OFF in Profile & Usage controls.'
+      });
+    }
+
     const synthesized = await autoSynthesizeProfileFromDescription(description);
-    return res.json({ success: true, profile: synthesized });
+    const usageStats = recordPromptArchitectUsage();
+
+    return res.json({
+      success: true,
+      profile: synthesized,
+      architectUsage: usageStats
+    });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }

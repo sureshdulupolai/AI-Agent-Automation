@@ -91,12 +91,25 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed
         </div>
 
         <button
-          onClick={() => setIsBuilderOpen(true)}
-          className="btn-primary"
-          style={{ padding: '9px 18px', fontSize: '13.5px' }}
+          onClick={() => {
+            if (bots.length >= 3) {
+              alert('Maximum chatbot limit reached (3/3). Your account allows up to 3 chatbots. Please manage or remove an existing bot before creating a new one.');
+              return;
+            }
+            setIsBuilderOpen(true);
+          }}
+          className={bots.length >= 3 ? "btn-secondary" : "btn-primary"}
+          style={{
+            padding: '9px 18px',
+            fontSize: '13.5px',
+            opacity: bots.length >= 3 ? 0.85 : 1,
+            cursor: bots.length >= 3 ? 'not-allowed' : 'pointer',
+            border: bots.length >= 3 ? '1px dashed #ef4444' : undefined
+          }}
+          title={bots.length >= 3 ? 'Max 3 chatbots reached' : 'Create new chatbot'}
         >
-          <Plus size={16} />
-          <span>New Chatbot</span>
+          <Plus size={16} color={bots.length >= 3 ? '#ef4444' : 'currentColor'} />
+          <span>{bots.length >= 3 ? '3 / 3 Chatbots (Max Limit)' : 'New Chatbot'}</span>
         </button>
       </div>
 
@@ -113,9 +126,11 @@ export default function DashboardPage({ onSelectBot, onOpenWhatsApp, onOpenEmbed
             <Bot size={16} color="var(--primary)" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '2px' }}>
-            {bots.length}
+            {bots.length} <span style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>/ 3</span>
           </div>
-          <span style={{ fontSize: '11.5px', color: '#059669', fontWeight: 600 }}>Active</span>
+          <span style={{ fontSize: '11.5px', color: bots.length >= 3 ? '#dc2626' : '#059669', fontWeight: 600 }}>
+            {bots.length >= 3 ? 'Max Capacity (3/3 Slots Used)' : `${3 - bots.length} Slot Available`}
+          </span>
         </div>
 
         <div className="glass-panel" style={{ padding: '18px' }}>
