@@ -695,16 +695,28 @@
       });
 
       if (!response.ok) throw new Error('Chat API returned error');
-      const data = await response.json();
       isTyping = false;
-
-      messages.push({
+      const fullReply = data.reply || '';
+      const botMsg = {
         sender: 'bot',
-        content: data.reply,
+        content: '',
         created_at: data.timestamp || new Date().toISOString()
-      });
-
+      };
+      messages.push(botMsg);
+      renderMessages();
       playChime();
+
+      // Fast Word-by-Word Streaming Effect
+      const tokens = fullReply.match(/(\s+|\S+)/g) || [fullReply];
+      let tIdx = 0;
+      const streamTimer = setInterval(() => {
+        tIdx += 1;
+        botMsg.content = tokens.slice(0, tIdx).join('');
+        renderMessages();
+        if (tIdx >= tokens.length) {
+          clearInterval(streamTimer);
+        }
+      }, 20);
     } catch (err) {
       isTyping = false;
       messages.push({
@@ -712,9 +724,8 @@
         content: "Sorry, I am having trouble connecting to the server. Please try again shortly.",
         created_at: new Date().toISOString()
       });
+      renderMessages();
     }
-
-    renderMessages();
   }
 
   async function fetchConfig() {

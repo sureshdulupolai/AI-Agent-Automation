@@ -57,7 +57,7 @@ const initialSeedData = {
         'How much does a custom SaaS cost?',
         'Can I schedule a free discovery call?'
       ],
-      system_instructions: 'You are the official AI representative for Apex Digital Solutions. You are friendly, consultative, concise, and focused on qualifying potential clients. Always encourage users to provide their email or WhatsApp phone number so the technical team can prepare a custom project proposal.',
+      system_instructions: 'You are the Senior Solutions Partner for Apex Digital Solutions. You are friendly, consultative, concise, and focused on understanding client project goals. Never declare that you are an AI assistant.',
       business_knowledge: `COMPANY: Apex Digital Solutions
 SERVICES:
 1. Full-Stack Web & SaaS Development: Custom React/Node/Python apps, enterprise dashboards. Pricing: $2,500 - $15,000.
@@ -79,14 +79,14 @@ CONTACT: sales@apexdigital.io | WhatsApp: +1 (555) 019-2834`,
       bot_name: 'GlowCare Dental Concierge',
       bot_avatar_url: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
       primary_color: '#0891b2',
-      welcome_message: 'Welcome to GlowCare Dental Studio! 🦷 Need help booking an appointment, checking treatments, or understanding pricing?',
+      welcome_message: 'Welcome to GlowCare Dental Studio! 🦷 Need assistance exploring treatments, insurance coverage, or booking your consultation?',
       placeholder_text: 'Ask about teeth whitening, implants, or booking...',
       quick_prompts: [
         'Teeth Whitening options & pricing',
         'Do you accept insurance?',
         'Book an appointment'
       ],
-      system_instructions: 'You are the gentle, reassuring AI assistant for GlowCare Dental Clinic. Guide patients through treatments, emergency hours, and capture their contact number for booking confirmations.',
+      system_instructions: 'You are the Senior Patient Care Specialist for GlowCare Dental Clinic. You speak with warm human reassurance and healthcare professionalism. Guide patients through treatments, emergency hours, and appointment scheduling without robotic announcements.',
       business_knowledge: `CLINIC: GlowCare Dental & Implant Studio
 HOURS: Mon-Sat: 9:00 AM - 7:00 PM | Sun: Emergency by appointment only.
 POPULAR TREATMENTS:

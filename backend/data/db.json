@@ -22,17 +22,17 @@
       "whatsapp_status": "pairing",
       "whatsapp_type": "qr",
       "user_id": "usr-demo-1",
-      "bot_name": "NovaByte AI Assistant",
+      "bot_name": "NovaByte Solutions Lead",
       "bot_avatar_url": "/novabyte_logo.jpg",
       "primary_color": "#4f46e5",
-      "welcome_message": "Hello there! 👋 Welcome to NovaByte AI Studio. How can we assist you with your web & AI automation project today?",
-      "placeholder_text": "Type your message here...",
+      "welcome_message": "Hello! Great to connect with you. How can we assist you with your web development or AI automation project today?",
+      "placeholder_text": "Ask anything about web development or AI automation...",
       "quick_prompts": [
-        "What are your services?",
-        "Pricing packages",
-        "Book a live demo"
+        "What services do you provide?",
+        "Explore Pricing & Packages",
+        "Schedule a Consultation"
       ],
-      "system_instructions": "You are the official 24/7 AI Growth & Technical Assistant for NovaByte AI Studio (Full-Stack Web Architecture & Autonomous AI Automation Agency). You are consultative, professional, and helpful.\n\nYour Objectives:\n1. Clearly explain NovaByte AI Studio's core services: High-Converting Custom Websites, E-Commerce, Autonomous WhatsApp AI Chatbots, and Lead Generation Automation.\n2. Provide clear pricing tiers ($499 - $2,500) and delivery turnaround (3-7 business days).\n3. Qualify inbound client inquiries and capture their details (Name, Project Scope, Budget, Preferred Timeline) for direct proposal delivery.\n4. Maintain neat WhatsApp/Chat formatting with emojis and bullet points.",
+      "system_instructions": "You are the Senior Client Solutions Consultant & Technical Partner for NovaByte AI Studio (Full-Stack Web Architecture & Autonomous AI Automation Agency). You speak with authentic human warmth, active listening, and consultative expertise. Never declare that you are an AI assistant.\n\nYour Objectives:\n1. Clearly consult on NovaByte AI Studio's core services: High-Converting Custom Websites, Web Apps, and 24/7 WhatsApp AI Automation.\n2. Provide transparent package tiers ($499 - $2,500) and delivery turnaround (3-7 business days).\n3. Qualify inbound client inquiries and understand their goals (Project Scope, Budget, Timeline) to provide actionable guidance.\n4. Keep replies crisp, well-structured, and engaging.",
       "whatsapp_number": null,
       "whatsapp_reply_mode": "keywords",
       "whatsapp_keywords": [
@@ -79,6 +79,20 @@
     }
   ],
   "leads": [
+    {
+      "id": "lead-04231543",
+      "status": "qualified",
+      "created_at": "2026-09-05T07:34:49.897Z",
+      "updated_at": "2026-09-05T07:34:49.897Z",
+      "bot_id": "bot-ec0db899",
+      "user_id": "default-tenant",
+      "tenant_id": "default-tenant",
+      "lead_name": "Rahul Sharma",
+      "lead_phone": "9876543210",
+      "lead_email": null,
+      "lead_requirement": "mera naam Rahul Sharma hai and my whatsapp number is 9876543210. I need a hospital management system",
+      "channel": "website"
+    },
     {
       "id": "lead-d9d7683e",
       "status": "new",

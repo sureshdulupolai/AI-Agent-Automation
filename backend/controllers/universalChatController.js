@@ -2,12 +2,85 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../config/database.js';
-import { processUniversalChat, autoSynthesizeProfileFromDescription } from '../services/universalBrain.js';
+import { processUniversalChat, autoSynthesizeProfileFromDescription, synthesizeSystemPrompt } from '../services/universalBrain.js';
 import { logAutonomousTask } from '../services/taskEngine.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROFILES_FILE = path.join(__dirname, '../data/universal_profiles.json');
+const CREDITS_FILE = path.join(__dirname, '../data/simulator_credits.json');
+
+/**
+ * Helper to read credit usage per bot
+ */
+function readCredits() {
+  try {
+    if (!fs.existsSync(CREDITS_FILE)) {
+      fs.writeFileSync(CREDITS_FILE, JSON.stringify({}));
+      return {};
+    }
+    return JSON.parse(fs.readFileSync(CREDITS_FILE, 'utf-8'));
+  } catch (err) {
+    return {};
+  }
+}
+
+/**
+ * Helper to write credit usage
+ */
+function saveCredits(data) {
+  try {
+    fs.writeFileSync(CREDITS_FILE, JSON.stringify(data, null, 2));
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Get credit statistics with persistent 10 free token tier + ₹0.60/inquiry billing
+ */
+export function getCreditStats(botId = 'global') {
+  const credits = readCredits();
+  const key = botId || 'global';
+  // Isolate credits per bot: each model has its own independent 10 free inquiries
+  const record = credits[key] || { usedCount: 0 };
+  const freeLimit = 10;
+  const pricePerQuery = 0.60;
+  const usedCount = Number(record.usedCount) || 0;
+  const freeRemaining = Math.max(0, freeLimit - usedCount);
+  const paidCount = Math.max(0, usedCount - freeLimit);
+  const accruedCost = Number((paidCount * pricePerQuery).toFixed(2));
+
+  return {
+    botId: key,
+    freeLimit,
+    usedCount,
+    freeRemaining,
+    paidCount,
+    pricePerQuery,
+    accruedCost,
+    currency: 'INR',
+    currencySymbol: '₹'
+  };
+}
+
+/**
+ * Consume 1 test query credit persistently
+ */
+export function incrementCreditUsage(botId = 'global') {
+  const credits = readCredits();
+  const key = botId || 'global';
+  const current = credits[key] || { usedCount: 0 };
+  const newUsed = (Number(current.usedCount) || 0) + 1;
+  credits[key] = {
+    ...current,
+    usedCount: newUsed,
+    updated_at: new Date().toISOString()
+  };
+  saveCredits(credits);
+  return getCreditStats(key);
+}
 
 /**
  * Helper to read universal profiles
@@ -42,16 +115,27 @@ function saveProfiles(data) {
 export async function getProfileForBot(botId) {
   try {
     const profiles = readProfiles();
+    const bot = botId ? await db.getBotById(botId).catch(() => null) : null;
+
     if (botId && profiles[botId]) {
-      return profiles[botId];
+      const existing = profiles[botId];
+      if (bot) {
+        existing.business_name = bot.bot_name || existing.business_name;
+        // Prioritize actual system instructions from the database bot record
+        if (bot.system_instructions && bot.system_instructions.trim()) {
+          existing.direct_prompt = bot.system_instructions;
+        }
+      }
+      return existing;
     }
 
-    const bot = botId ? await db.getBotById(botId).catch(() => null) : null;
     const defaultProfile = {
       business_name: bot?.bot_name || 'NovaByte AI Studio',
       industry_category: bot?.industry || 'Full-Stack Web & AI Automation',
       brand_voice: 'Warm, Consultative, and Authoritative Senior Specialist',
       fulfillment_type: 'custom_quote',
+      direct_prompt_enabled: Boolean(bot?.system_instructions?.trim()),
+      direct_prompt: bot?.system_instructions || '',
       core_offerings: [
         {
           name: 'Custom High-Converting Websites',
@@ -94,6 +178,7 @@ export async function getProfileForBot(botId) {
       business_name: 'NovaByte AI Studio',
       industry_category: 'Full-Stack Web & AI Automation',
       brand_voice: 'Warm, Consultative, and Authoritative Senior Specialist',
+      direct_prompt: '',
       core_offerings: []
     };
   }
@@ -129,14 +214,31 @@ export async function updateBusinessProfile(req, res) {
 
     // Sync bot record system instructions and knowledge
     try {
-      const offeringsSummary = (newProfile.core_offerings || []).map(o => `${o.name} (${o.price_range || ''})`).join(', ');
+      const fullSynthesizedPrompt = synthesizeSystemPrompt(newProfile);
       await db.updateBot(botId, {
-        system_instructions: `You represent ${newProfile.business_name} (${newProfile.industry_category}). Voice: ${newProfile.brand_voice}. Offerings: ${offeringsSummary}.`,
+        bot_name: newProfile.business_name || undefined,
+        system_instructions: fullSynthesizedPrompt,
         business_knowledge: JSON.stringify(newProfile.policies_and_faqs || {})
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Could not sync to bot DB record:', e.message);
+    }
 
     return res.json({ success: true, profile: profiles[botId] });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+/**
+ * GET /api/universal/credits/:botId
+ * Persistent credit tracker for simulator queries (10 free, then ₹0.60/inquiry)
+ */
+export async function getCreditsStatus(req, res) {
+  try {
+    const { botId } = req.params;
+    const stats = getCreditStats(botId);
+    return res.json({ success: true, ...stats });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }
@@ -167,6 +269,12 @@ export async function handleUniversalInboundChat(req, res) {
   try {
     const { botId, userMessage, history, media, senderPhone, senderName, channel = 'simulator', apiKeyOverride } = req.body;
     const profile = await getProfileForBot(botId);
+
+    // Persistent credit tracking for simulator testing
+    let creditUsage = null;
+    if (channel === 'universal_simulator' || channel === 'simulator') {
+      creditUsage = incrementCreditUsage(botId || 'global');
+    }
 
     const result = await processUniversalChat({
       businessProfile: profile,
@@ -212,7 +320,10 @@ export async function handleUniversalInboundChat(req, res) {
       } catch (e) {}
     }
 
-    return res.json(result);
+    return res.json({
+      ...result,
+      creditUsage: creditUsage || getCreditStats(botId || 'global')
+    });
   } catch (err) {
     return res.status(500).json({ success: false, error: err.message });
   }

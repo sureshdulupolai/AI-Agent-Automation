@@ -397,9 +397,10 @@ export default function NovaByteCopilotDrawer({ isOpen, onClose }) {
             ))}
 
             {isTyping && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', backgroundColor: '#f1f5f9', borderRadius: '12px', width: 'fit-content' }}>
-                <span style={{ width: '6px', height: '6px', backgroundColor: '#818cf8', borderRadius: '50%', animation: 'pulse 1s infinite' }}></span>
-                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>NovaByte AI is thinking...</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '10px 14px', backgroundColor: '#f1f5f9', borderRadius: '14px', width: 'fit-content' }}>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#818cf8', borderRadius: '50%', display: 'inline-block', animation: 'botDotBounce 1.2s infinite ease-in-out', animationDelay: '0s' }}></span>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#818cf8', borderRadius: '50%', display: 'inline-block', animation: 'botDotBounce 1.2s infinite ease-in-out', animationDelay: '0.2s' }}></span>
+                <span style={{ width: '6px', height: '6px', backgroundColor: '#818cf8', borderRadius: '50%', display: 'inline-block', animation: 'botDotBounce 1.2s infinite ease-in-out', animationDelay: '0.4s' }}></span>
               </div>
             )}
 

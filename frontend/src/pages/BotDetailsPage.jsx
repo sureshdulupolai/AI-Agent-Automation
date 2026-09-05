@@ -24,11 +24,43 @@ import {
   Info,
   CheckCheck,
   Filter,
-  X
+  X,
+  Stethoscope,
+  Building2,
+  Code2,
+  ShoppingBag,
+  Target,
+  GraduationCap,
+  Utensils,
+  Headphones,
+  Mail,
+  Mic,
+  Image as ImageIcon,
+  Languages,
+  Briefcase,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { INDUSTRY_PRESETS, AUTONOMOUS_CAPABILITIES } from '../data/industryTemplates';
 import { getInitialColor, getInitialLetter } from '../utils/avatarUtils';
+
+const ICON_MAP = {
+  Stethoscope,
+  Building2,
+  Code2,
+  ShoppingBag,
+  Target,
+  GraduationCap,
+  Utensils,
+  Headphones,
+  Mail,
+  Mic,
+  Image: ImageIcon,
+  Languages,
+  Briefcase
+};
 import { formatWhatsAppText } from '../utils/formatWhatsAppText';
+import TypewriterMessage from '../components/common/TypewriterMessage';
 
 export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
   const { botId: routeBotId } = useParams();
@@ -48,6 +80,8 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
 
   const [systemInstructions, setSystemInstructions] = useState('');
   const [businessKnowledge, setBusinessKnowledge] = useState('');
+  const [selectedIndustryId, setSelectedIndustryId] = useState('software_agency');
+  const [enabledCapabilities, setEnabledCapabilities] = useState(['lead_capture', 'voice_notes', 'media_inspection', 'language_mirroring']);
   const [faqs, setFaqs] = useState([
     { question: 'What services do you offer?', answer: 'We specialize in custom web development, AI chatbots, and full-stack SaaS automation.' },
     { question: 'What is your turnaround time?', answer: 'Most custom websites and AI chatbots are delivered within 3 to 7 business days.' }
@@ -98,6 +132,11 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
         setLauncherPosition(b.launcher_position || 'bottom-right');
         setTeaserText(b.teaser_text || 'How can I help you today?');
         setShowTeaser(b.show_teaser !== false);
+
+        if (b.industry_template) setSelectedIndustryId(b.industry_template);
+        if (Array.isArray(b.training_goals) && b.training_goals.length > 0) {
+          setEnabledCapabilities(b.training_goals);
+        }
 
         setReplyMode(b.whatsapp_reply_mode || 'all');
         if (Array.isArray(b.whatsapp_keywords) && b.whatsapp_keywords.length > 0) {
@@ -162,7 +201,9 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
           teaser_text: teaserText,
           show_teaser: showTeaser,
           whatsapp_reply_mode: replyMode,
-          whatsapp_keywords: keywords
+          whatsapp_keywords: keywords,
+          industry_template: selectedIndustryId,
+          training_goals: enabledCapabilities
         })
       });
 
@@ -262,33 +303,38 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
       if (data.reply) {
         setSandboxMessages(prev => [
           ...prev,
-          { sender: 'bot', content: data.reply, time: 'Just now' }
+          { sender: 'bot', content: data.reply, time: 'Just now', isStreaming: true }
         ]);
       }
     } catch (err) {
       setSandboxTyping(false);
       setSandboxMessages(prev => [
         ...prev,
-        { sender: 'bot', content: `⚠️ Error: ${err.message}`, time: 'Just now' }
+        { sender: 'bot', content: `⚠️ Error: ${err.message}`, time: 'Just now', isStreaming: true }
       ]);
     }
   };
 
-  // Pre-made Prompt Persona Templates
-  const promptTemplates = [
-    {
-      title: 'Digital Agency / Freelancer',
-      prompt: 'You are the official AI representative for Suresh Polai Digital Studio. You are polite, consultative, concise, and focused on explaining web development ($499-$2500) and AI automation services. Always ask for client project details and preferred callback time.'
-    },
-    {
-      title: 'WhatsApp Sales Representative',
-      prompt: 'You are an enthusiastic, consultative WhatsApp sales assistant. You write concise messages with bullet points and friendly emojis. You answer product and pricing inquiries promptly and capture client name and WhatsApp number.'
-    },
-    {
-      title: 'Customer Support Concierge',
-      prompt: 'You are a patient, helpful 24/7 customer support specialist. You resolve user inquiries using the provided business knowledge and escalate complex issues gracefully.'
+  // One-Click Industry Preset Applier
+  const handleApplyPreset = (preset) => {
+    setSelectedIndustryId(preset.id);
+    setSystemInstructions(preset.systemInstructions);
+    if (!businessKnowledge.trim() || window.confirm(`Replace Knowledge Base with ${preset.name} catalog and FAQs as well?`)) {
+      setBusinessKnowledge(preset.businessKnowledge);
     }
-  ];
+    if (preset.defaultCapabilities) {
+      setEnabledCapabilities(preset.defaultCapabilities);
+    }
+    if (preset.quickPrompts && preset.quickPrompts.length > 0) {
+      setFaqs(preset.quickPrompts.map(q => ({ question: q, answer: `Information regarding ${q}.` })));
+    }
+  };
+
+  const handleToggleCapability = (capId) => {
+    setEnabledCapabilities(prev =>
+      prev.includes(capId) ? prev.filter(id => id !== capId) : [...prev, capId]
+    );
+  };
 
   if (loading) {
     return (
@@ -531,28 +577,126 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
                   Instruct the AI on how to represent your business on WhatsApp and Website chat.
                 </p>
 
-                {/* Quick Persona Chips */}
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '11.5px', color: '#71717a', fontWeight: 700, alignSelf: 'center' }}>Preset Roles:</span>
-                  {promptTemplates.map((tmpl, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setSystemInstructions(tmpl.prompt)}
-                      style={{
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #e2e8f0',
-                        backgroundColor: '#f8fafc',
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                        color: '#334155',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {tmpl.title}
-                    </button>
-                  ))}
+                {/* One-Click Industry Training Presets */}
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#0f172a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={14} color="#7c3aed" />
+                      <span>One-Click Industry Presets:</span>
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                      Select to instantly retrain behavioral tone and directives
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+                    gap: '8px'
+                  }}>
+                    {INDUSTRY_PRESETS.map((preset) => {
+                      const isSelected = selectedIndustryId === preset.id;
+                      const PresetIcon = ICON_MAP[preset.iconName] || Bot;
+
+                      return (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleApplyPreset(preset)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 10px',
+                            borderRadius: '8px',
+                            border: isSelected ? `2px solid ${preset.primaryColor}` : '1px solid #e2e8f0',
+                            backgroundColor: isSelected ? `${preset.primaryColor}10` : '#f8fafc',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '6px',
+                            backgroundColor: isSelected ? preset.primaryColor : '#e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}>
+                            <PresetIcon size={13} color={isSelected ? '#ffffff' : '#475569'} />
+                          </div>
+                          <span style={{
+                            fontSize: '11.5px',
+                            fontWeight: isSelected ? 800 : 600,
+                            color: isSelected ? preset.primaryColor : '#334155',
+                            lineHeight: 1.2,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {preset.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Autonomous Capabilities Checklist */}
+                <div style={{
+                  marginBottom: '14px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '10px',
+                  padding: '10px 12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Sparkles size={13} color="#7c3aed" />
+                      <span>Autonomous Capabilities &amp; Contact Capture</span>
+                    </span>
+                    <span style={{ fontSize: '10.5px', color: '#059669', fontWeight: 700, backgroundColor: '#ecfdf5', padding: '1px 6px', borderRadius: '4px' }}>
+                      WhatsApp &amp; Web
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '6px' }}>
+                    {AUTONOMOUS_CAPABILITIES.map((cap) => {
+                      const isEnabled = enabledCapabilities.includes(cap.id);
+                      const CapIcon = ICON_MAP[cap.iconName] || CheckCircle2;
+
+                      return (
+                        <div
+                          key={cap.id}
+                          onClick={() => handleToggleCapability(cap.id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 8px',
+                            borderRadius: '6px',
+                            backgroundColor: isEnabled ? '#ffffff' : 'transparent',
+                            border: isEnabled ? '1px solid #cbd5e1' : '1px solid transparent',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={() => {}}
+                            style={{ cursor: 'pointer', accentColor: '#7c3aed' }}
+                          />
+                          <CapIcon size={13} color={isEnabled ? '#7c3aed' : '#94a3b8'} style={{ flexShrink: 0 }} />
+                          <span style={{ fontSize: '11px', fontWeight: isEnabled ? 700 : 500, color: isEnabled ? '#0f172a' : '#64748b' }}>
+                            {cap.name}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <textarea
@@ -1034,7 +1178,13 @@ export default function BotDetailsPage({ bots = [], onBack, onOpenEmbed }) {
                     fontSize: '13px',
                     lineHeight: 1.45
                   }}>
-                    {formatWhatsAppText(m.content)}
+                    <TypewriterMessage
+                      text={m.content}
+                      isStreaming={m.isStreaming}
+                      speed={18}
+                      formatter={formatWhatsAppText}
+                      onStreamEnd={() => { m.isStreaming = false; }}
+                    />
                   </div>
                 </div>
               );

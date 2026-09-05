@@ -76,15 +76,15 @@
 
   let botConfig = {
     id: botId,
-    bot_name: 'AI Support Assistant',
+    bot_name: 'Solutions Specialist',
     bot_avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     primary_color: rawOverrideColor || '#4f46e5',
-    welcome_message: 'Hello! 👋 How can I help you today?',
-    placeholder_text: 'Type a message...',
-    quick_prompts: ['What services do you offer?', 'Pricing details', 'Talk to an agent'],
+    welcome_message: 'Hello! Great to connect with you. How can we assist your business today?',
+    placeholder_text: 'Type your message...',
+    quick_prompts: ['What services do you offer?', 'Explore Pricing & Packages', 'Schedule a Consultation'],
     launcher_icon: 'chat',
     launcher_position: 'bottom-right',
-    teaser_text: '👋 Need help? Chat with our AI!',
+    teaser_text: 'Need assistance? Chat with our specialist!',
     show_teaser: true,
     theme_mode: 'light'
   };
@@ -783,25 +783,37 @@
       if (!response.ok) throw new Error('Chat API returned error');
       const data = await response.json();
       isTyping = false;
-
-      messages.push({
+      const fullReply = data.reply || '';
+      const botMsg = {
         sender: 'bot',
-        content: data.reply,
+        content: '',
         action: data.action,
         created_at: data.timestamp || new Date().toISOString()
-      });
-
+      };
+      messages.push(botMsg);
+      renderMessages();
       playChime();
+
+      // Fast Word-by-Word Streaming Effect
+      const tokens = fullReply.match(/(\s+|\S+)/g) || [fullReply];
+      let tIdx = 0;
+      const streamTimer = setInterval(() => {
+        tIdx += 1;
+        botMsg.content = tokens.slice(0, tIdx).join('');
+        renderMessages();
+        if (tIdx >= tokens.length) {
+          clearInterval(streamTimer);
+        }
+      }, 20);
     } catch (err) {
       isTyping = false;
       messages.push({
         sender: 'bot',
-        content: "Sorry, I am having trouble connecting to the server. Please try again shortly.",
+        content: "I'm experiencing a brief network delay. Please feel free to retry your message or leave your contact details!",
         created_at: new Date().toISOString()
       });
+      renderMessages();
     }
-
-    renderMessages();
   }
 
   async function fetchConfig() {

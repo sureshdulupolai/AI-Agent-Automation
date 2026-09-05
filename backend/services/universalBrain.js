@@ -28,6 +28,11 @@ function getKeysData() {
  * Transforms any arbitrary business configuration into an ultra-natural, human-grade consultative persona.
  */
 export function synthesizeSystemPrompt(profile = {}) {
+  // Direct Master Prompt Directive Override (If client provided custom direct prompt)
+  if (profile.direct_prompt_enabled && profile.direct_prompt && profile.direct_prompt.trim()) {
+    return profile.direct_prompt.trim();
+  }
+
   const businessName = profile.business_name || 'NovaByte AI Studio';
   const category = profile.industry_category || 'General Business & Services';
   const voice = profile.brand_voice || 'Warm, Consultative, and Authoritative Senior Specialist';
@@ -51,17 +56,27 @@ export function synthesizeSystemPrompt(profile = {}) {
   `.trim();
 
   return `
-You are the official Senior Human Representative and Solutions Lead for "${businessName}" (${category}).
+You are the official Senior Solutions Consultant and Client Partner representing "${businessName}" (${category}).
 
-### YOUR HUMAN PERSONA & VOICE DIRECTIVE:
+### YOUR HUMAN PERSONA & VOICE DIRECTIVE (Intercom Fin & Zendesk AI Standard):
 1. Speak with 100% AUTHENTIC HUMAN WARMTH, conversational empathy, and deep domain authority. Tone: ${voice}.
-2. NEVER use robotic clichés like:
-   - "As an AI language model..."
-   - "I am programmed to assist..."
-   - "Please note that..."
-   - "Here is a breakdown of our services:"
-3. Adapt your natural vocabulary strictly to the **${category}** domain (e.g. use proper terminology whether talking to medical patients, real estate buyers, gym members, automotive owners, or software clients).
-4. Always acknowledge user names warmly when provided (e.g. "Hey Rahul! Great to connect with you.").
+2. ABSOLUTE PROHIBITION ON ROBOTIC DECLARATIONS:
+   - NEVER introduce yourself as an AI ("I am an AI assistant", "As an AI language model...", "I am programmed to...", "NovaByte AI Assistant is ready to...").
+   - NEVER sound like a rigid command executor or mechanical script.
+3. CONVERSATIONAL CONSULTATIVE FLOW:
+   - Actively listen: acknowledge user needs and questions directly with empathy.
+   - Provide concise, practical guidance without overwhelming walls of text.
+   - Proactively guide with a clear next step or one thoughtful discovery question.
+4. DOMAIN ADAPTABILITY:
+   - Adapt your natural vocabulary strictly to the **${category}** domain (e.g. clinic, real estate, e-commerce, software, professional services).
+5. Always acknowledge user names warmly when provided (e.g. "Hey Rahul! Great to connect with you.").
+6. COMMERCIAL LEAD CONVERSION DIRECTIVE (CRITICAL):
+   - When a client expresses interest in a project, software, or service:
+     - Enthusiastically confirm our ability to deliver.
+     - Keep technical details high-level and consultative.
+     - Promptly request their WhatsApp number or email address so our solutions team can prepare and send a tailored project proposal and estimate.
+7. STRICT LANGUAGE MIRRORING:
+   - Always reply in the exact language/dialect the user writes in (Hinglish -> professional Hinglish, English -> executive English, etc.).
 
 ### VERIFIED BUSINESS OFFERINGS:
 ${offeringsText}
@@ -98,18 +113,24 @@ export async function processUniversalChat({
 
   // Compile candidate keys
   const candidateKeys = [];
-  if (apiKeyOverride && apiKeyOverride.trim().length > 5) {
+  const isValidKey = (k) => Boolean(k && typeof k === 'string' && k.trim().length > 15 && !k.includes('YOUR_CUSTOM') && !k.includes('YOUR_BACKUP'));
+
+  if (apiKeyOverride && isValidKey(apiKeyOverride)) {
     candidateKeys.push({ key: apiKeyOverride.trim(), label: 'Override Key', isClient: true });
   }
-  for (const k of (keysData.client_keys || []).filter(k => k.status !== 'invalid')) {
-    candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id });
+  for (const k of (keysData.client_keys || []).filter(k => k.status === 'active' && isValidKey(k.key))) {
+    if (!candidateKeys.some(c => c.key === k.key)) {
+      candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id });
+    }
   }
-  for (const k of (keysData.system_keys || []).filter(k => k.status !== 'invalid')) {
-    candidateKeys.push({ key: k.key, label: k.label || 'System Key', isClient: false, id: k.id });
+  for (const k of (keysData.system_keys || []).filter(k => k.status === 'active' && isValidKey(k.key))) {
+    if (!candidateKeys.some(c => c.key === k.key)) {
+      candidateKeys.push({ key: k.key, label: k.label || 'System Key', isClient: false, id: k.id });
+    }
   }
   const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
-  if (candidateKeys.length === 0 && envKey) {
-    candidateKeys.push({ key: envKey.trim(), label: 'Env Key', isClient: false });
+  if (isValidKey(envKey) && !candidateKeys.some(c => c.key === envKey.trim())) {
+    candidateKeys.push({ key: envKey.trim(), label: 'Verified Env Key', isClient: false });
   }
 
   const systemPrompt = synthesizeSystemPrompt(businessProfile);
@@ -139,8 +160,9 @@ You must provide your response in valid JSON with exactly this structure:
   // Format History according to Gemini requirements:
   // 1. First turn MUST be role 'user'
   // 2. Roles must strictly alternate: 'user', 'model', 'user', 'model'
+  // Optimized to last 4 turns to conserve tokens and prevent heavy AI load
   const formattedContents = [];
-  const recentHistory = (history || []).slice(-6);
+  const recentHistory = (history || []).slice(-4);
   let expectedRole = 'user';
 
   for (const msg of recentHistory) {
@@ -188,7 +210,7 @@ You must provide your response in valid JSON with exactly this structure:
     }
   }
 
-  const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const candidateModels = ['gemini-3.6-flash', 'gemini-2.5-pro', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
 
   for (const keyObj of candidateKeys) {
     for (const modelName of candidateModels) {
@@ -206,7 +228,7 @@ You must provide your response in valid JSON with exactly this structure:
               contents: formattedContents,
               generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 800,
+                maxOutputTokens: 350,
                 responseMimeType: 'application/json'
               }
             }),
@@ -393,27 +415,52 @@ function generateUniversalFailSafe({ businessProfile, userMessage, startTime }) 
   const businessName = businessProfile.business_name || 'NovaByte AI Studio';
   const category = businessProfile.industry_category || 'Solutions';
 
-  let reply = `Hello${detectedName ? ' ' + detectedName : ''}! 👋 Welcome to ${businessName}. How can we assist you with our ${category.toLowerCase()} services today?`;
+  let reply = `Hello${detectedName ? ' ' + detectedName : ''}! Great to connect with you. How can we assist you with our ${category.toLowerCase()} services today?`;
   let score = 40;
   let temp = '⚡ Warm';
   let intent = 'General Inquiry';
 
-  if (lower.includes('service') || lower.includes('offer') || lower.includes('provide') || lower.includes('what do you do') || lower.includes('package') || lower.includes('feature')) {
+  if (/^(i need help|help me|can you help|help|need support|assistance|support)\b/i.test(lower) || lower === 'help' || lower === 'i need help') {
+    reply = `I'd be glad to help! Whether you need guidance on our ${category.toLowerCase()} packages, customized solutions, or onboarding steps—what specific question or project can I assist you with today? 😊`;
+    score = 60;
+    temp = '⚡ Warm';
+    intent = 'Customer Support & Guidance';
+  } else if (/^(hi|hello|helo|hey|hola|namaste|good morning|good afternoon|good evening|hlo|hii|heyy)\b/i.test(lower)) {
+    reply = `Hello${detectedName ? ' ' + detectedName : ''}! Great to connect with you. How can we support your business goals with our ${category.toLowerCase()} solutions today?`;
+    score = 45;
+    temp = '⚡ Warm';
+    intent = 'Greeting';
+  } else if (lower.includes('service') || lower.includes('offer') || lower.includes('provide') || lower.includes('what do you do') || lower.includes('package') || lower.includes('feature')) {
     const offerings = businessProfile.core_offerings || [];
     const list = offerings.map(o => `• *${o.name}*: ${o.description || 'Specialized service'} (${o.price_range || 'Custom pricing'}, Turnaround: ${o.turnaround || 'Standard delivery'})`).join('\n');
-    reply = `We offer premier ${category} solutions designed to scale your business:\n\n${list || '• Custom Web Development\n• 24/7 Autonomous AI Chatbots'}\n\nWhich of these would you like to explore further? 😊`;
+    reply = `We provide premier ${category} solutions designed to scale your business:\n\n${list || '• Custom Web Architecture\n• 24/7 Autonomous AI Automation'}\n\nWhich of these would you like to explore further? 😊`;
     score = 65;
     temp = '⚡ Warm';
     intent = 'Inquire Services';
   } else if (lower.includes('price') || lower.includes('cost') || lower.includes('quote') || lower.includes('how much') || lower.includes('rate')) {
     const offerings = businessProfile.core_offerings || [];
     const list = offerings.map(o => `• *${o.name}*: ${o.price_range || 'Custom quote'} (${o.turnaround || 'Standard delivery'})`).join('\n');
-    reply = `Here is an overview of our ${category} packages:\n\n${list || 'Please share your specific scope for a tailored quote!'}\n\nCould you share a little bit about your requirements so I can give you an exact estimate? 😊`;
+    reply = `Here is an overview of our ${category} packages:\n\n${list || 'Please share your specific scope for a tailored quote!'}\n\nCould you share a little bit about your project goals so I can give you an exact estimate? 😊`;
     score = 80;
     temp = '🔥 Hot';
     intent = 'Request Pricing';
+  } else if (/(hospital|management|system|project|software|app|portal|platform|crm|ecommerce|e-commerce|build|develop)\b/i.test(lower)) {
+    const isHinglish = /\b(mujhe|kya|bhai|chahiye|banana|banwana|hoga|kitna|lagega|kaise|karo|batao|apna|haan|nahi|karna|h)\b/i.test(lower);
+    if (isHinglish) {
+      reply = `Bilkul! Hum aapke liye custom enterprise software aur automated platforms build kar sakte hain with secure role-based portals aur automated WhatsApp alerts.\n\nProject ka detailed scope aur custom estimate share karne ke liye kripya apna WhatsApp number ya email share karein taaki humari senior technical team aapse directly connect kar sake! 🚀`;
+    } else {
+      reply = `We specialize in custom enterprise development and can definitely architect and build this solution for your workflow.\n\nTo prepare a tailored technical scope, feature roadmap, and ballpark estimate, could you share your WhatsApp number or email? Our senior engineering team will review your requirements and reach out directly! 🚀`;
+    }
+    score = 85;
+    temp = '🔥 Hot';
+    intent = 'Project Architecture Inquiry';
   } else if (lower.includes('@') || /(\+?\d{1,3}[-.\s]?)?\d{10}/.test(lower)) {
-    reply = `Awesome, thank you! I have securely recorded your contact details. Our senior team at ${businessName} will review your requirements and get in touch directly. Is there a preferred time for us to reach out? 😊`;
+    const isHinglish = /\b(mujhe|kya|bhai|chahiye|banana|banwana|hoga|kitna|lagega|kaise|karo|batao|apna|haan|nahi|karna|h)\b/i.test(lower);
+    if (isHinglish) {
+      reply = `Shukriya! Aapka contact number securely record kar liya gaya hai. Humari senior technical team aapke project requirements ko review karke jald hi aapse directly contact karegi! 😊`;
+    } else {
+      reply = `Awesome, thank you! I have securely recorded your contact details. A senior representative from ${businessName} will review your requirements and reach out directly. Is there a preferred time for us to connect? 😊`;
+    }
     score = 95;
     temp = '🔥 Hot';
     intent = 'Lead Contact Capture';

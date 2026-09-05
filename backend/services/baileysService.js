@@ -14,8 +14,7 @@ import { db } from '../config/database.js';
 import { generateBotReply } from './geminiService.js';
 import { extractLeadDetails } from './leadParserService.js';
 import { scheduleFollowUp, cancelFollowUp, isConversationClosed } from './followUpScheduler.js';
-import { logAutonomousTask } from './taskEngine.js';
-import { isHumanTakeoverActive } from './humanTakeoverService.js';
+import { isHumanTakeoverActive, recordHumanOutbound } from './humanTakeoverService.js';
 import { isWhatsAppTargetAllowed } from './whatsappGroupWhitelistService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +30,32 @@ const activeSockets = new Map();
 const activeQR = new Map();
 const activePairingCodes = new Map();
 const connectingLocks = new Map();
+
+/**
+ * Recursively unwraps nested WhatsApp message envelopes (ViewOnce, Ephemeral, etc.)
+ */
+export function unwrapWhatsAppMessage(msgContent) {
+  if (!msgContent) return {};
+  let current = msgContent;
+  let iterations = 0;
+  while (current && iterations < 5) {
+    if (current.viewOnceMessage?.message) {
+      current = current.viewOnceMessage.message;
+    } else if (current.viewOnceMessageV2?.message) {
+      current = current.viewOnceMessageV2.message;
+    } else if (current.viewOnceMessageV2Extension?.message) {
+      current = current.viewOnceMessageV2Extension.message;
+    } else if (current.ephemeralMessage?.message) {
+      current = current.ephemeralMessage.message;
+    } else if (current.documentWithCaptionMessage?.message) {
+      current = current.documentWithCaptionMessage.message;
+    } else {
+      break;
+    }
+    iterations++;
+  }
+  return current;
+}
 
 /**
  * Resolves the real international phone number from a WhatsApp message / JID.
@@ -238,8 +263,40 @@ export async function getOrCreateSocket(botId, forceReset = false) {
       for (const msg of incomingMsgs) {
         if (!msg.message) continue;
 
-        // Ignore messages sent by the connected phone itself
-        if (msg.key.fromMe) continue;
+        // Handle messages sent by the connected phone itself (Business Owner chatting manually)
+        if (msg.key.fromMe) {
+          try {
+            const recipientJid = msg.key.remoteJid;
+            if (recipientJid && !recipientJid.includes('@broadcast') && !recipientJid.includes('@newsletter')) {
+              const currentBot = await db.getBotById(botId);
+              const recipientPhone = await resolveSenderPhone(sock, msg, recipientJid, currentBot?.whatsapp_number);
+              if (recipientPhone && recipientPhone.length >= 7) {
+                // Engage human takeover silence guard for 120 minutes (2 hours)
+                recordHumanOutbound(recipientPhone, 120, 'Business Owner (Mobile Phone)');
+
+                const sessionId = `wa-${recipientPhone.replace(/[^0-9]/g, '')}`;
+                cancelFollowUp(sessionId);
+
+                // Record outbound message in DB so live dashboard shows the full 2-way conversation
+                const outboundText = msg.message?.conversation ||
+                  msg.message?.extendedTextMessage?.text ||
+                  msg.message?.imageMessage?.caption ||
+                  '[Outbound Attachment]';
+
+                await db.addMessage({
+                  bot_id: botId,
+                  session_id: sessionId,
+                  sender: 'agent',
+                  content: outboundText,
+                  channel: 'whatsapp'
+                }).catch(() => {});
+              }
+            }
+          } catch (fromMeErr) {
+            console.warn('Error handling fromMe message:', fromMeErr.message);
+          }
+          continue;
+        }
 
         const senderJid = msg.key.remoteJid;
         if (!senderJid) continue;
@@ -253,49 +310,99 @@ export async function getOrCreateSocket(botId, forceReset = false) {
         const senderPhone = await resolveSenderPhone(sock, msg, senderJid, currentBot.whatsapp_number);
         const senderName = msg.pushName || 'WhatsApp Customer';
 
+        // 1. Unwrap any nested message layers (ViewOnce, Ephemeral, etc.)
+        const rawContent = unwrapWhatsAppMessage(msg.message);
+
         let mediaPayload = null;
-        if (msg.message.imageMessage) {
+        if (rawContent.imageMessage) {
           try {
             const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            const rawMime = rawContent.imageMessage.mimetype || 'image/jpeg';
             mediaPayload = {
-              mimeType: msg.message.imageMessage.mimetype || 'image/jpeg',
+              mediaType: 'image',
+              mimeType: rawMime.split(';')[0].trim().toLowerCase(),
               base64: buffer.toString('base64'),
-              caption: msg.message.imageMessage.caption || ''
+              caption: rawContent.imageMessage.caption || ''
             };
           } catch (e) {
             console.warn('Could not download image:', e.message);
           }
-        } else if (msg.message.audioMessage) {
+        } else if (rawContent.audioMessage) {
           try {
             const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            const rawMime = rawContent.audioMessage.mimetype || 'audio/ogg';
+            const isPtt = Boolean(rawContent.audioMessage.ptt);
             mediaPayload = {
-              mimeType: msg.message.audioMessage.mimetype || 'audio/ogg',
-              base64: buffer.toString('base64')
+              mediaType: isPtt ? 'voice_note' : 'audio',
+              mimeType: rawMime.split(';')[0].trim().toLowerCase(),
+              base64: buffer.toString('base64'),
+              ptt: isPtt
             };
           } catch (e) {
-            console.warn('Could not download audio:', e.message);
+            console.warn('Could not download audio/voice note:', e.message);
           }
-        } else if (msg.message.documentMessage) {
+        } else if (rawContent.videoMessage) {
           try {
             const buffer = await downloadMediaMessage(msg, 'buffer', {});
-            mediaPayload = {
-              mimeType: msg.message.documentMessage.mimetype || 'application/pdf',
-              base64: buffer.toString('base64'),
-              filename: msg.message.documentMessage.fileName || 'file'
-            };
+            const rawMime = rawContent.videoMessage.mimetype || 'video/mp4';
+            if (buffer.length <= 16 * 1024 * 1024) {
+              mediaPayload = {
+                mediaType: 'video',
+                mimeType: rawMime.split(';')[0].trim().toLowerCase(),
+                base64: buffer.toString('base64'),
+                caption: rawContent.videoMessage.caption || ''
+              };
+            } else {
+              console.warn(`Video size (${(buffer.length / (1024 * 1024)).toFixed(1)}MB) exceeds 16MB limit for direct AI analysis.`);
+              mediaPayload = {
+                mediaType: 'video_oversized',
+                mimeType: 'video/mp4',
+                sizeMb: (buffer.length / (1024 * 1024)).toFixed(1),
+                caption: rawContent.videoMessage.caption || ''
+              };
+            }
+          } catch (e) {
+            console.warn('Could not download video:', e.message);
+          }
+        } else if (rawContent.documentMessage) {
+          try {
+            const buffer = await downloadMediaMessage(msg, 'buffer', {});
+            const rawMime = rawContent.documentMessage.mimetype || 'application/pdf';
+            const cleanMime = rawMime.split(';')[0].trim().toLowerCase();
+            if (buffer.length <= 16 * 1024 * 1024) {
+              mediaPayload = {
+                mediaType: 'document',
+                mimeType: cleanMime,
+                base64: buffer.toString('base64'),
+                filename: rawContent.documentMessage.fileName || 'document.pdf',
+                title: rawContent.documentMessage.title || ''
+              };
+            } else {
+              mediaPayload = {
+                mediaType: 'document_oversized',
+                mimeType: cleanMime,
+                filename: rawContent.documentMessage.fileName || 'document.pdf'
+              };
+            }
           } catch (e) {
             console.warn('Could not download document:', e.message);
           }
         }
 
-        const messageText = msg.message.conversation ||
-          msg.message.extendedTextMessage?.text ||
-          msg.message.imageMessage?.caption ||
-          msg.message.videoMessage?.caption ||
-          msg.message.documentMessage?.title ||
-          msg.message.buttonsResponseMessage?.selectedButtonId ||
-          msg.message.templateButtonReplyMessage?.selectedId ||
-          (mediaPayload ? `[Attached ${mediaPayload.mimeType.startsWith('image') ? 'Image' : (mediaPayload.mimeType.startsWith('audio') ? 'Voice Note' : 'Document')}]` : '');
+        const messageText = rawContent.conversation ||
+          rawContent.extendedTextMessage?.text ||
+          rawContent.imageMessage?.caption ||
+          rawContent.videoMessage?.caption ||
+          rawContent.documentMessage?.title ||
+          rawContent.buttonsResponseMessage?.selectedButtonId ||
+          rawContent.templateButtonReplyMessage?.selectedId ||
+          (mediaPayload ? `[Attached ${
+            mediaPayload.mediaType === 'voice_note' ? 'Voice Note (PTT)' :
+            mediaPayload.mediaType === 'audio' ? 'Audio Clip' :
+            mediaPayload.mediaType === 'image' ? 'Image' :
+            mediaPayload.mediaType === 'video' ? 'Video' :
+            mediaPayload.mediaType === 'document' ? `Document (${mediaPayload.filename || 'PDF'})` : 'Media'
+          }]` : '');
 
         console.log(`📩 [REAL WHATSAPP INCOMING] from ${senderPhone} (${senderName}): "${messageText || '[Media Attachment]'}"`);
 
@@ -386,9 +493,9 @@ export async function getOrCreateSocket(botId, forceReset = false) {
             });
           }
 
-          // Check if contact is in Human Takeover mode
+          // Check if contact is in Human Takeover mode (Coexistence & Silence Guard)
           if (isHumanTakeoverActive(senderPhone)) {
-            console.log(`👤 [HUMAN TAKEOVER] AI reply skipped for ${senderPhone}. Human specialist has manual control.`);
+            console.log(`👤 [HUMAN ACTIVE - AI SILENCED] AI reply suppressed for ${senderPhone}. Live human specialist is handling this conversation.`);
             continue;
           }
 

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { formatWhatsAppText } from '../../utils/formatWhatsAppText';
+import TypewriterMessage from '../common/TypewriterMessage';
 
 // Pre-configured real-world conversational presets derived from the 15 images
 const INDUSTRY_PRESETS = {
@@ -255,6 +256,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: '📅 Excellent! We have dedicated VIP slots available this week. Please select your preferred time:',
             time: replyTime,
+            isStreaming: true,
             buttons: [
               { text: '🗓️ Tomorrow 11:00 AM', id: 'slot_1', icon: '🗓️' },
               { text: '🗓️ Tomorrow 04:00 PM', id: 'slot_2', icon: '🗓️' },
@@ -273,6 +275,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: `🎉 *Appointment Confirmed!*\n\nYour visit has been locked in for **${text}**.\n\n📍 Experience Center: Sector 45, Luxury Enclave.\n👤 Welcome Host: Senior Director Amit Sharma.\n\nWe look forward to meeting you!`,
             time: replyTime,
+            isStreaming: true,
             card: {
               type: 'booking_confirmation',
               title: 'VIP Appointment Confirmed',
@@ -291,6 +294,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: 'Here are our top trending solutions curated for rapid growth:',
             time: replyTime,
+            isStreaming: true,
             card: {
               type: 'product_catalog',
               title: '⚡ 24/7 AI WhatsApp Automation Engine',
@@ -314,6 +318,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: 'Here is the comprehensive brochure with specs, pricing tiers, and architecture layout:',
             time: replyTime,
+            isStreaming: true,
             card: {
               type: 'pdf_brochure',
               filename: 'NovaByte_Enterprise_Brochure.pdf',
@@ -337,6 +342,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: '🤝 *Handover Initiated*: Our Senior Consultant has received your lead details and will connect with you on this WhatsApp number within 10 minutes.',
             time: replyTime,
+            isStreaming: true,
             card: {
               type: 'agent_handoff',
               agentName: 'Amit Sharma (Senior Solutions Director)',
@@ -355,6 +361,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: 'To complete your instant disbursal of ₹2,00,000, please verify your KYC details securely here: https://bajajmarkets.com/claim-200k\n\n_Reply STOP to opt-out_',
             time: replyTime,
+            isStreaming: true,
             card: {
               type: 'loan_alert',
               amount: '₹2,00,000',
@@ -371,7 +378,8 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             id: `bot-${Date.now()}`,
             sender: 'bot',
             text: 'You have been successfully unsubscribed from automated WhatsApp messages. Reply START anytime if you wish to re-enable notifications.',
-            time: replyTime
+            time: replyTime,
+            isStreaming: true
           }
         ]);
         setLeadState(prev => ({ ...prev, status: 'Opted Out / Unsubscribed', stageProgress: 0 }));
@@ -385,6 +393,7 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
             sender: 'bot',
             text: `Thank you for selecting "${text}". How would you like to proceed next?`,
             time: replyTime,
+            isStreaming: true,
             buttons: [
               { text: '👤 Talk to Expert', id: 'talk_expert', icon: '👤' },
               { text: '📅 Book an Appointment', id: 'book_visit', icon: '📅' }
@@ -661,7 +670,13 @@ export default function WhatsAppInteractiveSimulator({ bot = {}, onSwitchBot }) 
                   }}>
                     {/* Plain Text Body */}
                     <div style={{ fontSize: '13px', color: '#111b21', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
-                      {formatWhatsAppText(m.text)}
+                      <TypewriterMessage 
+                        text={m.text}
+                        isStreaming={m.isStreaming}
+                        speed={18}
+                        formatter={formatWhatsAppText}
+                        onStreamEnd={() => { m.isStreaming = false; }}
+                      />
                     </div>
 
                     {/* ── CARD: PDF BROCHURE PREVIEW (Growth Suite - Image 4) ── */}

@@ -271,6 +271,7 @@ app.get('/api/universal/profile/:botId', universalChatController.getBusinessProf
 app.post('/api/universal/profile/:botId', universalChatController.updateBusinessProfile);
 app.post('/api/universal/generate-profile', universalChatController.autoGenerateProfile);
 app.post('/api/universal/chat', universalChatController.handleUniversalInboundChat);
+app.get('/api/universal/credits/:botId', universalChatController.getCreditsStatus);
 
 // ----------------------------------------------------
 // Deals & Sales Pipeline Kanban Routes

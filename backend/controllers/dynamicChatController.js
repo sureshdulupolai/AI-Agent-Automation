@@ -3,6 +3,7 @@ import db from '../config/database.js';
 import * as dealModel from '../models/dealModel.js';
 import { getTaskSummary, logAutonomousTask } from '../services/taskEngine.js';
 import { getWhatsAppStatus, sendWhatsAppMessage } from '../services/baileysService.js';
+import { extractLeadDetails } from '../services/leadParserService.js';
 
 /**
  * POST /api/chat/dynamic
@@ -15,6 +16,30 @@ export async function handleDynamicChat(req, res) {
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ success: false, error: 'Message is required' });
+    }
+
+    // 0. Auto-extract and persist Lead if contact info (phone/email) is provided
+    let capturedLead = null;
+    const leadData = extractLeadDetails(message, history || []);
+    if (leadData && (leadData.lead_phone || leadData.lead_email)) {
+      try {
+        const bots = await db.getBots();
+        const targetBotId = botId || (bots[0]?.id || 'bot-ec0db899');
+        capturedLead = await db.createLead({
+          bot_id: targetBotId,
+          user_id: tenantId,
+          tenant_id: tenantId,
+          lead_name: leadData.lead_name || 'Website Visitor',
+          lead_phone: leadData.lead_phone || null,
+          lead_email: leadData.lead_email || null,
+          lead_requirement: leadData.lead_requirement || message.trim(),
+          channel: 'website',
+          status: 'qualified'
+        });
+        console.log(`🎯 [LEAD CAPTURED VIA DYNAMIC CHAT] ${leadData.lead_name || 'Visitor'} (${leadData.lead_phone || leadData.lead_email})`);
+      } catch (leadErr) {
+        console.warn('Lead capture notice in dynamicChat:', leadErr.message);
+      }
     }
 
     // 1. Parse Dynamic Intent via Gemini / Fallback
@@ -169,7 +194,9 @@ export async function handleDynamicChat(req, res) {
       reply: enrichedReply,
       action: actionPayload,
       queryResults,
-      tenantId
+      tenantId,
+      leadCaptured: !!capturedLead,
+      leadId: capturedLead?.id || null
     });
   } catch (err) {
     console.error('Dynamic Chat Controller Error:', err);

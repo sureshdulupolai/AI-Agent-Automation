@@ -1,6 +1,29 @@
 import React, { useState } from 'react';
-import { X, Bot, Sparkles } from 'lucide-react';
+import { 
+  X, 
+  Bot, 
+  Sparkles,
+  Stethoscope,
+  Building2,
+  Code2,
+  ShoppingBag,
+  Target,
+  GraduationCap,
+  Utensils,
+  Headphones,
+  Mail,
+  Mic,
+  Image as ImageIcon,
+  Languages,
+  Briefcase,
+  Check,
+  CheckCircle2,
+  Layers,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { INDUSTRY_PRESETS, AUTONOMOUS_CAPABILITIES } from '../../data/industryTemplates';
 
 const COLOR_PRESETS = [
   '#4f46e5', // Indigo
@@ -11,23 +34,70 @@ const COLOR_PRESETS = [
   '#7c3aed'  // Purple
 ];
 
+const ICON_MAP = {
+  Stethoscope,
+  Building2,
+  Code2,
+  ShoppingBag,
+  Target,
+  GraduationCap,
+  Utensils,
+  Headphones,
+  Mail,
+  Mic,
+  Image: ImageIcon,
+  Languages,
+  Briefcase
+};
+
 export default function BotBuilderModal({ onClose, onCreated }) {
+  const [selectedPresetId, setSelectedPresetId] = useState(INDUSTRY_PRESETS[2].id); // Default to Software Agency
+  const defaultPreset = INDUSTRY_PRESETS[2];
+
   const [formData, setFormData] = useState({
-    bot_name: '',
-    primary_color: COLOR_PRESETS[0],
-    welcome_message: 'Hello! How can I help you today?',
+    bot_name: defaultPreset.recommendedBotName,
+    primary_color: defaultPreset.primaryColor,
+    welcome_message: defaultPreset.welcomeMessage,
     placeholder_text: 'Type your message...',
-    system_instructions: 'You are a polite, helpful, and knowledgeable AI sales representative. Guide the customer and capture their contact info when relevant.',
-    business_knowledge: '',
-    quick_prompts: ['What services do you offer?', 'Pricing details', 'Talk to support']
+    system_instructions: defaultPreset.systemInstructions,
+    business_knowledge: defaultPreset.businessKnowledge,
+    quick_prompts: defaultPreset.quickPrompts,
+    industry_template: defaultPreset.id,
+    training_goals: defaultPreset.defaultCapabilities
   });
 
+  const [enabledCapabilities, setEnabledCapabilities] = useState(defaultPreset.defaultCapabilities);
+  const [showAdvancedKnowledge, setShowAdvancedKnowledge] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Normalize color for dynamic styling
   const activeColor = (formData.primary_color && formData.primary_color.trim())
     ? (formData.primary_color.trim().startsWith('#') ? formData.primary_color.trim() : `#${formData.primary_color.trim()}`)
     : '#4f46e5';
+
+  const handleSelectPreset = (preset) => {
+    setSelectedPresetId(preset.id);
+    setFormData(prev => ({
+      ...prev,
+      industry_template: preset.id,
+      bot_name: preset.recommendedBotName,
+      primary_color: preset.primaryColor,
+      welcome_message: preset.welcomeMessage,
+      system_instructions: preset.systemInstructions,
+      business_knowledge: preset.businessKnowledge,
+      quick_prompts: preset.quickPrompts,
+      training_goals: preset.defaultCapabilities
+    }));
+    setEnabledCapabilities(preset.defaultCapabilities);
+  };
+
+  const handleToggleCapability = (capId) => {
+    const updated = enabledCapabilities.includes(capId)
+      ? enabledCapabilities.filter(id => id !== capId)
+      : [...enabledCapabilities, capId];
+    setEnabledCapabilities(updated);
+    setFormData(prev => ({ ...prev, training_goals: updated }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,7 +110,8 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          primary_color: activeColor
+          primary_color: activeColor,
+          training_goals: enabledCapabilities
         })
       });
       const data = await res.json();
@@ -73,40 +144,43 @@ export default function BotBuilderModal({ onClose, onCreated }) {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 100,
-      padding: '20px'
+      padding: '16px'
     }}>
       <div className="glass-panel animate-fade-in" style={{
-        width: '680px',
+        width: '780px',
         maxWidth: '100%',
-        maxHeight: '90vh',
+        maxHeight: '92vh',
         backgroundColor: '#ffffff',
         padding: '28px',
         position: 'relative',
         overflowY: 'auto',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        border: '1px solid var(--border-subtle)'
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '16px'
       }}>
-        {/* Header - Dynamically updates logo background with selected brand color */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              background: `linear-gradient(135deg, ${activeColor}, #0891b2)`,
+              width: '42px',
+              height: '42px',
+              borderRadius: '11px',
+              background: `linear-gradient(135deg, ${activeColor}, #0f172a)`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: `0 4px 14px ${activeColor}50`,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transition: 'all 0.3s ease',
               flexShrink: 0
             }}>
               <Bot size={22} color="#ffffff" />
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>Create New AI Chatbot</h3>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                Configure identity, theme, and knowledge base.
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Create Autonomous AI Agent
+              </h3>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                Select an industry template to automatically configure behavior, knowledge, and lead capture.
               </p>
             </div>
           </div>
@@ -121,14 +195,175 @@ export default function BotBuilderModal({ onClose, onCreated }) {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Bot Name & Dynamic Brand Color Selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group">
+          {/* SECTION 1: Industry Persona Presets */}
+          <div style={{ marginBottom: '22px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Layers size={15} color={activeColor} />
+                <span>1. Select Industry Persona (One-Click Auto-Train)</span>
+              </label>
+              <span style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 500 }}>
+                Auto-configures prompts, knowledge, and welcome message
+              </span>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+              gap: '10px'
+            }}>
+              {INDUSTRY_PRESETS.map((preset) => {
+                const isSelected = selectedPresetId === preset.id;
+                const IconComponent = ICON_MAP[preset.iconName] || Bot;
+
+                return (
+                  <button
+                    type="button"
+                    key={preset.id}
+                    onClick={() => handleSelectPreset(preset)}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      border: isSelected ? `2px solid ${preset.primaryColor}` : '1px solid #e2e8f0',
+                      backgroundColor: isSelected ? `${preset.primaryColor}0c` : '#ffffff',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      position: 'relative',
+                      transition: 'all 0.18s ease',
+                      boxShadow: isSelected ? `0 4px 12px ${preset.primaryColor}25` : '0 1px 2px rgba(0,0,0,0.03)'
+                    }}
+                  >
+                    {isSelected && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        backgroundColor: preset.primaryColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <Check size={11} color="#ffffff" strokeWidth={3} />
+                      </div>
+                    )}
+
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      backgroundColor: isSelected ? preset.primaryColor : '#f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: '8px',
+                      transition: 'all 0.18s ease'
+                    }}>
+                      <IconComponent size={17} color={isSelected ? '#ffffff' : '#475569'} />
+                    </div>
+
+                    <span style={{
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      color: isSelected ? preset.primaryColor : '#0f172a',
+                      lineHeight: 1.3,
+                      marginBottom: '3px'
+                    }}>
+                      {preset.name}
+                    </span>
+
+                    <span style={{
+                      fontSize: '10.5px',
+                      color: '#64748b',
+                      lineHeight: 1.25,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {preset.tagline}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 2: Autonomous Capabilities & Contact Capture */}
+          <div style={{
+            marginBottom: '22px',
+            backgroundColor: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            padding: '14px 16px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={15} color={activeColor} />
+                <span>2. Autonomous Capabilities & Contact Capture</span>
+              </label>
+              <span style={{ fontSize: '11px', color: '#059669', fontWeight: 600, backgroundColor: '#ecfdf5', padding: '2px 8px', borderRadius: '9999px' }}>
+                Active on WhatsApp & Web
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '8px' }}>
+              {AUTONOMOUS_CAPABILITIES.map((cap) => {
+                const isEnabled = enabledCapabilities.includes(cap.id);
+                const CapIcon = ICON_MAP[cap.iconName] || CheckCircle2;
+
+                return (
+                  <div
+                    key={cap.id}
+                    onClick={() => handleToggleCapability(cap.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '9px',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      backgroundColor: isEnabled ? '#ffffff' : 'transparent',
+                      border: isEnabled ? '1px solid #cbd5e1' : '1px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={() => {}} // Handled by parent div
+                      style={{ marginTop: '3px', cursor: 'pointer', accentColor: activeColor }}
+                    />
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                      <CapIcon size={14} color={isEnabled ? activeColor : '#94a3b8'} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: '11.5px', fontWeight: 700, color: isEnabled ? '#0f172a' : '#64748b' }}>
+                          {cap.name}
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#94a3b8', lineHeight: 1.25 }}>
+                          {cap.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SECTION 3: Agent Identity & Brand Styling */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Chatbot Name *</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Zenith Support"
+                placeholder="e.g. CarePlus Assistant"
                 value={formData.bot_name}
                 onChange={(e) => setFormData({ ...formData, bot_name: e.target.value })}
                 required
@@ -136,7 +371,7 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-group" style={{ margin: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <label className="form-label" style={{ marginBottom: 0 }}>Brand Color</label>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
@@ -145,7 +380,6 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               </div>
               
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                {/* Preset Circles */}
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {COLOR_PRESETS.map((color) => {
                     const isSelected = activeColor.toLowerCase() === color.toLowerCase();
@@ -171,7 +405,6 @@ export default function BotBuilderModal({ onClose, onCreated }) {
                   })}
                 </div>
 
-                {/* Custom Color Picker & Hex Input */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -234,8 +467,8 @@ export default function BotBuilderModal({ onClose, onCreated }) {
           </div>
 
           {/* Welcome Message */}
-          <div className="form-group">
-            <label className="form-label">Welcome Message</label>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label className="form-label">Initial Greeting / Welcome Message</label>
             <input
               type="text"
               className="form-input"
@@ -244,22 +477,70 @@ export default function BotBuilderModal({ onClose, onCreated }) {
             />
           </div>
 
-          {/* Business Knowledge Base (RAG Training) - Gemini Active removed */}
-          <div className="form-group">
-            <label className="form-label">
-              Knowledge Base (FAQs, Services, Pricing)
-            </label>
-            <textarea
-              className="form-textarea"
-              style={{ minHeight: '120px', fontFamily: 'var(--font-mono)', fontSize: '12.5px' }}
-              placeholder="Provide information about your business:&#10;- Services offered: Web development, AI Chatbots&#10;- Pricing: Starter is ₹4,999, Pro is ₹14,999&#10;- Working hours: 9 AM - 6 PM IST"
-              value={formData.business_knowledge}
-              onChange={(e) => setFormData({ ...formData, business_knowledge: e.target.value })}
-            />
+          {/* Advanced Training & Knowledge Base Accordion */}
+          <div style={{
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            marginBottom: '20px',
+            overflow: 'hidden'
+          }}>
+            <button
+              type="button"
+              onClick={() => setShowAdvancedKnowledge(!showAdvancedKnowledge)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 14px',
+                background: '#f8fafc',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#334155' }}>
+                  Knowledge Base, FAQs & Custom Instructions
+                </span>
+                <span style={{ fontSize: '10.5px', color: '#059669', fontWeight: 600, backgroundColor: '#ecfdf5', padding: '1px 6px', borderRadius: '4px' }}>
+                  Pre-Trained
+                </span>
+              </div>
+              {showAdvancedKnowledge ? <ChevronUp size={16} color="#64748b" /> : <ChevronDown size={16} color="#64748b" />}
+            </button>
+
+            {showAdvancedKnowledge && (
+              <div style={{ padding: '14px', backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label className="form-label" style={{ fontSize: '11.5px' }}>
+                    Business Knowledge & Scope (Auto-populated from industry preset)
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    style={{ minHeight: '90px', fontFamily: 'var(--font-mono)', fontSize: '11.5px', lineHeight: 1.45 }}
+                    value={formData.business_knowledge}
+                    onChange={(e) => setFormData({ ...formData, business_knowledge: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: '11.5px' }}>
+                    System Instructions / Behavioral Directives
+                  </label>
+                  <textarea
+                    className="form-textarea"
+                    style={{ minHeight: '90px', fontFamily: 'var(--font-mono)', fontSize: '11.5px', lineHeight: 1.45 }}
+                    value={formData.system_instructions}
+                    onChange={(e) => setFormData({ ...formData, system_instructions: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button
               type="button"
               onClick={onClose}
@@ -271,9 +552,16 @@ export default function BotBuilderModal({ onClose, onCreated }) {
               type="submit"
               disabled={loading || !formData.bot_name.trim()}
               className="btn-primary"
+              style={{
+                backgroundColor: activeColor,
+                borderColor: activeColor,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
               <Sparkles size={15} />
-              <span>{loading ? 'Creating...' : 'Create Chatbot'}</span>
+              <span>{loading ? 'Deploying...' : 'Deploy Chatbot'}</span>
             </button>
           </div>
         </form>
@@ -281,3 +569,4 @@ export default function BotBuilderModal({ onClose, onCreated }) {
     </div>
   );
 }
+

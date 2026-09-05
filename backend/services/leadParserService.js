@@ -13,10 +13,10 @@ const PHONE_PATTERNS = [
   /\b\d{10}\b/                                                 // Raw 10 digits
 ];
 
-// Name extraction patterns
+// Name extraction patterns (English + Hinglish)
 const NAME_PATTERNS = [
-  /(?:my name is|i am|this is|call me|name:?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
-  /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:here|at|from)\b/i
+  /(?:my name is|i am|this is|call me|name:?|mera naam|naam|main hoon)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+  /^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(?:here|at|from|bol raha hoon|bol rha hu)\b/i
 ];
 
 export function extractLeadDetails(userMessage, messageHistory = []) {
