@@ -586,6 +586,8 @@ function compileFullPromptFromProfile(p) {
     `Assurances: ${p.policies_and_faqs?.custom_policies || '100% verified client satisfaction guarantee.'}`
   ].join('\n');
 
+  const customDirective = (p.custom_automation_directive || '').trim();
+
   return `You are the official Senior Solutions Consultant and Client Partner representing "${businessName}" (${category}).
 
 ### YOUR HUMAN PERSONA & VOICE DIRECTIVE:
@@ -595,7 +597,7 @@ function compileFullPromptFromProfile(p) {
 4. Strictly mirror the language and dialect of the prospect (Hinglish -> professional Hinglish, English -> executive English).
 5. Commercial lead conversion directive: When a customer asks about a project or service, confirm capability, highlight high-level architecture, and promptly request their WhatsApp number or email for a detailed quote.
 6. Target fulfillment outcome: Guide prospect toward ${fulfillment.replace(/_/g, ' ')}.
-
+${customDirective ? `\n### CLIENT SPECIFIC AUTOMATION & WORKFLOW DIRECTIVES:\n${customDirective}\n` : ''}
 ### VERIFIED BUSINESS OFFERINGS:
 ${offeringsText}
 
@@ -604,6 +606,192 @@ ${qualRulesText}
 
 ### OPERATIONAL POLICIES & LOCATION:
 ${policiesText}`.trim();
+}
+
+// Custom Premium Dropdown Component for Target Chatbot Selection
+function CustomBotDropdown({ bots = [], selectedBotId, onSelectBot }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const activeBot = bots.find(b => String(b.id) === String(selectedBotId)) || bots[0];
+  const activeBotName = activeBot?.bot_name || 'NovaByte Solutions Lead';
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(prev => !prev)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '10px',
+          padding: '9px 12px',
+          borderRadius: '9px',
+          border: '1.5px solid',
+          borderColor: isOpen ? '#4f46e5' : 'var(--border-subtle)',
+          backgroundColor: 'var(--bg-page)',
+          cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          boxShadow: isOpen ? '0 0 0 3px rgba(79, 70, 229, 0.12)' : 'none',
+          boxSizing: 'border-box'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <div style={{
+            width: '24px',
+            height: '24px',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(79, 70, 229, 0.12)',
+            color: '#4f46e5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Bot size={14} />
+          </div>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {activeBotName}
+          </span>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '1px 6px',
+            borderRadius: '999px',
+            backgroundColor: 'rgba(34, 197, 94, 0.12)',
+            color: '#15803d',
+            fontSize: '10px',
+            fontWeight: 700,
+            flexShrink: 0
+          }}>
+            <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+            Active
+          </span>
+        </div>
+
+        <ChevronDown
+          size={14}
+          color="#64748b"
+          style={{
+            transform: isOpen ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s ease',
+            flexShrink: 0
+          }}
+        />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '12px',
+          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.04)',
+          padding: '6px',
+          maxHeight: '260px',
+          overflowY: 'auto'
+        }}>
+          {bots && bots.length > 0 ? (
+            bots.map((b) => {
+              const isSelected = String(b.id) === String(selectedBotId);
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectBot(b.id);
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: isSelected ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'background-color 0.12s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-page)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '6px',
+                      backgroundColor: isSelected ? '#4f46e5' : 'var(--bg-page)',
+                      color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Bot size={13} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: '12.5px',
+                        fontWeight: isSelected ? 800 : 600,
+                        color: isSelected ? '#4f46e5' : 'var(--text-primary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {b.bot_name || b.id}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                        Neural Model &bull; WhatsApp &amp; Web
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <Check size={14} color="#4f46e5" strokeWidth={2.5} style={{ flexShrink: 0 }} />
+                  )}
+                </button>
+              );
+            })
+          ) : (
+            <div style={{ padding: '10px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              No chatbots available
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function UniversalStudio({ bots = [] }) {
@@ -633,14 +821,20 @@ export default function UniversalStudio({ bots = [] }) {
     return () => window.removeEventListener('resize', handleWinResize);
   }, []);
 
-  // Sync selectedBotId when bots load or update
-  useEffect(() => {
-    if (bots && bots.length > 0) {
-      if (!selectedBotId || !bots.some(b => String(b.id) === String(selectedBotId))) {
-        setSelectedBotId(bots[0].id);
-      }
+  // Unified handler to switch active target bot and sync identity/prompt
+  const handleSelectBot = (newId) => {
+    setSelectedBotId(newId);
+    const matched = (bots || []).find(b => String(b.id) === String(newId));
+    if (matched) {
+      setProfile(prev => ({
+        ...prev,
+        business_name: matched.bot_name || prev.business_name,
+        direct_prompt: (matched.system_instructions && matched.system_instructions.trim())
+          ? matched.system_instructions
+          : prev.direct_prompt
+      }));
     }
-  }, [bots]);
+  };
 
   // Persistent Credit Tracking State (Each bot model gets 10 independent free inquiries, then ₹0.60/query)
   const [creditUsage, setCreditUsage] = useState(() => {
@@ -864,7 +1058,7 @@ export default function UniversalStudio({ bots = [] }) {
     confetti({ particleCount: 30, spread: 55, origin: { y: 0.5 } });
   };
 
-  // 1-Click AI Auto-Generate Schema
+  // 1-Click AI Auto-Generate Schema & Populate Direct Master Prompt
   const handleSynthesizeProfile = async (promptOverride) => {
     const textToUse = (promptOverride || generatorPrompt).trim();
     if (!textToUse) return;
@@ -877,10 +1071,29 @@ export default function UniversalStudio({ bots = [] }) {
         body: JSON.stringify({ description: textToUse })
       });
       const data = await res.json();
-      if (data.success && data.profile) {
-        setProfile(data.profile);
-        confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
-      }
+      const generatedProfile = (data.success && data.profile) ? data.profile : {};
+
+      const compiled = compileFullPromptFromProfile({
+        ...profile,
+        ...generatedProfile,
+        business_name: activeBotName,
+        custom_automation_directive: textToUse
+      });
+
+      setProfile(prev => ({
+        ...prev,
+        ...generatedProfile,
+        business_name: activeBotName,
+        custom_automation_directive: textToUse,
+        direct_prompt: compiled,
+        direct_prompt_enabled: true
+      }));
+
+      // Automatically switch to Direct Master Prompt view so user immediately sees the generated prompt
+      setStudioMode('direct');
+      setActiveTab('direct');
+
+      confetti({ particleCount: 60, spread: 75, origin: { y: 0.55 } });
     } catch (err) {
       console.error('Synthesis error:', err);
       alert('AI Generation error: ' + err.message);
@@ -1001,8 +1214,8 @@ export default function UniversalStudio({ bots = [] }) {
     }
   };
 
-  // 5 Pipeline Stepper Tabs Definition (Guided Steps 1-4 + Direct Master System Prompt Step 5)
-  const NAVIGATION_TABS = [
+  // 4 Guided Steps Definition (Displayed only when in Guided 4-Step Studio)
+  const GUIDED_TABS = [
     {
       id: 'identity',
       stepNum: 1,
@@ -1033,14 +1246,6 @@ export default function UniversalStudio({ bots = [] }) {
       title: 'Operations & Guidelines',
       subtitle: 'Hours, Location & Terms',
       icon: Clock,
-      count: null
-    },
-    {
-      id: 'direct',
-      stepNum: 5,
-      title: 'Direct Master Prompt',
-      subtitle: 'Live Custom Directive',
-      icon: FileText,
       count: null
     }
   ];
@@ -1169,7 +1374,7 @@ export default function UniversalStudio({ bots = [] }) {
         </div>
       </div>
 
-      {/* 2. AI Copilot Synthesis Card */}
+      {/* 2. AI Business & Automation Prompt Architect */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(14, 165, 233, 0.05) 100%)',
         border: '1px solid rgba(79, 70, 229, 0.2)',
@@ -1178,105 +1383,72 @@ export default function UniversalStudio({ bots = [] }) {
         marginBottom: '20px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '26px', height: '26px', borderRadius: '7px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Wand2 size={14} color="#4f46e5" />
+            <div style={{ width: '28px', height: '28px', borderRadius: '7px', backgroundColor: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Wand2 size={15} color="#4f46e5" />
             </div>
-            <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              AI Copilot Auto-Synthesis
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Describe your business in one sentence to instantly generate the full catalog, pricing &amp; qualification rules
-            </span>
+            <div>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)', display: 'block', lineHeight: 1.2 }}>
+                AI Business &amp; Automation Prompt Architect
+              </span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                Explain your business, services, client journey, and automation requirements. AI will synthesize your complete master prompt.
+              </span>
+            </div>
           </div>
           <span style={{ fontSize: '11px', color: '#4f46e5', fontWeight: 700 }}>
             Powered by Google Gemini
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-          <input
-            type="text"
-            placeholder="e.g. Specialty dental clinic in Mumbai offering implants, clear aligners, and cosmetic procedures..."
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <textarea
+            rows={5}
+            placeholder="Explain your business & automation workflow in detail: What products/services do you offer? Why do you need this AI automation and what is its primary objective? How should the bot converse with leads, ask qualification questions (phone, email, project requirements, budget, timeline), and guide them toward pricing, quotes or booking? Our AI will analyze your entire business logic, synthesize your complete Master System Prompt, and auto-populate it into the Direct Master Prompt editor ready for you to save and test."
             value={generatorPrompt}
             onChange={(e) => setGeneratorPrompt(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSynthesizeProfile()}
             style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: '8px',
+              width: '100%',
+              minHeight: '140px',
+              padding: '14px 16px',
+              borderRadius: '10px',
               border: '1px solid var(--border-subtle)',
               backgroundColor: 'var(--bg-surface)',
               fontSize: '13px',
               color: 'var(--text-primary)',
-              outline: 'none'
+              lineHeight: '1.6',
+              outline: 'none',
+              resize: 'vertical',
+              boxSizing: 'border-box'
             }}
           />
-          <button
-            onClick={() => handleSynthesizeProfile()}
-            disabled={isSynthesizing || !generatorPrompt.trim()}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: 'none',
-              backgroundColor: '#4f46e5',
-              color: '#ffffff',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              cursor: isSynthesizing ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <Sparkles size={13} className={isSynthesizing ? 'animate-spin' : ''} />
-            <span>{isSynthesizing ? 'Generating Profile...' : 'Auto-Generate'}</span>
-          </button>
-        </div>
 
-        {/* Quick Sample Prompts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Quick Prompts:</span>
-          {[
-            'Custom Software Studio & AI Automations',
-            'Multi-Specialty Healthcare Clinic & Diagnostics',
-            'Luxury Sea-Facing Real Estate Advisory',
-            'Direct-to-Consumer Fashion Retail Store',
-            'B2B Growth Agency & Outbound Lead Systems'
-          ].map((prompt, idx) => (
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setGeneratorPrompt(prompt);
-                handleSynthesizeProfile(prompt);
-              }}
+              onClick={() => handleSynthesizeProfile()}
+              disabled={isSynthesizing || !generatorPrompt.trim()}
               style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid rgba(79, 70, 229, 0.18)',
-                backgroundColor: 'var(--bg-surface)',
-                color: 'var(--text-secondary)',
-                fontSize: '11px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.12s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#4f46e5';
-                e.currentTarget.style.color = '#4f46e5';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(79, 70, 229, 0.18)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 22px',
+                borderRadius: '9px',
+                border: 'none',
+                backgroundColor: '#4f46e5',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: (isSynthesizing || !generatorPrompt.trim()) ? 'not-allowed' : 'pointer',
+                opacity: (isSynthesizing || !generatorPrompt.trim()) ? 0.6 : 1,
+                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.3)',
+                transition: 'all 0.15s ease'
               }}
             >
-              {prompt}
+              <Sparkles size={14} className={isSynthesizing ? 'animate-spin' : ''} />
+              <span>{isSynthesizing ? 'Analyzing & Synthesizing Prompt...' : 'Analyze & Generate Master Prompt'}</span>
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
@@ -1506,115 +1678,101 @@ export default function UniversalStudio({ bots = [] }) {
             </button>
           </div>
 
-          {/* Reimagined Pipeline Stepper (Interconnected 5-Step Navigation - Responsive & Compact) */}
-          <div style={{
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '14px',
-            padding: '8px 10px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-            gap: '6px',
-            minWidth: 0
-          }}>
-            {NAVIGATION_TABS.map((tab) => {
-              const TabIcon = tab.icon;
-              const isActive = activeTab === tab.id;
+          {/* 4-Step Stepper Bar - Only visible in Guided 4-Step Studio mode */}
+          {(studioMode === 'guided' && activeTab !== 'direct') && (
+            <div style={{
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '14px',
+              padding: '8px 10px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gap: '6px',
+              minWidth: 0
+            }}>
+              {GUIDED_TABS.map((tab) => {
+                const TabIcon = tab.icon;
+                const isActive = activeTab === tab.id;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    if (tab.id === 'direct') {
-                      setStudioMode('direct');
-                      setProfile(prev => {
-                        const compiled = prev.direct_prompt?.trim() ? prev.direct_prompt : compileFullPromptFromProfile(prev);
-                        return {
-                          ...prev,
-                          direct_prompt_enabled: true,
-                          direct_prompt: compiled
-                        };
-                      });
-                    } else {
-                      setStudioMode('guided');
-                      setProfile(prev => ({ ...prev, direct_prompt_enabled: false }));
-                    }
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '7px',
-                    padding: '8px 8px',
-                    borderRadius: '10px',
-                    border: '2px solid',
-                    borderColor: isActive ? '#4f46e5' : 'transparent',
-                    backgroundColor: isActive ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'background-color 0.15s ease, border-color 0.15s ease',
-                    boxSizing: 'border-box',
-                    minWidth: 0,
-                    overflow: 'hidden'
-                  }}
-                >
-                  <div style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '7px',
-                    backgroundColor: isActive ? '#4f46e5' : 'var(--bg-page)',
-                    color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    boxShadow: isActive ? '0 2px 8px rgba(79, 70, 229, 0.3)' : 'none',
-                    transition: 'all 0.15s ease'
-                  }}>
-                    <TabIcon size={14} />
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{
-                        fontSize: '9.5px',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        color: isActive ? '#4f46e5' : 'var(--text-muted)',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        Step {tab.stepNum}
-                      </span>
-                      {tab.count !== null && (
-                        <span style={{
-                          fontSize: '9px',
-                          fontWeight: 700,
-                          backgroundColor: isActive ? '#4f46e5' : 'var(--bg-page)',
-                          color: isActive ? '#ffffff' : 'var(--text-muted)',
-                          padding: '1px 5px',
-                          borderRadius: '9999px',
-                          lineHeight: 1
-                        }}>
-                          {tab.count}
-                        </span>
-                      )}
-                    </div>
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '7px',
+                      padding: '8px 10px',
+                      borderRadius: '10px',
+                      border: '2px solid',
+                      borderColor: isActive ? '#4f46e5' : 'transparent',
+                      backgroundColor: isActive ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'background-color 0.15s ease, border-color 0.15s ease',
+                      boxSizing: 'border-box',
+                      minWidth: 0,
+                      overflow: 'hidden'
+                    }}
+                  >
                     <div style={{
-                      fontSize: '11.5px',
-                      fontWeight: 700,
-                      color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '7px',
+                      backgroundColor: isActive ? '#4f46e5' : 'var(--bg-page)',
+                      color: isActive ? '#ffffff' : 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: isActive ? '0 2px 8px rgba(79, 70, 229, 0.3)' : 'none',
+                      transition: 'all 0.15s ease'
                     }}>
-                      {tab.title}
+                      <TabIcon size={14} />
                     </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+
+                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{
+                          fontSize: '9.5px',
+                          fontWeight: 800,
+                          textTransform: 'uppercase',
+                          color: isActive ? '#4f46e5' : 'var(--text-muted)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          Step {tab.stepNum}
+                        </span>
+                        {tab.count !== null && (
+                          <span style={{
+                            fontSize: '9px',
+                            fontWeight: 700,
+                            backgroundColor: isActive ? '#4f46e5' : 'var(--bg-page)',
+                            color: isActive ? '#ffffff' : 'var(--text-muted)',
+                            padding: '1px 5px',
+                            borderRadius: '9999px',
+                            lineHeight: 1
+                          }}>
+                            {tab.count}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{
+                        fontSize: '11.5px',
+                        fontWeight: 700,
+                        color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {tab.title}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* TAB 1: Business Identity & Tone */}
           {activeTab === 'identity' && (
@@ -1643,62 +1801,12 @@ export default function UniversalStudio({ bots = [] }) {
               </div>
 
               {/* Entity Name & Industry */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     Entity / Target Chatbot *
                   </label>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-page)',
-                    position: 'relative'
-                  }}>
-                    <Bot size={15} color="#4f46e5" />
-                    <select
-                      value={selectedBotId}
-                      onChange={(e) => {
-                        const newId = e.target.value;
-                        setSelectedBotId(newId);
-                        const matched = bots.find(b => String(b.id) === String(newId));
-                        if (matched) {
-                          setProfile(prev => ({
-                            ...prev,
-                            business_name: matched.bot_name || prev.business_name,
-                            direct_prompt: matched.system_instructions || prev.direct_prompt
-                          }));
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        border: 'none',
-                        background: 'transparent',
-                        outline: 'none',
-                        fontSize: '13px',
-                        color: 'var(--text-primary)',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        paddingRight: '22px',
-                        appearance: 'none',
-                        WebkitAppearance: 'none'
-                      }}
-                    >
-                      {bots && bots.length > 0 ? (
-                        bots.map(b => (
-                          <option key={b.id} value={b.id} style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
-                            {b.bot_name || b.id}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">No chatbot created</option>
-                      )}
-                    </select>
-                    <ChevronDown size={14} color="#64748b" style={{ position: 'absolute', right: '12px', pointerEvents: 'none' }} />
-                  </div>
+                  <CustomBotDropdown bots={bots} selectedBotId={selectedBotId} onSelectBot={handleSelectBot} />
                 </div>
 
                 <div>
@@ -2790,7 +2898,7 @@ export default function UniversalStudio({ bots = [] }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <FileText size={18} color="#4f46e5" />
                     <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                      Step 5: Direct Master System Prompt Directive
+                      Direct Master System Prompt Directive
                     </h3>
                   </div>
                   <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2863,49 +2971,7 @@ export default function UniversalStudio({ bots = [] }) {
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     Entity / Target Chatbot *
                   </label>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-page)',
-                    position: 'relative'
-                  }}>
-                    <Bot size={15} color="#4f46e5" />
-                    <select
-                      value={selectedBotId}
-                      onChange={(e) => {
-                        const newId = e.target.value;
-                        setSelectedBotId(newId);
-                        const matched = bots.find(b => String(b.id) === String(newId));
-                        if (matched) {
-                          setProfile(prev => ({
-                            ...prev,
-                            business_name: matched.bot_name || prev.business_name,
-                            direct_prompt: (matched.system_instructions && matched.system_instructions.trim()) ? matched.system_instructions : prev.direct_prompt
-                          }));
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        border: 'none',
-                        outline: 'none',
-                        background: 'transparent',
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {bots.map(b => (
-                        <option key={b.id} value={b.id} style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
-                          {b.bot_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <CustomBotDropdown bots={bots} selectedBotId={selectedBotId} onSelectBot={handleSelectBot} />
                 </div>
 
                 <div>
