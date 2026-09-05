@@ -280,7 +280,11 @@ app.get('/api/universal/credits/:botId', universalChatController.getCreditsStatu
 app.get('/api/billing/controls', billingController.getBillingControls);
 app.post('/api/billing/controls/toggle', billingController.updateBillingControlToggle);
 app.get('/api/billing/keys-health', billingController.getApiKeysHealth);
-app.post('/api/billing/keys-update', billingController.updateApiKeySlot);
+app.post('/api/billing/keys-routing-policy', billingController.updateRoutingPolicy);
+app.post('/api/billing/keys-add', billingController.addApiKey);
+app.delete('/api/billing/keys/:id', billingController.deleteApiKey);
+app.put('/api/billing/keys/:id', billingController.editApiKey);
+app.patch('/api/billing/keys/:id/toggle', billingController.toggleApiKey);
 app.post('/api/billing/keys-test', billingController.testApiKeySlot);
 
 // ----------------------------------------------------

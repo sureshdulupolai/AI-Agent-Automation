@@ -118,19 +118,25 @@ export async function processUniversalChat({
   if (apiKeyOverride && isValidKey(apiKeyOverride)) {
     candidateKeys.push({ key: apiKeyOverride.trim(), label: 'Override Key', isClient: true });
   }
-  for (const k of (keysData.client_keys || []).filter(k => k.status === 'active' && isValidKey(k.key))) {
-    if (!candidateKeys.some(c => c.key === k.key)) {
-      candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id });
+
+  const useCustomKeys = Boolean(keysData.routing_policy?.use_custom_keys);
+
+  if (useCustomKeys) {
+    for (const k of (keysData.client_keys || []).filter(k => k.status === 'active' && isValidKey(k.key))) {
+      if (!candidateKeys.some(c => c.key === k.key)) {
+        candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id, priority: 1 });
+      }
     }
   }
+
   for (const k of (keysData.system_keys || []).filter(k => k.status === 'active' && isValidKey(k.key))) {
     if (!candidateKeys.some(c => c.key === k.key)) {
-      candidateKeys.push({ key: k.key, label: k.label || 'System Key', isClient: false, id: k.id });
+      candidateKeys.push({ key: k.key, label: k.label || 'System Managed Key', isClient: false, id: k.id, priority: useCustomKeys ? 2 : 1 });
     }
   }
   const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (isValidKey(envKey) && !candidateKeys.some(c => c.key === envKey.trim())) {
-    candidateKeys.push({ key: envKey.trim(), label: 'Verified Env Key', isClient: false });
+    candidateKeys.push({ key: envKey.trim(), label: 'Verified Env Key', isClient: false, priority: useCustomKeys ? 2 : 1 });
   }
 
   const systemPrompt = synthesizeSystemPrompt(businessProfile);

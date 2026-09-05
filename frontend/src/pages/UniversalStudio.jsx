@@ -48,7 +48,8 @@ import {
   AlertTriangle,
   X,
   Coins,
-  Copy
+  Copy,
+  Loader2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -1919,15 +1920,15 @@ export default function UniversalStudio({ bots = [] }) {
                   <Lock size={14} />
                   <span>Locked (3/3 Free Limit - Auto-Pay OFF)</span>
                 </>
+              ) : isSynthesizing ? (
+                <Loader2 size={16} className="spin" />
               ) : (
                 <>
-                  <Sparkles size={14} className={isSynthesizing ? 'animate-spin' : ''} />
+                  <Sparkles size={14} />
                   <span>
-                    {isSynthesizing
-                      ? 'Analyzing & Synthesizing Prompt...'
-                      : architectBilling.usedCount >= (architectBilling.freeLimit || 3)
-                        ? 'Analyze & Generate Master Prompt (₹5.00)'
-                        : 'Analyze & Generate Master Prompt'}
+                    {architectBilling.usedCount >= (architectBilling.freeLimit || 3)
+                      ? 'Analyze & Generate Master Prompt (₹5.00)'
+                      : 'Analyze & Generate Master Prompt'}
                   </span>
                 </>
               )}
@@ -3342,6 +3343,7 @@ export default function UniversalStudio({ bots = [] }) {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '8px',
                       padding: '10px 24px',
                       borderRadius: '8px',
@@ -3350,12 +3352,20 @@ export default function UniversalStudio({ bots = [] }) {
                       color: '#ffffff',
                       fontSize: '13px',
                       fontWeight: 700,
-                      cursor: 'pointer',
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                      minWidth: '170px',
+                      height: '42px',
                       boxShadow: '0 2px 8px rgba(22, 163, 74, 0.25)'
                     }}
                   >
-                    <Save size={14} />
-                    <span>{saving ? 'Deploying...' : 'Save & Deploy Agent'}</span>
+                    {saving ? (
+                      <Loader2 size={16} className="spin" />
+                    ) : (
+                      <>
+                        <Save size={14} />
+                        <span>Save & Deploy Agent</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -3584,6 +3594,7 @@ export default function UniversalStudio({ bots = [] }) {
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '6px',
                       padding: '8px 16px',
                       borderRadius: '8px',
@@ -3595,11 +3606,24 @@ export default function UniversalStudio({ bots = [] }) {
                       cursor: launchingPrompt ? 'not-allowed' : 'pointer',
                       boxShadow: launchSuccess ? '0 2px 8px rgba(22, 163, 74, 0.3)' : '0 2px 8px rgba(79, 70, 229, 0.3)',
                       transition: 'all 0.15s ease',
+                      minWidth: '130px',
+                      height: '36px',
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    {launchSuccess ? <Check size={13} strokeWidth={3} /> : <Rocket size={13} />}
-                    <span>{launchingPrompt ? 'Deploying...' : launchSuccess ? 'Deployed!' : 'Deploy Prompt'}</span>
+                    {launchingPrompt ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : launchSuccess ? (
+                      <>
+                        <Check size={13} strokeWidth={3} />
+                        <span>Deployed!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Rocket size={13} />
+                        <span>Deploy Prompt</span>
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -3609,6 +3633,7 @@ export default function UniversalStudio({ bots = [] }) {
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '6px',
                       padding: '8px 16px',
                       borderRadius: '8px',
@@ -3619,11 +3644,24 @@ export default function UniversalStudio({ bots = [] }) {
                       fontWeight: 700,
                       cursor: saving ? 'not-allowed' : 'pointer',
                       transition: 'all 0.15s ease',
+                      minWidth: '120px',
+                      height: '36px',
                       whiteSpace: 'nowrap'
                     }}
                   >
-                    {savedSuccess ? <Check size={13} /> : <Save size={13} />}
-                    <span>{saving ? 'Saving...' : savedSuccess ? 'Saved!' : 'Save Profile'}</span>
+                    {saving ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : savedSuccess ? (
+                      <>
+                        <Check size={13} />
+                        <span>Saved!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save size={13} />
+                        <span>Save Profile</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -3958,6 +3996,7 @@ export default function UniversalStudio({ bots = [] }) {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
                 padding: '7px 14px',
                 borderRadius: '8px',
@@ -3969,12 +4008,25 @@ export default function UniversalStudio({ bots = [] }) {
                 cursor: launchingPrompt ? 'not-allowed' : 'pointer',
                 boxShadow: launchSuccess ? '0 2px 8px rgba(22, 163, 74, 0.3)' : '0 2px 8px rgba(79, 70, 229, 0.3)',
                 transition: 'all 0.15s ease',
+                minWidth: '110px',
+                height: '32px',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
             >
-              {launchSuccess ? <Check size={12} strokeWidth={3} /> : <Rocket size={12} />}
-              <span>{launchingPrompt ? 'Deploying...' : launchSuccess ? 'Deployed!' : 'Launch Prompt'}</span>
+              {launchingPrompt ? (
+                <Loader2 size={13} className="spin" />
+              ) : launchSuccess ? (
+                <>
+                  <Check size={12} strokeWidth={3} />
+                  <span>Deployed!</span>
+                </>
+              ) : (
+                <>
+                  <Rocket size={12} />
+                  <span>Launch Prompt</span>
+                </>
+              )}
             </button>
           </div>
 

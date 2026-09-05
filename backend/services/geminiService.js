@@ -56,26 +56,30 @@ export async function generateBotReply({
     candidateKeys.push({ key: apiKeyOverride.trim(), label: 'Override Key', isClient: true });
   }
 
-  // Add active client keys (Priority 1)
-  const clientKeys = (keysData.client_keys || []).filter(k => k.status === 'active' && isValidKey(k.key));
-  for (const k of clientKeys) {
-    if (!candidateKeys.some(c => c.key === k.key)) {
-      candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id });
+  const useCustomKeys = Boolean(keysData.routing_policy?.use_custom_keys);
+
+  // If Client BYOK is enabled: Client keys get PRIORITY #1
+  if (useCustomKeys) {
+    const clientKeys = (keysData.client_keys || []).filter(k => k.status === 'active' && isValidKey(k.key));
+    for (const k of clientKeys) {
+      if (!candidateKeys.some(c => c.key === k.key)) {
+        candidateKeys.push({ key: k.key, label: k.label || 'Client Key', isClient: true, id: k.id, priority: 1 });
+      }
     }
   }
 
-  // Add system fallback keys (Priority 2)
+  // Add system fallback keys (Safety-Net Managed Pool - Priority #2 or Priority #1 when BYOK disabled)
   const systemKeys = (keysData.system_keys || []).filter(k => k.status === 'active' && isValidKey(k.key));
   for (const k of systemKeys) {
     if (!candidateKeys.some(c => c.key === k.key)) {
-      candidateKeys.push({ key: k.key, label: k.label || 'System Fallback Key', isClient: false, id: k.id });
+      candidateKeys.push({ key: k.key, label: k.label || 'System Managed Key', isClient: false, id: k.id, priority: useCustomKeys ? 2 : 1 });
     }
   }
 
   // Always ensure .env key is included in the pool
   const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (isValidKey(envKey) && !candidateKeys.some(c => c.key === envKey.trim())) {
-    candidateKeys.push({ key: envKey.trim(), label: 'Verified Env Key', isClient: false });
+    candidateKeys.push({ key: envKey.trim(), label: 'Verified Env Key', isClient: false, priority: useCustomKeys ? 2 : 1 });
   }
 
   // Build the rich business context & prompt with strict guardrails

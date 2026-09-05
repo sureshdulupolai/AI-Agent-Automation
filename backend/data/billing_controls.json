@@ -22,7 +22,9 @@
       "currency": "INR",
       "currency_symbol": "₹",
       "accrued_cost": 0,
-      "updated_at": "2026-09-05T15:04:55.453Z"
+      "updated_at": "2026-09-05T15:49:25.191Z",
+      "rate_per_action_managed": 5,
+      "rate_per_action_byok": 1
     },
     "chatbot_simulator": {
       "id": "chatbot_simulator",
@@ -32,16 +34,21 @@
       "rate_per_query": 3,
       "auto_metered_enabled": true,
       "currency": "INR",
-      "currency_symbol": "₹"
+      "currency_symbol": "₹",
+      "rate_per_query_managed": 3,
+      "rate_per_query_byok": 1,
+      "updated_at": "2026-09-05T15:45:25.300Z"
     },
     "live_integrations": {
       "id": "live_integrations",
       "name": "Production Channel Routing (WhatsApp & Web Embed Traffic)",
       "page_location": "Public Web Widget & Baileys Local WhatsApp Engine",
-      "rate_per_request": 0.6,
+      "rate_per_request": 1,
       "currency": "INR",
       "currency_symbol": "₹",
-      "auto_metered_enabled": true
+      "auto_metered_enabled": true,
+      "rate_per_request_managed": 1,
+      "rate_per_request_byok": 0.5
     },
     "chatbot_deployments": {
       "id": "chatbot_deployments",

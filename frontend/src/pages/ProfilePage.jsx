@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User,
@@ -27,7 +27,15 @@ import {
   Plus,
   Key,
   Activity,
-  ArrowUpRight
+  ArrowUpRight,
+  Trash2,
+  Copy,
+  Eye,
+  EyeOff,
+  Pencil,
+  Play,
+  Pause,
+  Loader2
 } from 'lucide-react';
 
 export default function ProfilePage({ bots = [] }) {
@@ -53,6 +61,8 @@ export default function ProfilePage({ bots = [] }) {
         page_location: 'http://localhost:3000/universal-studio (Step 0)',
         free_limit: 3,
         used_count: 0,
+        rate_per_action_managed: 5.00,
+        rate_per_action_byok: 1.00,
         rate_per_action: 5.00,
         auto_metered_enabled: true,
         currency: 'INR',
@@ -64,6 +74,8 @@ export default function ProfilePage({ bots = [] }) {
         name: 'OmniBot Neural Simulator & In-House Testing',
         page_location: 'http://localhost:3000/universal-studio (Right Panel)',
         free_limit: 10,
+        rate_per_query_managed: 3.00,
+        rate_per_query_byok: 1.00,
         rate_per_query: 3.00,
         auto_metered_enabled: true,
         currency: 'INR',
@@ -73,7 +85,9 @@ export default function ProfilePage({ bots = [] }) {
         id: 'live_integrations',
         name: 'Production Channel Routing (WhatsApp & Web Embed Traffic)',
         page_location: 'Public Web Widget & Baileys Local WhatsApp Engine',
-        rate_per_request: 0.60,
+        rate_per_request_managed: 1.00,
+        rate_per_request_byok: 0.50,
+        rate_per_request: 1.00,
         currency: 'INR',
         currency_symbol: '₹',
         auto_metered_enabled: true
@@ -92,18 +106,36 @@ export default function ProfilePage({ bots = [] }) {
   const [loading, setLoading] = useState(true);
   const [togglingService, setTogglingService] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const toastTimeoutRef = useRef(null);
 
-  // 10-Key Rotation Health State
+  // Dynamic Gemini API Keys & Priority BYOK Routing State
   const [keysHealth, setKeysHealth] = useState({
-    total_slots: 10,
+    routing_policy: {
+      use_custom_keys: false,
+      fallback_to_managed: true,
+      managed_rate_per_request: 1.00,
+      byok_rate_per_request: 0.50
+    },
+    total_keys: 1,
     active_count: 1,
     over_quota_count: 0,
-    standby_count: 9,
-    slots: []
+    standby_count: 0,
+    keys: []
   });
-  const [testingSlot, setTestingSlot] = useState(null);
-  const [editSlotModal, setEditSlotModal] = useState(null); // { slot_number, label, key }
-  const [savingKey, setSavingKey] = useState(false);
+
+  const [testingKeyId, setTestingKeyId] = useState(null);
+  const [togglingKeyId, setTogglingKeyId] = useState(null);
+  const [deletingKeyId, setDeletingKeyId] = useState(null);
+  const [syncingTelemetry, setSyncingTelemetry] = useState(false);
+  const [togglingPolicy, setTogglingPolicy] = useState(false);
+  const [addKeyModalOpen, setAddKeyModalOpen] = useState(false);
+  const [addKeyForm, setAddKeyForm] = useState({ label: '', key: '' });
+  const [showKeySecret, setShowKeySecret] = useState(false);
+  const [addingKey, setAddingKey] = useState(false);
+  const [editKeyModal, setEditKeyModal] = useState(null); // { id, label, key: '' }
+  const [editingKey, setEditingKey] = useState(false);
+  const [showEditKeySecret, setShowEditKeySecret] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState(null);
 
   // Fetch Billing Controls
   const fetchBillingControls = useCallback(async () => {
@@ -145,10 +177,14 @@ export default function ProfilePage({ bots = [] }) {
     fetchKeysHealth();
   }, [fetchBillingControls, fetchKeysHealth]);
 
-  const showNotification = (msg, type = 'success') => {
-    setToastMessage({ msg, type });
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  const showNotification = useCallback((msg, type = 'success') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToastMessage({ msg, type, visible: true });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToastMessage(prev => prev ? { ...prev, visible: false } : null);
+      setTimeout(() => setToastMessage(null), 400);
+    }, 4500);
+  }, []);
 
   // Toggle Auto-Metered Billing for a service
   const handleToggleService = async (serviceId, currentVal) => {
@@ -183,54 +219,217 @@ export default function ProfilePage({ bots = [] }) {
     }
   };
 
-  // Test API Key Ping
-  const handleTestKeySlot = async (slotNumber) => {
-    setTestingSlot(slotNumber);
+  // Toggle Master BYOK Routing Policy (Instant Optimistic & Robust)
+  const handleToggleRoutingPolicy = async () => {
+    if (togglingPolicy) return;
+    const currentVal = Boolean(keysHealth.routing_policy?.use_custom_keys);
+    const newVal = !currentVal;
+
+    // Instant optimistic update
+    setKeysHealth(prev => ({
+      ...prev,
+      routing_policy: {
+        ...prev.routing_policy,
+        use_custom_keys: newVal
+      }
+    }));
+    setTogglingPolicy(true);
+
+    try {
+      const res = await fetch('/api/billing/keys-routing-policy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ use_custom_keys: newVal })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setKeysHealth(prev => ({
+          ...prev,
+          routing_policy: data.routing_policy
+        }));
+        showNotification(
+          newVal
+            ? 'Custom Gemini Key Routing (Priority #1) enabled @ ₹0.50/query.'
+            : 'Platform Managed Engine active @ ₹1.00/query.'
+        );
+      } else {
+        // Revert on failure
+        setKeysHealth(prev => ({
+          ...prev,
+          routing_policy: {
+            ...prev.routing_policy,
+            use_custom_keys: currentVal
+          }
+        }));
+        showNotification(data.error || 'Failed to update routing policy', 'error');
+      }
+    } catch (err) {
+      setKeysHealth(prev => ({
+        ...prev,
+        routing_policy: {
+          ...prev.routing_policy,
+          use_custom_keys: currentVal
+        }
+      }));
+      showNotification('Failed to update routing policy', 'error');
+    } finally {
+      setTogglingPolicy(false);
+    }
+  };
+
+  // Sync Telemetry Handler with smooth spin loading state (No extra timers)
+  const handleSyncTelemetry = async () => {
+    if (syncingTelemetry) return;
+    setSyncingTelemetry(true);
+    try {
+      await Promise.all([fetchBillingControls(), fetchKeysHealth()]);
+      showNotification('Refreshed live account telemetry.');
+    } catch (err) {
+      showNotification('Failed to refresh telemetry', 'error');
+    } finally {
+      setSyncingTelemetry(false);
+    }
+  };
+
+  // Test Real API Key Ping (live Google Gemini request - 100% Free - No extra timers)
+  const handleTestKey = async (keyId) => {
+    setTestingKeyId(keyId);
     try {
       const res = await fetch('/api/billing/keys-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slotNumber })
+        body: JSON.stringify({ keyId })
       });
       const data = await res.json();
-      showNotification(data.message, data.success ? 'success' : 'error');
-      fetchKeysHealth();
+      if (data.success) {
+        showNotification(
+          `Ping Verified (${data.latency_ms}ms, ${data.model_used}): "${data.response_snippet || 'OK'}"`,
+          'success'
+        );
+      } else {
+        showNotification(data.error || data.message || 'Key test failed', 'error');
+      }
+      await fetchKeysHealth();
     } catch (err) {
-      showNotification('Key test ping failed', 'error');
+      showNotification('Key test ping network failure', 'error');
     } finally {
-      setTestingSlot(null);
+      setTestingKeyId(null);
     }
   };
 
-  // Save/Update Key Slot
-  const handleSaveKeySlot = async (e) => {
-    e.preventDefault();
-    if (!editSlotModal || !editSlotModal.key?.trim()) return;
-
-    setSavingKey(true);
+  // Toggle Key Active / Standby Status
+  const handleToggleKeyStatus = async (keyId) => {
+    if (togglingKeyId) return;
+    setTogglingKeyId(keyId);
     try {
-      const res = await fetch('/api/billing/keys-update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slotNumber: editSlotModal.slot_number,
-          label: editSlotModal.label,
-          key: editSlotModal.key
-        })
+      const res = await fetch(`/api/billing/keys/${keyId}/toggle`, {
+        method: 'PATCH'
       });
       const data = await res.json();
       if (data.success) {
         showNotification(data.message);
-        setEditSlotModal(null);
-        fetchKeysHealth();
-      } else {
-        showNotification(data.error || 'Failed to save key', 'error');
+        await fetchKeysHealth();
       }
     } catch (err) {
-      showNotification('Error saving key slot', 'error');
+      showNotification('Failed to toggle key status', 'error');
     } finally {
-      setSavingKey(false);
+      setTogglingKeyId(null);
     }
+  };
+
+  // Delete Key from Pool
+  const handleDeleteKey = async (keyId, label) => {
+    if (!window.confirm(`Are you sure you want to remove "${label || 'this key'}" from your pool?`)) {
+      return;
+    }
+    setDeletingKeyId(keyId);
+    try {
+      const res = await fetch(`/api/billing/keys/${keyId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(data.message);
+        await fetchKeysHealth();
+      } else {
+        showNotification(data.error || 'Failed to delete key', 'error');
+      }
+    } catch (err) {
+      showNotification('Error deleting key', 'error');
+    } finally {
+      setDeletingKeyId(null);
+    }
+  };
+
+  // Edit Existing Key
+  const handleEditKey = async (e) => {
+    e.preventDefault();
+    if (!editKeyModal) return;
+    setEditingKey(true);
+    try {
+      const res = await fetch(`/api/billing/keys/${editKeyModal.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: editKeyModal.label,
+          key: editKeyModal.key
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(data.message, 'success');
+        setEditKeyModal(null);
+        fetchKeysHealth();
+      } else {
+        showNotification(data.error || 'Failed to update key', 'error');
+      }
+    } catch (err) {
+      showNotification('Error updating key credentials', 'error');
+    } finally {
+      setEditingKey(false);
+    }
+  };
+
+  // Add New Custom Gemini Key
+  const handleAddKey = async (e) => {
+    e.preventDefault();
+    if (!addKeyForm.key?.trim()) {
+      showNotification('Please enter a Google Gemini API key', 'error');
+      return;
+    }
+    setAddingKey(true);
+    try {
+      const res = await fetch('/api/billing/keys-add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: addKeyForm.label,
+          key: addKeyForm.key
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showNotification(data.message, 'success');
+        setAddKeyModalOpen(false);
+        setAddKeyForm({ label: '', key: '' });
+        fetchKeysHealth();
+      } else {
+        showNotification(data.error || 'Failed to add key', 'error');
+      }
+    } catch (err) {
+      showNotification('Error connecting to add key endpoint', 'error');
+    } finally {
+      setAddingKey(false);
+    }
+  };
+
+  // Copy Masked Key Helper
+  const handleCopyKey = (keyId, text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopiedKeyId(keyId);
+    setTimeout(() => setCopiedKeyId(null), 2000);
   };
 
   const pArchitect = billingData.services?.prompt_architect || {};
@@ -247,27 +446,66 @@ export default function ProfilePage({ bots = [] }) {
 
   return (
     <div style={{ padding: '28px 36px', maxWidth: '1440px', margin: '0 auto', boxSizing: 'border-box' }}>
-      {/* Toast Notification */}
+      {/* Top-Right Animated Studio-Style Single-Line Toast Notification (No cross button, auto-dismiss 4.5s) */}
       {toastMessage && (
         <div style={{
           position: 'fixed',
           top: '24px',
-          right: '28px',
-          zIndex: 9999,
+          right: '24px',
+          zIndex: 999999,
+          backgroundColor: 'var(--bg-surface, #ffffff)',
+          borderRadius: '12px',
+          border: toastMessage.type === 'error'
+            ? '1.5px solid rgba(239, 68, 68, 0.45)'
+            : toastMessage.type === 'info'
+              ? '1.5px solid rgba(79, 70, 229, 0.45)'
+              : '1.5px solid rgba(34, 197, 94, 0.45)',
+          boxShadow: '0 16px 36px -8px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.08)',
           padding: '12px 18px',
-          borderRadius: '10px',
-          backgroundColor: toastMessage.type === 'error' ? '#ef4444' : '#10b981',
-          color: '#ffffff',
-          fontWeight: 700,
-          fontSize: '13px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          animation: 'slideIn 0.25s ease'
+          gap: '12px',
+          transform: toastMessage.visible ? 'translateX(0) translateY(0)' : 'translateX(120%) translateY(0)',
+          opacity: toastMessage.visible ? 1 : 0,
+          transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease',
+          pointerEvents: 'none',
+          boxSizing: 'border-box'
         }}>
-          {toastMessage.type === 'error' ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
-          <span>{toastMessage.msg}</span>
+          <div style={{
+            width: '28px',
+            height: '28px',
+            borderRadius: '8px',
+            backgroundColor: toastMessage.type === 'error'
+              ? 'rgba(239, 68, 68, 0.12)'
+              : toastMessage.type === 'info'
+                ? 'rgba(79, 70, 229, 0.12)'
+                : 'rgba(34, 197, 94, 0.12)',
+            color: toastMessage.type === 'error'
+              ? '#dc2626'
+              : toastMessage.type === 'info'
+                ? '#4f46e5'
+                : '#16a34a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            {toastMessage.type === 'error' ? (
+              <AlertCircle size={16} />
+            ) : toastMessage.type === 'info' ? (
+              <Sparkles size={16} />
+            ) : (
+              <CheckCircle2 size={16} />
+            )}
+          </div>
+          <span style={{
+            fontSize: '13px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            whiteSpace: 'nowrap'
+          }}>
+            {toastMessage.msg}
+          </span>
         </div>
       )}
 
@@ -281,22 +519,9 @@ export default function ProfilePage({ bots = [] }) {
         gap: '14px'
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-              Client Profile &amp; Service Governance
-            </h1>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 800,
-              padding: '3px 9px',
-              borderRadius: '999px',
-              backgroundColor: 'rgba(79, 70, 229, 0.1)',
-              color: 'var(--primary)',
-              border: '1px solid rgba(79, 70, 229, 0.2)'
-            }}>
-              Enterprise Tier
-            </span>
-          </div>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+            Client Profile &amp; Service Governance
+          </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
             Unified client credentials, auto-metered consumption policies, service lock guards, and 10-key rotating Gemini API pools.
           </p>
@@ -304,16 +529,31 @@ export default function ProfilePage({ bots = [] }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
-            onClick={() => {
-              fetchBillingControls();
-              fetchKeysHealth();
-              showNotification('Refreshed live account telemetry.');
-            }}
+            type="button"
+            onClick={handleSyncTelemetry}
+            disabled={syncingTelemetry}
             className="btn-secondary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', padding: '8px 14px' }}
+            title="Refresh live account telemetry"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontSize: '12.5px',
+              padding: '8px 14px',
+              minWidth: '135px',
+              height: '36px',
+              cursor: syncingTelemetry ? 'not-allowed' : 'pointer'
+            }}
           >
-            <RefreshCw size={13} />
-            <span>Sync Telemetry</span>
+            {syncingTelemetry ? (
+              <Loader2 size={14} className="spin" />
+            ) : (
+              <>
+                <RefreshCw size={13} />
+                <span>Sync Telemetry</span>
+              </>
+            )}
           </button>
 
           <button
@@ -528,41 +768,18 @@ export default function ProfilePage({ bots = [] }) {
                       AI Business &amp; Automation Prompt Architect
                     </span>
                     {architectIsLocked ? (
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: '#ef4444',
-                        color: '#ffffff',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Lock size={11} /> Button Locked in Studio
-                      </span>
-                    ) : architectUsed < 3 ? (
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        color: '#059669'
-                      }}>
-                        {architectFreeRemaining} / 3 Free Runs Left
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Lock size={12} /> Button Locked (Turn Auto-Metered ON to Unlock)
                       </span>
                     ) : (
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                        color: 'var(--primary)'
-                      }}>
-                        Metered: ₹5.00 / action
-                      </span>
+                      <>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: architectUsed < 3 ? '#059669' : '#4f46e5' }}>
+                          &bull; {architectUsed < 3 ? `${architectFreeRemaining} / 3 Free Left` : '3 Free Consumed'}
+                        </span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2' }}>
+                          &bull; ₹1.00 with Custom Key &bull; ₹5.00 Managed
+                        </span>
+                      </>
                     )}
                   </div>
 
@@ -570,8 +787,8 @@ export default function ProfilePage({ bots = [] }) {
                     Synthesizes complete enterprise master prompts from business descriptions on <code>/universal-studio</code>.
                   </p>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    <span>Rate: <strong>₹5.00 per action</strong> beyond 3 free</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                    <span>Rate: <strong>₹5.00 / action</strong> (<strong>₹1.00</strong> with custom API key)</span>
                     <span>&bull;</span>
                     <span>Total Runs: <strong>{architectUsed}</strong></span>
                     <span>&bull;</span>
@@ -584,7 +801,7 @@ export default function ProfilePage({ bots = [] }) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: pArchitect.auto_metered_enabled ? '#16a34a' : 'var(--text-muted)' }}>
-                    {pArchitect.auto_metered_enabled ? 'Auto-Metered ON (₹5/run)' : 'Auto-Metered OFF'}
+                    {pArchitect.auto_metered_enabled ? 'Auto-Metered ON (₹1 Custom / ₹5 Managed)' : 'Auto-Metered OFF (Locked after 3 free)'}
                   </span>
 
                   <button
@@ -618,12 +835,12 @@ export default function ProfilePage({ bots = [] }) {
                   </button>
                 </div>
 
-                <span style={{ fontSize: '10.5px', color: architectIsLocked ? '#dc2626' : 'var(--text-muted)', maxWidth: '240px', textAlign: 'right' }}>
+                <span style={{ fontSize: '10.5px', color: architectIsLocked ? '#dc2626' : 'var(--text-muted)', maxWidth: '280px', textAlign: 'right' }}>
                   {architectIsLocked
                     ? 'Quota exhausted & auto-pay is OFF. Universal Studio button is completely locked.'
                     : pArchitect.auto_metered_enabled
-                      ? 'AI will seamlessly charge ₹5/run after 3 free runs.'
-                      : 'AI will stop and lock button once 3 free runs are consumed.'}
+                      ? 'When ON: ₹1.00 with custom key, ₹5.00 on managed engine beyond 3 free.'
+                      : 'When OFF: AI halts after 3 free runs. Turn ON to enable at ₹1.00 or ₹5.00.'}
                 </span>
               </div>
             </div>
@@ -658,15 +875,11 @@ export default function ProfilePage({ bots = [] }) {
                     <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       OmniBot Neural Simulator &amp; In-House Testing
                     </span>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(8, 145, 178, 0.1)',
-                      color: '#0891b2'
-                    }}>
-                      10 Free Inquiries / Bot Model
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#0891b2' }}>
+                      &bull; 10 Free Inquiries / Model
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>
+                      &bull; ₹1.00 with Custom Key &bull; ₹3.00 Managed
                     </span>
                   </div>
 
@@ -674,8 +887,8 @@ export default function ProfilePage({ bots = [] }) {
                     Live interactive sandbox testing right panel on <code>/universal-studio</code>. Evaluates lead scoring and persona directives.
                   </p>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    <span>Rate: <strong>₹3.00 per inquiry</strong> beyond 10 complimentary</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                    <span>Rate: <strong>₹3.00 / query</strong> (<strong>₹1.00</strong> with custom API key)</span>
                     <span>&bull;</span>
                     <span>Independent 10 Free Tier Per Model</span>
                   </div>
@@ -686,7 +899,7 @@ export default function ProfilePage({ bots = [] }) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '12px', fontWeight: 700, color: cSimulator.auto_metered_enabled ? '#16a34a' : 'var(--text-muted)' }}>
-                    {cSimulator.auto_metered_enabled ? 'Auto-Metered ON (₹3/query)' : 'Auto-Metered OFF'}
+                    {cSimulator.auto_metered_enabled ? 'Auto-Metered ON (₹1 Custom / ₹3 Managed)' : 'Auto-Metered OFF (10 Free Only)'}
                   </span>
 
                   <button
@@ -719,8 +932,10 @@ export default function ProfilePage({ bots = [] }) {
                     }} />
                   </button>
                 </div>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', maxWidth: '240px', textAlign: 'right' }}>
-                  Allows testing beyond 10 free queries at ₹3.00/query.
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', maxWidth: '280px', textAlign: 'right' }}>
+                  {cSimulator.auto_metered_enabled
+                    ? 'When ON: ₹1.00 with custom key, ₹3.00 on platform beyond 10 free.'
+                    : 'When OFF: Testing limited to 10 free queries per model.'}
                 </span>
               </div>
             </div>
@@ -755,15 +970,8 @@ export default function ProfilePage({ bots = [] }) {
                     <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       Production Realtime Channels (WhatsApp &amp; Web Embed)
                     </span>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                      color: '#059669'
-                    }}>
-                      Live Production Active
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>
+                      &bull; ₹0.50 with Custom Key &bull; ₹1.00 Managed
                     </span>
                   </div>
 
@@ -771,8 +979,8 @@ export default function ProfilePage({ bots = [] }) {
                     Incoming visitor traffic from deployed website embeds and connected Baileys WhatsApp sessions.
                   </p>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                    <span>Rate: <strong>₹0.60 per request</strong> (60 paise / req)</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11.5px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                    <span>Rate: <strong>₹0.50 / req</strong> (Custom Key) &bull; <strong>₹1.00 / req</strong> (Platform Managed)</span>
                     <span>&bull;</span>
                     <span>Multi-tenant secure encryption active</span>
                   </div>
@@ -790,10 +998,12 @@ export default function ProfilePage({ bots = [] }) {
                   gap: '5px'
                 }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                  Routing Enabled (₹0.60/req)
+                  Routing Active ({keysHealth.routing_policy?.use_custom_keys ? '₹0.50/req Custom Key' : '₹1.00/req Managed'})
                 </span>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', maxWidth: '240px', textAlign: 'right' }}>
-                  Metered directly upon genuine inbound customer messages.
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', maxWidth: '280px', textAlign: 'right' }}>
+                  {keysHealth.routing_policy?.use_custom_keys
+                    ? 'When Custom Keys ON: ₹0.50/req (Priority #1 routing).'
+                    : 'When Custom Keys OFF: ₹1.00/req (OmniBot managed engine).'}
                 </span>
               </div>
             </div>
@@ -828,15 +1038,8 @@ export default function ProfilePage({ bots = [] }) {
                     <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       Autonomous Chatbot Deployment Slots
                     </span>
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '4px',
-                      backgroundColor: isMaxBotsReached ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                      color: isMaxBotsReached ? '#dc2626' : '#059669'
-                    }}>
-                      {currentBotsCount} / 3 Maximum Cap
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: isMaxBotsReached ? '#dc2626' : '#059669' }}>
+                      &bull; {currentBotsCount} / 3 Maximum Cap
                     </span>
                   </div>
 
@@ -889,252 +1092,586 @@ export default function ProfilePage({ bots = [] }) {
         </div>
       </div>
 
-      {/* SECTION 3: Daily Multi-API Key Health & Rotation Monitor (10 Rotating Keys) */}
+      {/* SECTION 3: Client Gemini API Key Vault & Priority BYOK Engine */}
       <div style={{ marginBottom: '36px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+        {/* Section Header with Add Key Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Key size={18} color="var(--primary)" />
-              <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                Daily Multi-API Key Health &amp; Rotation Pool (10 Keys Engine)
-              </h2>
-            </div>
+            <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              Client Gemini API Key Vault &amp; Priority BYOK Engine
+            </h2>
             <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-              System rotates through 10 API keys. When a key hits its daily limit or rate-limit, the gateway instantly auto-routes to the next healthy slot.
+              Manage your custom Google Gemini keys. When enabled, your keys receive <strong>Priority #1</strong> rotation (₹0.50/req). Auto-failover routes to the Managed Engine @ ₹1.00/req.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              fontSize: '11px',
+          {/* ONLY the + Add Gemini API Key Button on right side */}
+          <button
+            type="button"
+            onClick={() => {
+              setAddKeyForm({ label: `Gemini Key #${(keysHealth.keys?.length || 0) + 1}`, key: '' });
+              setAddKeyModalOpen(true);
+            }}
+            className="btn-primary"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12.5px',
+              padding: '8px 16px',
               fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              color: '#059669'
-            }}>
-              Active: {keysHealth.active_count}
-            </span>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '4px',
-              backgroundColor: keysHealth.over_quota_count > 0 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-page)',
-              color: keysHealth.over_quota_count > 0 ? '#dc2626' : 'var(--text-muted)'
-            }}>
-              Over Quota: {keysHealth.over_quota_count}
-            </span>
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '4px',
-              backgroundColor: 'rgba(8, 145, 178, 0.1)',
-              color: '#0891b2'
-            }}>
-              Standby: {keysHealth.standby_count}
-            </span>
+              borderRadius: '8px'
+            }}
+          >
+            <Plus size={14} />
+            <span>Add Gemini API Key</span>
+          </button>
+        </div>
+
+        {/* Master BYOK Priority Switch Card - Identical clean border and surface styling as upper Service Cards */}
+        <div className="glass-panel" style={{
+          padding: '18px 24px',
+          borderRadius: '12px',
+          border: '1px solid var(--border-subtle)',
+          backgroundColor: 'var(--bg-surface)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+          marginBottom: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: '280px' }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <ShieldCheck size={20} />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    Client Custom API Key Routing (BYOK - Priority #1)
+                  </span>
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: keysHealth.routing_policy?.use_custom_keys ? '#16a34a' : 'var(--text-muted)'
+                  }}>
+                    &bull; {keysHealth.routing_policy?.use_custom_keys
+                      ? 'Active: ₹0.50 / req (Priority #1)'
+                      : 'Inactive: ₹1.00 / req (Managed Safety Net)'}
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '3px 0 6px' }}>
+                  Priority #1 multi-key sequential rotation across all your client keys (₹0.50/req). Auto-failover to Managed Safety Net (₹1.00/req) if client quota runs out.
+                </p>
+
+                {/* Routing Strategy Details */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '11px',
+                    padding: '2px 8px',
+                    borderRadius: '5px',
+                    backgroundColor: 'var(--bg-page)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)'
+                  }}>
+                    <Zap size={11} color="#f59e0b" />
+                    <strong>Priority 1:</strong> Client Keys (₹0.50/req &bull; ₹1.00 studio)
+                  </span>
+
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '11px',
+                    padding: '2px 8px',
+                    borderRadius: '5px',
+                    backgroundColor: 'var(--bg-page)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)'
+                  }}>
+                    <Activity size={11} color="#10b981" />
+                    <strong>Backup:</strong> Managed Engine (₹1.00/req &bull; ₹5.00 studio)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Master Switch */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: keysHealth.routing_policy?.use_custom_keys ? '#16a34a' : 'var(--text-muted)' }}>
+                  {keysHealth.routing_policy?.use_custom_keys ? 'Custom Keys ON (₹0.50 / req)' : 'Custom Keys OFF (₹1.00 / req)'}
+                </span>
+
+                <button
+                  type="button"
+                  disabled={togglingPolicy}
+                  onClick={handleToggleRoutingPolicy}
+                  style={{
+                    width: '46px',
+                    height: '24px',
+                    borderRadius: '999px',
+                    backgroundColor: keysHealth.routing_policy?.use_custom_keys ? '#10b981' : '#cbd5e1',
+                    border: 'none',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'background-color 0.2s ease',
+                    outline: 'none',
+                    padding: 0
+                  }}
+                >
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    position: 'absolute',
+                    top: '3px',
+                    left: keysHealth.routing_policy?.use_custom_keys ? '25px' : '3px',
+                    transition: 'left 0.2s ease',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                  }} />
+                </button>
+              </div>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', maxWidth: '280px', textAlign: 'right' }}>
+                {keysHealth.routing_policy?.use_custom_keys
+                  ? 'When ON: ₹0.50/req (Client keys tried first. Auto-failover to ₹1.00/req).'
+                  : 'When OFF: ₹1.00/req (Always routes via Platform Managed Engine).'}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* 10-Slot Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
-          gap: '14px'
-        }}>
-          {(keysHealth.slots || []).map((slot) => {
-            const isActive = slot.status === 'active';
-            const isOverQuota = slot.status === 'over_quota';
-            const isRateLimited = slot.status === 'rate_limited';
-            const isStandby = slot.status === 'standby';
+        {/* Dynamic Key Cards List (ONLY configured keys shown - No fake empty slots) */}
+        {(!keysHealth.keys || keysHealth.keys.length === 0) ? (
+          <div className="glass-panel" style={{
+            padding: '40px 24px',
+            textAlign: 'center',
+            borderRadius: '14px',
+            border: '1px dashed var(--border-subtle)',
+            backgroundColor: 'var(--bg-surface)'
+          }}>
+            <div style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '16px',
+              backgroundColor: 'rgba(79, 70, 229, 0.08)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px'
+            }}>
+              <Key size={26} />
+            </div>
+            <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>
+              No Custom Gemini API Keys Added Yet
+            </h3>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', maxWidth: '520px', margin: '0 auto 18px', lineHeight: '1.5' }}>
+              Traffic is currently routed 100% reliably through the OmniBot Platform Managed Engine @ ₹0.60 per query. Click below to add your own Google AI Studio key for Priority #1 routing.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setAddKeyForm({ label: 'Primary Google AI Studio Key', key: '' });
+                setAddKeyModalOpen(true);
+              }}
+              className="btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '10px 20px' }}
+            >
+              <Plus size={15} />
+              <span>Add Your First Gemini Key</span>
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+            gap: '16px'
+          }}>
+            {keysHealth.keys.map((keyObj, idx) => {
+              const isActive = keyObj.status === 'active';
+              const isOverQuota = keyObj.status === 'over_quota';
+              const isStandby = keyObj.status === 'standby';
+              const isInvalid = keyObj.status === 'invalid';
+              const isTesting = testingKeyId === keyObj.id;
 
-            return (
-              <div
-                key={slot.slot_number}
-                className="glass-panel"
-                style={{
-                  padding: '16px',
-                  borderRadius: '12px',
-                  border: slot.is_current_active
-                    ? '2px solid var(--primary)'
-                    : isOverQuota
-                      ? '1px solid rgba(239, 68, 68, 0.3)'
-                      : '1px solid var(--border-subtle)',
-                  backgroundColor: slot.is_current_active
-                    ? 'rgba(79, 70, 229, 0.02)'
-                    : isOverQuota
-                      ? 'rgba(239, 68, 68, 0.02)'
-                      : 'var(--bg-surface)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                  position: 'relative'
-                }}
-              >
-                <div>
-                  {/* Top Row: Slot # & Status Badge */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        padding: '1px 6px',
-                        borderRadius: '4px',
-                        backgroundColor: slot.is_current_active ? 'var(--primary)' : 'var(--bg-page)',
-                        color: slot.is_current_active ? '#ffffff' : 'var(--text-secondary)'
-                      }}>
-                        Slot #{slot.slot_number.toString().padStart(2, '0')}
-                      </span>
-                      {slot.is_current_active && (
-                        <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: 800 }}>
-                          Primary
+              return (
+                <div
+                  key={keyObj.id || idx}
+                  className="glass-panel"
+                  style={{
+                    padding: '20px',
+                    borderRadius: '14px',
+                    border: keyObj.is_primary
+                      ? '2px solid var(--primary)'
+                      : isOverQuota
+                        ? '1px solid rgba(239, 68, 68, 0.35)'
+                        : '1px solid var(--border-subtle)',
+                    backgroundColor: keyObj.is_primary
+                      ? 'linear-gradient(180deg, var(--bg-surface) 0%, rgba(79, 70, 229, 0.02) 100%)'
+                      : isOverQuota
+                        ? 'rgba(239, 68, 68, 0.02)'
+                        : 'var(--bg-surface)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+                    position: 'relative'
+                  }}
+                >
+                  <div>
+                    {/* Top Row: Priority & Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: keyObj.is_primary ? 'var(--primary)' : 'var(--bg-page)',
+                          color: keyObj.is_primary ? '#ffffff' : 'var(--text-secondary)'
+                        }}>
+                          Priority #{keyObj.priority || (idx + 1)}
                         </span>
+                        {keyObj.is_primary && (
+                          <span style={{ fontSize: '10.5px', color: 'var(--primary)', fontWeight: 800 }}>
+                            Primary Key
+                          </span>
+                        )}
+                      </div>
+
+                      <span style={{
+                        fontSize: '10.5px',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        backgroundColor: isActive
+                          ? 'rgba(16, 185, 129, 0.15)'
+                          : isOverQuota
+                            ? 'rgba(239, 68, 68, 0.15)'
+                            : isInvalid
+                              ? 'rgba(239, 68, 68, 0.15)'
+                              : 'rgba(100, 116, 139, 0.15)',
+                        color: isActive
+                          ? '#059669'
+                          : isOverQuota
+                            ? '#dc2626'
+                            : isInvalid
+                              ? '#dc2626'
+                              : '#64748b'
+                      }}>
+                        {isActive
+                          ? 'Active & Verified'
+                          : isOverQuota
+                            ? 'Daily Quota Limit (429)'
+                            : isInvalid
+                              ? 'Invalid Key'
+                              : 'Standby'}
+                      </span>
+                    </div>
+
+                    {/* Key Label */}
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: 800,
+                      color: 'var(--text-primary)',
+                      marginBottom: '6px',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
+                      {keyObj.label}
+                    </div>
+
+                    {/* Masked Key & Copy Button */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: 'var(--bg-page)',
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      marginBottom: '12px',
+                      border: '1px solid var(--border-subtle)'
+                    }}>
+                      <span style={{ fontSize: '11.5px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                        {keyObj.masked_key}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyKey(keyObj.id, keyObj.masked_key)}
+                        title="Copy Key Reference"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: copiedKeyId === keyObj.id ? '#10b981' : 'var(--text-muted)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontSize: '11px',
+                          padding: '2px 4px'
+                        }}
+                      >
+                        {copiedKeyId === keyObj.id ? <Check size={13} /> : <Copy size={13} />}
+                        <span>{copiedKeyId === keyObj.id ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+
+                    {/* Telemetry Row: Latency, Last Checked, Models */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '11px',
+                      color: 'var(--text-muted)',
+                      marginBottom: '12px',
+                      padding: '0 2px'
+                    }}>
+                      <span>Latency: <strong style={{ color: keyObj.latency_ms > 0 ? '#10b981' : 'inherit' }}>{keyObj.latency_ms > 0 ? `${keyObj.latency_ms}ms` : '--'}</strong></span>
+                      <span>Model: <strong>{keyObj.models_available?.[0] || 'gemini-3.6-flash'}</strong></span>
+                      <span>Tested: <strong>{keyObj.last_tested}</strong></span>
+                    </div>
+
+                    {/* Live Gemini Response & Dynamic Token Meter Box */}
+                    <div style={{
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: isActive ? 'rgba(16, 185, 129, 0.05)' : isOverQuota ? 'rgba(239, 68, 68, 0.05)' : 'var(--bg-page)',
+                      border: isActive ? '1px solid rgba(16, 185, 129, 0.2)' : isOverQuota ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid var(--border-subtle)',
+                      marginBottom: '14px'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '10.5px',
+                        fontWeight: 700,
+                        color: isActive ? '#059669' : isOverQuota ? '#dc2626' : 'var(--text-muted)',
+                        marginBottom: '4px'
+                      }}>
+                        <span>Latest Gemini Ping Telemetry</span>
+                        {keyObj.tokens_used && (
+                          <span>{keyObj.tokens_used.totalTokenCount || keyObj.tokens_used.total || 0} Total Tokens</span>
+                        )}
+                      </div>
+
+                      <div style={{
+                        fontSize: '11.5px',
+                        color: 'var(--text-primary)',
+                        fontStyle: 'italic',
+                        marginBottom: keyObj.tokens_used ? '6px' : '0',
+                        lineHeight: '1.4'
+                      }}>
+                        "{keyObj.last_ping_response || 'Click Ping Test to verify live connectivity and measure latency.'}"
+                      </div>
+
+                      {keyObj.tokens_used && (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          fontSize: '10px',
+                          color: 'var(--text-muted)',
+                          paddingTop: '6px',
+                          borderTop: '1px dashed var(--border-subtle)'
+                        }}>
+                          <span>Prompt: <strong>{keyObj.tokens_used.promptTokenCount || 0}</strong></span>
+                          <span>&bull;</span>
+                          <span>Output: <strong>{keyObj.tokens_used.candidatesTokenCount || 0}</strong></span>
+                          <span>&bull;</span>
+                          <span>Total: <strong>{keyObj.tokens_used.totalTokenCount || 0}</strong></span>
+                        </div>
                       )}
                     </div>
-
-                    <span style={{
-                      fontSize: '10.5px',
-                      fontWeight: 800,
-                      padding: '2px 7px',
-                      borderRadius: '4px',
-                      backgroundColor: isActive
-                        ? 'rgba(16, 185, 129, 0.15)'
-                        : isOverQuota
-                          ? 'rgba(239, 68, 68, 0.15)'
-                          : isRateLimited
-                            ? 'rgba(245, 158, 11, 0.15)'
-                            : 'rgba(100, 116, 139, 0.15)',
-                      color: isActive
-                        ? '#059669'
-                        : isOverQuota
-                          ? '#dc2626'
-                          : isRateLimited
-                            ? '#d97706'
-                            : '#64748b'
-                    }}>
-                      {isActive
-                        ? 'Active & Ready'
-                        : isOverQuota
-                          ? 'Daily Limit Over'
-                          : isRateLimited
-                            ? 'Cooling Down'
-                            : 'Standby'}
-                    </span>
                   </div>
 
-                  {/* Slot Label & Masked Key */}
+                  {/* Actions Footer */}
                   <div style={{
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    marginBottom: '3px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingTop: '12px',
+                    borderTop: '1px solid var(--border-subtle)'
                   }}>
-                    {slot.label}
-                  </div>
-
-                  <div style={{
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                    color: 'var(--text-muted)',
-                    backgroundColor: 'var(--bg-page)',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    marginBottom: '10px',
-                    border: '1px solid var(--border-subtle)'
-                  }}>
-                    {slot.masked_key}
-                  </div>
-
-                  {/* Daily Quota Progress */}
-                  <div style={{ marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                      <span>Daily Requests</span>
-                      <span>{slot.daily_requests_used} / {slot.daily_requests_limit}</span>
-                    </div>
-                    <div style={{ width: '100%', height: '5px', backgroundColor: 'var(--bg-page)', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${Math.min(100, ((slot.daily_requests_used || 0) / (slot.daily_requests_limit || 1500)) * 100)}%`,
-                        height: '100%',
-                        backgroundColor: isOverQuota ? '#ef4444' : isActive ? '#10b981' : '#0891b2',
-                        borderRadius: '999px'
+                    {/* Left: Quick Status Info */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span style={{
+                        width: '7px',
+                        height: '7px',
+                        borderRadius: '50%',
+                        backgroundColor: isActive ? '#10b981' : '#94a3b8'
                       }} />
+                      <span>{isActive ? 'Active Priority #1' : 'Paused / Standby'}</span>
+                      {keyObj.latency_ms && <span>&bull; {keyObj.latency_ms}ms</span>}
+                    </div>
+
+                    {/* Right: Icon-Only Action Buttons (Ping Test FIRST) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* 1. Ping Test Icon Button (FIRST in card actions) */}
+                      <button
+                        type="button"
+                        disabled={isTesting || !keyObj.raw_key_available}
+                        onClick={() => handleTestKey(keyObj.id)}
+                        title={isTesting ? 'Pinging Gemini 3.6 Flash (Free)...' : 'Live Connectivity & Latency Ping Test (Free)'}
+                        style={{
+                          width: '32px',
+                          height: '30px',
+                          borderRadius: '6px',
+                          border: isTesting ? '1px solid var(--primary)' : '1px solid rgba(79, 70, 229, 0.3)',
+                          backgroundColor: isTesting ? 'rgba(79, 70, 229, 0.15)' : 'rgba(79, 70, 229, 0.08)',
+                          color: 'var(--primary)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: isTesting ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {isTesting ? (
+                          <Loader2 size={13} className="spin" />
+                        ) : (
+                          <Activity size={13} />
+                        )}
+                      </button>
+
+                      {/* 2. Start / Pause Icon Toggle */}
+                      {isActive ? (
+                        <button
+                          type="button"
+                          disabled={togglingKeyId === keyObj.id}
+                          onClick={() => handleToggleKeyStatus(keyObj.id)}
+                          title="Pause Key (Set to Standby)"
+                          style={{
+                            width: '32px',
+                            height: '30px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                            color: '#d97706',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: togglingKeyId === keyObj.id ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {togglingKeyId === keyObj.id ? (
+                            <Loader2 size={13} className="spin" />
+                          ) : (
+                            <Pause size={13} />
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={togglingKeyId === keyObj.id}
+                          onClick={() => handleToggleKeyStatus(keyObj.id)}
+                          title="Activate Key (Start Priority #1 Routing)"
+                          style={{
+                            width: '32px',
+                            height: '30px',
+                            borderRadius: '6px',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            color: '#059669',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: togglingKeyId === keyObj.id ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {togglingKeyId === keyObj.id ? (
+                            <Loader2 size={13} className="spin" />
+                          ) : (
+                            <Play size={13} />
+                          )}
+                        </button>
+                      )}
+
+                      {/* 3. Edit Key Icon Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditKeyModal({ id: keyObj.id, label: keyObj.label, key: '' });
+                          setShowEditKeySecret(false);
+                        }}
+                        title="Edit Key Label & Secret"
+                        style={{
+                          width: '32px',
+                          height: '30px',
+                          borderRadius: '6px',
+                          border: '1px solid var(--border-subtle)',
+                          backgroundColor: 'var(--bg-page)',
+                          color: 'var(--text-primary)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <Pencil size={13} />
+                      </button>
+
+                      {/* 4. Delete Key Icon Button */}
+                      <button
+                        type="button"
+                        disabled={deletingKeyId === keyObj.id}
+                        onClick={() => handleDeleteKey(keyObj.id, keyObj.label)}
+                        title="Delete Key from Vault"
+                        style={{
+                          width: '32px',
+                          height: '30px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                          backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                          color: '#ef4444',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: deletingKeyId === keyObj.id ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {deletingKeyId === keyObj.id ? (
+                          <Loader2 size={13} className="spin" />
+                        ) : (
+                          <Trash2 size={13} />
+                        )}
+                      </button>
                     </div>
                   </div>
-
-                  {/* Latency & Last Checked */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                    <span>Latency: <strong>{slot.latency_ms > 0 ? `${slot.latency_ms}ms` : '--'}</strong></span>
-                    <span>Last: <strong>{slot.last_tested}</strong></span>
-                  </div>
                 </div>
-
-                {/* Actions Footer */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  marginTop: '12px',
-                  paddingTop: '10px',
-                  borderTop: '1px solid var(--border-subtle)'
-                }}>
-                  <button
-                    type="button"
-                    disabled={testingSlot === slot.slot_number || !slot.raw_key_available}
-                    onClick={() => handleTestKeySlot(slot.slot_number)}
-                    style={{
-                      flex: 1,
-                      padding: '5px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-subtle)',
-                      backgroundColor: 'transparent',
-                      color: slot.raw_key_available ? 'var(--text-primary)' : 'var(--text-muted)',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      cursor: (testingSlot === slot.slot_number || !slot.raw_key_available) ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {testingSlot === slot.slot_number ? 'Testing...' : 'Ping Test'}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setEditSlotModal({ slot_number: slot.slot_number, label: slot.label, key: '' })}
-                    style={{
-                      flex: 1,
-                      padding: '5px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid rgba(79, 70, 229, 0.3)',
-                      backgroundColor: 'rgba(79, 70, 229, 0.08)',
-                      color: 'var(--primary)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Configure
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Modal: Configure / Change Key Slot */}
-      {editSlotModal && (
+      {/* Modal: Add New Gemini Key */}
+      {addKeyModalOpen && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
@@ -1144,42 +1681,59 @@ export default function ProfilePage({ bots = [] }) {
         }}>
           <div className="glass-panel" style={{
             width: '100%',
-            maxWidth: '480px',
+            maxWidth: '500px',
             borderRadius: '16px',
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-subtle)',
-            padding: '24px',
-            boxShadow: '0 12px 36px rgba(0,0,0,0.25)'
+            padding: '26px',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.25)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Key size={18} color="var(--primary)" />
-                <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Configure Gemini Slot #{editSlotModal.slot_number}
-                </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Key size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    Add New Google Gemini API Key
+                  </h3>
+                  <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                    Tested live with Gemini 3.6 Flash before saving.
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setEditSlotModal(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '18px' }}
+                onClick={() => setAddKeyModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '20px' }}
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleSaveKeySlot}>
+            <form onSubmit={handleAddKey}>
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  Slot Identifier / Label
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Key Identifier / Label *
                 </label>
                 <input
                   type="text"
-                  value={editSlotModal.label || ''}
-                  onChange={(e) => setEditSlotModal({ ...editSlotModal, label: e.target.value })}
-                  placeholder={`Gemini Multi-Key Slot #${editSlotModal.slot_number}`}
+                  required
+                  value={addKeyForm.label}
+                  onChange={(e) => setAddKeyForm({ ...addKeyForm, label: e.target.value })}
+                  placeholder="e.g. Production Gemini 3.6 Flash Key"
                   style={{
                     width: '100%',
-                    padding: '9px 12px',
+                    padding: '10px 12px',
                     borderRadius: '8px',
                     border: '1px solid var(--border-subtle)',
                     backgroundColor: 'var(--bg-page)',
@@ -1191,37 +1745,88 @@ export default function ProfilePage({ bots = [] }) {
                 />
               </div>
 
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  Google Gemini API Key *
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Google Gemini API Key (AIzaSy... or AQ...) *
                 </label>
-                <input
-                  type="password"
-                  value={editSlotModal.key || ''}
-                  onChange={(e) => setEditSlotModal({ ...editSlotModal, key: e.target.value })}
-                  placeholder="Enter Gemini API key (AIzaSy...)"
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-subtle)',
-                    backgroundColor: 'var(--bg-page)',
-                    fontSize: '13px',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                    fontFamily: 'monospace',
-                    boxSizing: 'border-box'
-                  }}
-                />
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                  Key will be added to the rotating pool and verified with a health ping.
-                </span>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showKeySecret ? 'text' : 'password'}
+                    required
+                    value={addKeyForm.key}
+                    onChange={(e) => setAddKeyForm({ ...addKeyForm, key: e.target.value })}
+                    placeholder="Enter your Gemini API key"
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-page)',
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKeySecret(!showKeySecret)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)'
+                    }}
+                  >
+                    {showKeySecret ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '6px',
+                  fontSize: '11px',
+                  color: 'var(--text-muted)'
+                }}>
+                  <span>Your key is tested immediately with Google Cloud.</span>
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                  >
+                    <span>Get Key from Google</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </div>
+              </div>
+
+              <div style={{
+                padding: '10px 12px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                border: '1px solid rgba(79, 70, 229, 0.15)',
+                fontSize: '11px',
+                color: 'var(--text-secondary)',
+                marginBottom: '20px',
+                lineHeight: '1.4'
+              }}>
+                <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '2px' }}>
+                  Safety-Net Guarantee:
+                </div>
+                When BYOK is enabled, this key receives Priority #1 (₹0.50/req). If it ever exceeds quota, OmniBot auto-routes to our managed engine @ ₹1.00/req so you never miss a client lead.
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                 <button
                   type="button"
-                  onClick={() => setEditSlotModal(null)}
+                  onClick={() => setAddKeyModalOpen(false)}
                   className="btn-secondary"
                   style={{ padding: '8px 16px', fontSize: '12.5px' }}
                 >
@@ -1229,11 +1834,195 @@ export default function ProfilePage({ bots = [] }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={savingKey || !editSlotModal.key?.trim()}
+                  disabled={addingKey || !addKeyForm.key?.trim()}
                   className="btn-primary"
-                  style={{ padding: '8px 20px', fontSize: '12.5px' }}
+                  style={{
+                    padding: '8px 20px',
+                    fontSize: '12.5px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    minWidth: '150px',
+                    height: '36px',
+                    cursor: addingKey ? 'not-allowed' : 'pointer'
+                  }}
                 >
-                  {savingKey ? 'Activating Key...' : 'Save & Activate Slot'}
+                  {addingKey ? (
+                    <Loader2 size={15} className="spin" />
+                  ) : (
+                    <>
+                      <Plus size={14} />
+                      <span>Verify & Add Key</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Existing Gemini Key */}
+      {editKeyModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{
+            width: '100%',
+            maxWidth: '500px',
+            borderRadius: '16px',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            padding: '26px',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Pencil size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    Edit Google Gemini API Key
+                  </h3>
+                  <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
+                    Update key label or replace API secret credentials.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditKeyModal(null)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '20px' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleEditKey}>
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Key Identifier / Label *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editKeyModal.label || ''}
+                  onChange={(e) => setEditKeyModal({ ...editKeyModal, label: e.target.value })}
+                  placeholder="e.g. Primary Production Gemini Key"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-subtle)',
+                    backgroundColor: 'var(--bg-page)',
+                    fontSize: '13px',
+                    color: 'var(--text-primary)',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  New Google Gemini API Key (Optional)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showEditKeySecret ? 'text' : 'password'}
+                    value={editKeyModal.key || ''}
+                    onChange={(e) => setEditKeyModal({ ...editKeyModal, key: e.target.value })}
+                    placeholder="Leave blank to keep current verified key"
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)',
+                      backgroundColor: 'var(--bg-page)',
+                      fontSize: '13px',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
+                      fontFamily: 'monospace',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowEditKeySecret(!showEditKeySecret)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)'
+                    }}
+                  >
+                    {showEditKeySecret ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
+                <p style={{ margin: '5px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  If a new key is entered, it is tested live with Gemini 3.6 Flash before saving.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditKeyModal(null)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '12.5px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editingKey || !editKeyModal.label?.trim()}
+                  className="btn-primary"
+                  style={{
+                    padding: '8px 20px',
+                    fontSize: '12.5px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    minWidth: '150px',
+                    height: '36px',
+                    cursor: editingKey ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {editingKey ? (
+                    <Loader2 size={15} className="spin" />
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      <span>Save Key Changes</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
